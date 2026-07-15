@@ -1024,7 +1024,7 @@ class CharoenOnCupDB {
     async applyHomepageOrganizationDefaults() {
         // Unconditional repair of why_us, steps, reviews JSON string fields to native Firestore arrays
         try {
-            const sectionsToRepair = ['why_us', 'steps', 'reviews'];
+            const sectionsToRepair = ['why_us', 'steps', 'reviews', 'strengths'];
             for (const secId of sectionsToRepair) {
                 const sec = await this.get('homepage', secId);
                 if (sec && sec.content) {
@@ -1035,7 +1035,7 @@ class CharoenOnCupDB {
                         } catch (e) {}
                     }
                     if (content && typeof content === 'object') {
-                        const arrayKeys = { why_us: 'items', steps: 'steps', reviews: 'reviews' };
+                        const arrayKeys = { why_us: 'items', steps: 'steps', reviews: 'reviews', strengths: 'items' };
                         const arrKey = arrayKeys[secId];
                         if (content[arrKey] && typeof content[arrKey] === 'string') {
                             try {

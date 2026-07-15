@@ -3015,6 +3015,8 @@ class CharoenAdmin {
             `;
         } else if (sec.type === 'strengths') {
             const items = sec.content.items || [];
+            window.currentStrengthsItems = JSON.parse(JSON.stringify(items));
+
             innerContentHtml = `
                 <div class="form-group">
                     <label>หัวข้อหลักภาษาไทย (Title TH)</label>
@@ -3025,40 +3027,11 @@ class CharoenAdmin {
                     <input type="text" id="sec-title-en" class="form-control" value="${sec.content.title_en || ''}">
                 </div>
                 <hr style="margin:20px 0; border-top:1px dashed var(--border-color);">
-                <h4 style="font-size:0.95rem; font-weight:700; color:var(--secondary); margin-bottom:12px;">จุดเด่นย่อย 3 รายการ:</h4>
-                ${[0, 1, 2].map(idx => {
-                    const it = items[idx] || { title_th:'', title_en:'', desc_th:'', desc_en:'', icon:'fa-award' };
-                    return `
-                        <div style="background:var(--bg-sec); padding:16px; border-radius:var(--radius-sm); border:1px solid var(--border-color); margin-bottom:16px;">
-                            <h5 style="font-weight:700; color:var(--primary); margin-bottom:10px;">จุดเด่นตำแหน่งที่ ${idx + 1}</h5>
-                            <div class="grid-2" style="margin-bottom:10px;">
-                                <div class="form-group">
-                                    <label style="font-size:0.75rem;">ชื่อจุดเด่น (TH)</label>
-                                    <input type="text" id="str-title-th-${idx}" class="form-control" value="${it.title_th}">
-                                </div>
-                                <div class="form-group">
-                                    <label style="font-size:0.75rem;">ชื่อจุดเด่น (EN)</label>
-                                    <input type="text" id="str-title-en-${idx}" class="form-control" value="${it.title_en}">
-                                </div>
-                            </div>
-                            <div class="grid-2" style="margin-bottom:10px;">
-                                <div class="form-group">
-                                    <label style="font-size:0.75rem;">ไอคอน FontAwesome (เช่น fa-award, fa-shield-alt)</label>
-                                    <input type="text" id="str-icon-${idx}" class="form-control" value="${it.icon}">
-                                </div>
-                                <div></div>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.75rem;">คำอธิบายจุดเด่น (TH)</label>
-                                <textarea id="str-desc-th-${idx}" class="form-control" style="min-height:50px;">${it.desc_th}</textarea>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.75rem;">คำอธิบายจุดเด่น (EN)</label>
-                                <textarea id="str-desc-en-${idx}" class="form-control" style="min-height:50px;">${it.desc_en}</textarea>
-                            </div>
-                        </div>
-                    `;
-                }).join('')}
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <h4 style="font-size:0.95rem; font-weight:700; color:var(--secondary);">รายการจุดเด่นย่อย:</h4>
+                    <button type="button" class="btn btn-outline" onclick="window.addStrengthItem()" style="padding:4px 8px; font-size:0.85rem;"><i class="fas fa-plus"></i> เพิ่มจุดเด่นใหม่</button>
+                </div>
+                <div id="strengths-items-container"></div>
             `;
         } else if (sec.type === 'why_us') {
             const items = sec.content.items || [];
@@ -3226,7 +3199,103 @@ class CharoenAdmin {
 
         document.body.appendChild(overlay);
 
-        const closeDialog = () => { overlay.remove(); };
+        // Define strengths dynamic handlers
+        window.renderStrengthItemsList = () => {
+            const container = document.getElementById('strengths-items-container');
+            if (!container) return;
+            
+            if (!window.currentStrengthsItems || window.currentStrengthsItems.length === 0) {
+                container.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding:20px; font-size:0.9rem; background:var(--bg-sec); border-radius:var(--radius-sm); border:1px dashed var(--border-color);">ไม่มีรายการจุดเด่น กรุณากดปุ่มเพิ่มจุดเด่นใหม่</p>`;
+                return;
+            }
+
+            container.innerHTML = window.currentStrengthsItems.map((it, idx) => `
+                <div class="strength-edit-card" style="background:var(--bg-sec); padding:16px; border-radius:var(--radius-sm); border:1px solid var(--border-color); margin-bottom:16px; position:relative;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px dashed var(--border-color); padding-bottom:8px;">
+                        <h5 style="font-weight:700; color:var(--primary); margin:0;">จุดเด่นรายการที่ ${idx + 1}</h5>
+                        <div style="display:flex; gap:6px;">
+                            <button type="button" class="btn btn-outline" onclick="window.moveStrengthItem(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} style="padding:4px 8px; font-size:0.75rem;"><i class="fas fa-arrow-up"></i> เลื่อนขึ้น</button>
+                            <button type="button" class="btn btn-outline" onclick="window.moveStrengthItem(${idx}, 1)" ${idx === window.currentStrengthsItems.length - 1 ? 'disabled' : ''} style="padding:4px 8px; font-size:0.75rem;"><i class="fas fa-arrow-down"></i> เลื่อนลง</button>
+                            <button type="button" class="btn btn-outline" onclick="window.deleteStrengthItem(${idx})" style="padding:4px 8px; font-size:0.75rem; color:var(--danger); border-color:var(--danger);"><i class="fas fa-trash"></i> ลบ</button>
+                        </div>
+                    </div>
+                    <div class="grid-2" style="margin-bottom:10px;">
+                        <div class="form-group">
+                            <label style="font-size:0.75rem;">ชื่อจุดเด่น (TH)</label>
+                            <input type="text" class="form-control str-input-title-th" data-index="${idx}" value="${it.title_th || ''}" oninput="window.updateStrengthItemField(${idx}, 'title_th', this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.75rem;">ชื่อจุดเด่น (EN)</label>
+                            <input type="text" class="form-control str-input-title-en" data-index="${idx}" value="${it.title_en || ''}" oninput="window.updateStrengthItemField(${idx}, 'title_en', this.value)">
+                        </div>
+                    </div>
+                    <div class="grid-2" style="margin-bottom:10px;">
+                        <div class="form-group">
+                            <label style="font-size:0.75rem;">ไอคอน FontAwesome (เช่น fa-award, fa-shield-alt)</label>
+                            <input type="text" class="form-control str-input-icon" data-index="${idx}" value="${it.icon || 'fa-award'}" oninput="window.updateStrengthItemField(${idx}, 'icon', this.value)">
+                        </div>
+                        <div></div>
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size:0.75rem;">คำอธิบายจุดเด่น (TH)</label>
+                        <textarea class="form-control str-input-desc-th" style="min-height:50px;" data-index="${idx}" oninput="window.updateStrengthItemField(${idx}, 'desc_th', this.value)">${it.desc_th || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size:0.75rem;">คำอธิบายจุดเด่น (EN)</label>
+                        <textarea class="form-control str-input-desc-en" style="min-height:50px;" data-index="${idx}" oninput="window.updateStrengthItemField(${idx}, 'desc_en', this.value)">${it.desc_en || ''}</textarea>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        window.updateStrengthItemField = (idx, field, value) => {
+            if (window.currentStrengthsItems && window.currentStrengthsItems[idx]) {
+                window.currentStrengthsItems[idx][field] = value || '';
+            }
+        };
+
+        window.addStrengthItem = () => {
+            if (!window.currentStrengthsItems) window.currentStrengthsItems = [];
+            window.currentStrengthsItems.push({
+                title_th: '',
+                title_en: '',
+                desc_th: '',
+                desc_en: '',
+                icon: 'fa-award'
+            });
+            window.renderStrengthItemsList();
+        };
+
+        window.deleteStrengthItem = (idx) => {
+            if (window.currentStrengthsItems) {
+                window.currentStrengthsItems.splice(idx, 1);
+                window.renderStrengthItemsList();
+            }
+        };
+
+        window.moveStrengthItem = (idx, dir) => {
+            if (!window.currentStrengthsItems) return;
+            const targetIdx = idx + dir;
+            if (targetIdx < 0 || targetIdx >= window.currentStrengthsItems.length) return;
+            const temp = window.currentStrengthsItems[idx];
+            window.currentStrengthsItems[idx] = window.currentStrengthsItems[targetIdx];
+            window.currentStrengthsItems[targetIdx] = temp;
+            window.renderStrengthItemsList();
+        };
+
+        if (sec.type === 'strengths') {
+            window.renderStrengthItemsList();
+        }
+
+        const closeDialog = () => { 
+            overlay.remove(); 
+            delete window.currentStrengthsItems;
+            delete window.renderStrengthItemsList;
+            delete window.updateStrengthItemField;
+            delete window.addStrengthItem;
+            delete window.deleteStrengthItem;
+            delete window.moveStrengthItem;
+        };
         document.getElementById('close-modal-btn').onclick = closeDialog;
         document.getElementById('close-modal-cancel-btn').onclick = closeDialog;
 
@@ -3244,12 +3313,12 @@ class CharoenAdmin {
             } else if (sec.type === 'strengths') {
                 sec.content.title_th = document.getElementById('sec-title-th').value;
                 sec.content.title_en = document.getElementById('sec-title-en').value;
-                sec.content.items = [0, 1, 2].map(idx => ({
-                    title_th: document.getElementById(`str-title-th-${idx}`).value,
-                    title_en: document.getElementById(`str-title-en-${idx}`).value,
-                    icon: document.getElementById(`str-icon-${idx}`).value,
-                    desc_th: document.getElementById(`str-desc-th-${idx}`).value,
-                    desc_en: document.getElementById(`str-desc-en-${idx}`).value
+                sec.content.items = (window.currentStrengthsItems || []).map(it => ({
+                    title_th: it.title_th || '',
+                    title_en: it.title_en || '',
+                    icon: it.icon || 'fa-award',
+                    desc_th: it.desc_th || '',
+                    desc_en: it.desc_en || ''
                 }));
             } else if (sec.type === 'why_us') {
                 sec.content.title_th = document.getElementById('sec-title-th').value;
