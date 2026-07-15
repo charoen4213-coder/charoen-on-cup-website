@@ -4071,7 +4071,7 @@ class CharoenAdmin {
             <div style="background:var(--bg-main); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:24px; box-shadow:var(--shadow-sm);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1.5px solid var(--border-color); padding-bottom:12px;">
                     <h3 style="font-size:1.15rem; font-weight:800; color:var(--secondary);"><i class="fas fa-question-circle" style="color:var(--primary)"></i> จัดการคำถามที่พบบ่อย (FAQs)</h3>
-                    <button id="add-faq-btn" class="btn btn-primary" style="padding:10px 18px;"><i class="fas fa-plus"></i> เพิ่มคำถามพบบ่อย</button>
+                    <button id="add-faq-btn" class="btn btn-primary" style="display: none; padding:10px 18px;"><i class="fas fa-plus"></i> เพิ่มคำถามพบบ่อย</button>
                 </div>
 
                 <div class="table-responsive">
@@ -4103,7 +4103,7 @@ class CharoenAdmin {
                                     <td style="text-align:center;">
                                         <div style="display:flex; gap:8px; justify-content:center;">
                                             <button class="btn btn-outline edit-faq-btn" data-id="${faq.id}" style="padding:6px 12px; font-size:0.75rem;"><i class="fas fa-edit"></i> แก้ไข</button>
-                                            <button class="btn btn-outline del-faq-btn" data-id="${faq.id}" style="padding:6px 12px; font-size:0.75rem; border-color:var(--danger); color:var(--danger);"><i class="fas fa-trash-alt"></i> ลบ</button>
+                                            <button class="btn btn-outline del-faq-btn" data-id="${faq.id}" style="display: none; padding:6px 12px; font-size:0.75rem; border-color:var(--danger); color:var(--danger);"><i class="fas fa-trash-alt"></i> ลบ</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -4177,14 +4177,12 @@ class CharoenAdmin {
                             <label style="font-weight:600; font-size:0.85rem;">คำตอบ (ภาษาอังกฤษ) <span style="color:var(--danger)">*</span></label>
                             <textarea id="faq-form-a-en" class="form-control" rows="3" required style="resize:vertical;">${f.answer_en}</textarea>
                         </div>
-                        <div class="grid-2">
-                            <div class="form-group">
-                                <label style="font-weight:600; font-size:0.85rem;">ลำดับการจัดเรียง (Order)</label>
-                                <input type="number" id="faq-form-order" class="form-control" value="${f.order}" min="1" required>
-                            </div>
-                            <div style="display:flex; align-items:center; gap:20px; padding-top:25px;">
-                                <label style="cursor:pointer; font-weight:700; font-size:0.85rem;"><input type="checkbox" id="faq-form-vis" ${f.visible ? 'checked' : ''}> แสดงผลบนหน้าเว็บ</label>
-                            </div>
+                        <div class="form-group" style="display: none;">
+                            <label style="font-weight:600; font-size:0.85rem;">ลำดับการจัดเรียง (Order)</label>
+                            <input type="number" id="faq-form-order" class="form-control" value="${f.order}" min="1" required>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:20px; padding-top:10px; margin-bottom:10px;">
+                            <label style="cursor:pointer; font-weight:700; font-size:0.85rem;"><input type="checkbox" id="faq-form-vis" ${f.visible ? 'checked' : ''}> แสดงผลบนหน้าเว็บ</label>
                         </div>
                     </div>
                     
@@ -4216,9 +4214,13 @@ class CharoenAdmin {
                 order: parseInt(document.getElementById('faq-form-order').value) || 1
             };
 
-            await this.db.put('faq', updatedFaq);
-            closeDialog();
-            this.renderActiveView();
+            try {
+                await this.db.put('faq', updatedFaq);
+                closeDialog();
+                this.renderActiveView();
+            } catch (err) {
+                alert(err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+            }
         };
     }
 }

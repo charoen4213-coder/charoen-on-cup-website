@@ -2104,19 +2104,24 @@ class CharoenApp {
 
         // Sort by order ascending
         const sortedFaqs = [...faqs]
-            .filter(f => f.visible !== false)
+            .filter(f => f.visible !== false && f.visible !== 'false')
             .sort((a, b) => (a.order || 0) - (b.order || 0));
 
         let faqsHtml = '';
         if (sortedFaqs.length > 0) {
             faqsHtml = sortedFaqs.map((faq, idx) => `
-                <div style="background:var(--bg-main); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:24px;">
-                    <h4 style="font-weight:700; color:var(--secondary); font-size:1.1rem; margin-bottom:10px;">
-                        <i class="fas fa-question-circle" style="color:var(--primary)"></i> ${idx + 1}. ${this.lang === 'th' ? (faq.question_th || faq.question_en) : (faq.question_en || faq.question_th)}
-                    </h4>
-                    <p style="color:var(--text-muted); line-height:1.6; font-size:0.95rem;">
-                        ${this.lang === 'th' ? (faq.answer_th || faq.answer_en) : (faq.answer_en || faq.answer_th)}
-                    </p>
+                <div class="faq-accordion-item" style="background:var(--bg-main); border:1px solid var(--border-color); border-radius:var(--radius-md); overflow:hidden;">
+                    <button class="faq-accordion-header" style="width:100%; border:none; background:none; text-align:left; padding:20px 24px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-family:'Kanit', sans-serif; transition:var(--transition); outline:none;">
+                        <h4 style="font-weight:700; color:var(--secondary); font-size:1.1rem; margin:0; display:flex; align-items:center; gap:10px; line-height:1.4;">
+                            <i class="fas fa-question-circle" style="color:var(--primary)"></i> ${this.lang === 'th' ? (faq.question_th || faq.question_en) : (faq.question_en || faq.question_th)}
+                        </h4>
+                        <span class="faq-accordion-icon" style="transition: transform 0.3s ease; color:var(--text-sec); margin-left:12px; display:flex; align-items:center; justify-content:center;"><i class="fas fa-plus"></i></span>
+                    </button>
+                    <div class="faq-accordion-content" style="max-height:0; overflow:hidden; transition: max-height 0.3s ease-out; background:rgba(0,0,0,0.015);">
+                        <p style="color:var(--text-sec); line-height:1.75; font-size:0.96rem; padding: 0 24px 24px 24px; margin:0;">
+                            ${this.lang === 'th' ? (faq.answer_th || faq.answer_en) : (faq.answer_en || faq.answer_th)}
+                        </p>
+                    </div>
                 </div>
             `).join('');
         } else {
@@ -2148,13 +2153,18 @@ class CharoenApp {
                 }
             ];
             faqsHtml = defaults.map((faq, idx) => `
-                <div style="background:var(--bg-main); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:24px;">
-                    <h4 style="font-weight:700; color:var(--secondary); font-size:1.1rem; margin-bottom:10px;">
-                        <i class="fas fa-question-circle" style="color:var(--primary)"></i> ${idx + 1}. ${this.lang === 'th' ? faq.q_th : faq.q_en}
-                    </h4>
-                    <p style="color:var(--text-muted); line-height:1.6; font-size:0.95rem;">
-                        ${this.lang === 'th' ? faq.a_th : faq.a_en}
-                    </p>
+                <div class="faq-accordion-item" style="background:var(--bg-main); border:1px solid var(--border-color); border-radius:var(--radius-md); overflow:hidden;">
+                    <button class="faq-accordion-header" style="width:100%; border:none; background:none; text-align:left; padding:20px 24px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-family:'Kanit', sans-serif; transition:var(--transition); outline:none;">
+                        <h4 style="font-weight:700; color:var(--secondary); font-size:1.1rem; margin:0; display:flex; align-items:center; gap:10px; line-height:1.4;">
+                            <i class="fas fa-question-circle" style="color:var(--primary)"></i> ${this.lang === 'th' ? faq.q_th : faq.q_en}
+                        </h4>
+                        <span class="faq-accordion-icon" style="transition: transform 0.3s ease; color:var(--text-sec); margin-left:12px; display:flex; align-items:center; justify-content:center;"><i class="fas fa-plus"></i></span>
+                    </button>
+                    <div class="faq-accordion-content" style="max-height:0; overflow:hidden; transition: max-height 0.3s ease-out; background:rgba(0,0,0,0.015);">
+                        <p style="color:var(--text-sec); line-height:1.75; font-size:0.96rem; padding: 0 24px 24px 24px; margin:0;">
+                            ${this.lang === 'th' ? faq.a_th : faq.a_en}
+                        </p>
+                    </div>
                 </div>
             `).join('');
         }
@@ -2175,6 +2185,31 @@ class CharoenApp {
                 </div>
             </section>
         `;
+
+        // Bind accordion animation listeners
+        const headers = container.querySelectorAll('.faq-accordion-header');
+        headers.forEach(header => {
+            header.onclick = () => {
+                const content = header.nextElementSibling;
+                const icon = header.querySelector('.faq-accordion-icon i');
+                const isOpen = content.style.maxHeight && content.style.maxHeight !== '0px';
+                
+                // Close all others for a clean single-accordion look
+                container.querySelectorAll('.faq-accordion-content').forEach(c => {
+                    c.style.maxHeight = '0px';
+                });
+                container.querySelectorAll('.faq-accordion-icon i').forEach(i => {
+                    i.className = 'fas fa-plus';
+                    i.parentElement.style.transform = 'rotate(0deg)';
+                });
+                
+                if (!isOpen) {
+                    content.style.maxHeight = content.scrollHeight + 'px';
+                    icon.className = 'fas fa-minus';
+                    icon.parentElement.style.transform = 'rotate(180deg)';
+                }
+            };
+        });
     }
 
     async openProductDetails(id) {

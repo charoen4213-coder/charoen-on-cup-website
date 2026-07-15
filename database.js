@@ -731,7 +731,11 @@ class CharoenOnCupDB {
             // 11. Seed FAQs
             const faqList = [
                 { id: 'faq_1', question_th: 'ขั้นต่ำในการสั่งผลิตสกรีนกี่ใบ?', question_en: 'What is the MOQ for custom printing?', answer_th: 'เริ่มต้นเพียง 1,000 ใบเท่านั้นสำหรับการสกรีน 1 สี', answer_en: 'For standard 1-color screen printing, MOQ starts at 1,000 pcs.', order: 1, visible: true },
-                { id: 'faq_2', question_th: 'มีค่าบล็อกพิมพ์แอบแฝงไหม?', question_en: 'Are there hidden setup fees?', answer_th: 'ราคาโรงงานตรงไปตรงมา ไม่มีค่าบล็อกพิมพ์หรือแอบแฝงใดๆ', answer_en: 'Transparent factory pricing with no hidden block setup fees.', order: 2, visible: true }
+                { id: 'faq_2', question_th: 'มีค่าบล็อกพิมพ์แอบแฝงไหม?', question_en: 'Are there hidden setup fees?', answer_th: 'ราคาโรงงานตรงไปตรงมา ไม่มีค่าบล็อกพิมพ์หรือแอบแฝงใดๆ', answer_en: 'Transparent factory pricing with no hidden block setup fees.', order: 2, visible: true },
+                { id: 'faq_3', question_th: 'ระยะเวลาการผลิตนานเท่าไร?', question_en: 'How long is the production lead time?', answer_th: 'ใช้เวลาผลิตเพียง 7-10 วันหลังจากลูกค้ายืนยันแบบ 3D และชำระมัดจำ', answer_en: 'Production takes 7-10 days after 3D mockup approval and deposit receipt.', order: 3, visible: true },
+                { id: 'faq_4', question_th: 'สามารถจัดส่งต่างจังหวัดได้ไหม?', question_en: 'Can you deliver to other provinces?', answer_th: 'บริการจัดส่งด่วนและปลอดภัยครอบคลุมทั่วประเทศผ่านขนส่งพันธมิตรของเรา', answer_en: 'Secure nationwide express shipping is available through our logistics partners.', order: 4, visible: true },
+                { id: 'faq_5', question_th: 'มีบริการออกแบบลายแก้วให้ไหม?', question_en: 'Do you offer cup design services?', answer_th: 'บริการจัดวางตำแหน่งโลโก้และขึ้นภาพจำลองแบบ 3D ให้ตรวจสอบความถูกต้องฟรีก่อนผลิตจริง', answer_en: 'We offer free logo placement layout design and 3D digital mockup proofing before production.', order: 5, visible: true },
+                { id: 'faq_6', question_th: 'สนใจขอใบเสนอราคาต้องทำอย่างไร?', question_en: 'How do I request a quotation?', answer_th: 'ลูกค้าสามารถเลือกแบบแก้วที่ต้องการผ่านเมนูสินค้าและกดขอใบเสนอราคา หรือติดต่อผ่าน LINE OA ได้ทันที', answer_en: 'You can select a cup style through our products catalog and click request quote, or contact us directly on LINE.', order: 6, visible: true }
             ];
 
             const faqTx = this.db.transaction('faq', 'readwrite');
@@ -914,14 +918,21 @@ class CharoenOnCupDB {
 
             // Check and Seed FAQs independently
             const faqSnap = await this.fs.collection('faq').get();
-            if (faqSnap.empty) {
-                console.log("CharoenOnCupDB: Cloud Firestore 'faq' is empty. Seeding FAQ to cloud...");
+            if (faqSnap.size < 6) {
+                console.log("CharoenOnCupDB: Cloud Firestore 'faq' has fewer than 6 items. Seeding remaining FAQ to cloud...");
                 const faqList = [
                     { id: 'faq_1', question_th: 'ขั้นต่ำในการสั่งผลิตสกรีนกี่ใบ?', question_en: 'What is the MOQ for custom printing?', answer_th: 'เริ่มต้นเพียง 1,000 ใบเท่านั้นสำหรับการสกรีน 1 สี', answer_en: 'For standard 1-color screen printing, MOQ starts at 1,000 pcs.', order: 1, visible: true },
-                    { id: 'faq_2', question_th: 'มีค่าบล็อกพิมพ์แอบแฝงไหม?', question_en: 'Are there hidden setup fees?', answer_th: 'ราคาโรงงานตรงไปตรงมา ไม่มีค่าบล็อกพิมพ์หรือแอบแฝงใดๆ', answer_en: 'Transparent factory pricing with no hidden block setup fees.', order: 2, visible: true }
+                    { id: 'faq_2', question_th: 'มีค่าบล็อกพิมพ์แอบแฝงไหม?', question_en: 'Are there hidden setup fees?', answer_th: 'ราคาโรงงานตรงไปตรงมา ไม่มีค่าบล็อกพิมพ์หรือแอบแฝงใดๆ', answer_en: 'Transparent factory pricing with no hidden block setup fees.', order: 2, visible: true },
+                    { id: 'faq_3', question_th: 'ระยะเวลาการผลิตนานเท่าไร?', question_en: 'How long is the production lead time?', answer_th: 'ใช้เวลาผลิตเพียง 7-10 วันหลังจากลูกค้ายืนยันแบบ 3D และชำระมัดจำ', answer_en: 'Production takes 7-10 days after 3D mockup approval and deposit receipt.', order: 3, visible: true },
+                    { id: 'faq_4', question_th: 'สามารถจัดส่งต่างจังหวัดได้ไหม?', question_en: 'Can you deliver to other provinces?', answer_th: 'บริการจัดส่งด่วนและปลอดภัยครอบคลุมทั่วประเทศผ่านขนส่งพันธมิตรของเรา', answer_en: 'Secure nationwide express shipping is available through our logistics partners.', order: 4, visible: true },
+                    { id: 'faq_5', question_th: 'มีบริการออกแบบลายแก้วให้ไหม?', question_en: 'Do you offer cup design services?', answer_th: 'บริการจัดวางตำแหน่งโลโก้และขึ้นภาพจำลองแบบ 3D ให้ตรวจสอบความถูกต้องฟรีก่อนผลิตจริง', answer_en: 'We offer free logo placement layout design and 3D digital mockup proofing before production.', order: 5, visible: true },
+                    { id: 'faq_6', question_th: 'สนใจขอใบเสนอราคาต้องทำอย่างไร?', question_en: 'How do I request a quotation?', answer_th: 'ลูกค้าสามารถเลือกแบบแก้วที่ต้องการผ่านเมนูสินค้าและกดขอใบเสนอราคา หรือติดต่อผ่าน LINE OA ได้ทันที', answer_en: 'You can select a cup style through our products catalog and click request quote, or contact us directly on LINE.', order: 6, visible: true }
                 ];
                 for (const f of faqList) {
-                    await this.fs.collection('faq').doc(f.id).set(f);
+                    const doc = await this.fs.collection('faq').doc(f.id).get();
+                    if (!doc.exists) {
+                        await this.fs.collection('faq').doc(f.id).set(f);
+                    }
                 }
             }
 
@@ -1052,6 +1063,27 @@ class CharoenOnCupDB {
             }
         } catch (e) {
             console.error("CharoenOnCupDB: Failed to verify/repair homepage sections:", e);
+        }
+
+        // Unconditional seed/repair of exactly 6 FAQs
+        try {
+            const faqList = [
+                { id: 'faq_1', question_th: 'ขั้นต่ำในการสั่งผลิตสกรีนกี่ใบ?', question_en: 'What is the MOQ for custom printing?', answer_th: 'เริ่มต้นเพียง 1,000 ใบเท่านั้นสำหรับการสกรีน 1 สี', answer_en: 'For standard 1-color screen printing, MOQ starts at 1,000 pcs.', order: 1, visible: true },
+                { id: 'faq_2', question_th: 'มีค่าบล็อกพิมพ์แอบแฝงไหม?', question_en: 'Are there hidden setup fees?', answer_th: 'ราคาโรงงานตรงไปตรงมา ไม่มีค่าบล็อกพิมพ์หรือแอบแฝงใดๆ', answer_en: 'Transparent factory pricing with no hidden block setup fees.', order: 2, visible: true },
+                { id: 'faq_3', question_th: 'ระยะเวลาการผลิตนานเท่าไร?', question_en: 'How long is the production lead time?', answer_th: 'ใช้เวลาผลิตเพียง 7-10 วันหลังจากลูกค้ายืนยันแบบ 3D และชำระมัดจำ', answer_en: 'Production takes 7-10 days after 3D mockup approval and deposit receipt.', order: 3, visible: true },
+                { id: 'faq_4', question_th: 'สามารถจัดส่งต่างจังหวัดได้ไหม?', question_en: 'Can you deliver to other provinces?', answer_th: 'บริการจัดส่งด่วนและปลอดภัยครอบคลุมทั่วประเทศผ่านขนส่งพันธมิตรของเรา', answer_en: 'Secure nationwide express shipping is available through our logistics partners.', order: 4, visible: true },
+                { id: 'faq_5', question_th: 'มีบริการออกแบบลายแก้วให้ไหม?', question_en: 'Do you offer cup design services?', answer_th: 'บริการจัดวางตำแหน่งโลโก้และขึ้นภาพจำลองแบบ 3D ให้ตรวจสอบความถูกต้องฟรีก่อนผลิตจริง', answer_en: 'We offer free logo placement layout design and 3D digital mockup proofing before production.', order: 5, visible: true },
+                { id: 'faq_6', question_th: 'สนใจขอใบเสนอราคาต้องทำอย่างไร?', question_en: 'How do I request a quotation?', answer_th: 'ลูกค้าสามารถเลือกแบบแก้วที่ต้องการผ่านเมนูสินค้าและกดขอใบเสนอราคา หรือติดต่อผ่าน LINE OA ได้ทันที', answer_en: 'You can select a cup style through our products catalog and click request quote, or contact us directly on LINE.', order: 6, visible: true }
+            ];
+            for (const f of faqList) {
+                const existing = await this.get('faq', f.id);
+                if (!existing) {
+                    await this.put('faq', f);
+                    console.log(`CharoenOnCupDB: Seeded missing FAQ item: ${f.id}`);
+                }
+            }
+        } catch (e) {
+            console.error("CharoenOnCupDB: Failed to verify/seed 6 FAQs:", e);
         }
 
         const flag = await this.get('settings', 'homepage_reorganized_v1');
