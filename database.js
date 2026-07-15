@@ -1113,6 +1113,11 @@ class CharoenOnCupDB {
             if (newsSec) {
                 if (!newsSec.content) newsSec.content = {};
                 newsSec.content.title_th = 'กิจกรรมและการสนับสนุน';
+                if (!newsSec.content.title_en) newsSec.content.title_en = 'Activities & Support';
+                if (!newsSec.content.desc_th) newsSec.content.desc_th = 'เกร็ดความรู้เรื่องบรรจุภัณฑ์เครื่องดื่มและข่าวสารกิจกรรมสำคัญ';
+                if (!newsSec.content.desc_en) newsSec.content.desc_en = 'Useful insights on beverage packaging and event updates';
+                if (!newsSec.content.subtitle_th) newsSec.content.subtitle_th = newsSec.content.desc_th;
+                if (!newsSec.content.subtitle_en) newsSec.content.subtitle_en = newsSec.content.desc_en;
                 await this.put('homepage', newsSec);
             }
         } catch (e) {}

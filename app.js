@@ -42,8 +42,8 @@ class CharoenApp {
                 nav_quote: 'ขอใบเสนอราคา',
                 nav_contact: 'ติดต่อเรา',
                 nav_faq: 'คำถามที่พบบ่อย',
-                nav_news: 'ข่าวสารและกิจกรรม',
-                nav_news_detail: 'รายละเอียดข่าวสาร',
+                nav_news: 'กิจกรรมและการสนับสนุน',
+                nav_news_detail: 'รายละเอียดกิจกรรมและการสนับสนุน',
                 nav_articles: 'บทความความรู้',
                 nav_articles_detail: 'รายละเอียดบทความ',
                 nav_search: 'ผลการค้นหา',
@@ -99,8 +99,8 @@ class CharoenApp {
                 nav_quote: 'Get a Quote',
                 nav_contact: 'Contact Us',
                 nav_faq: 'FAQ',
-                nav_news: 'News & Events',
-                nav_news_detail: 'News Details',
+                nav_news: 'Activities & Support',
+                nav_news_detail: 'Activity Details',
                 nav_articles: 'Articles & Guides',
                 nav_articles_detail: 'Article Details',
                 nav_search: 'Search Results',
@@ -817,41 +817,89 @@ class CharoenApp {
                     break;
 
                 case 'latest_news':
+                    if (sec.visible === false || sec.visible === 'false') break;
+
                     const news = await this.db.getAll('news');
-                    const visibleNews = news.filter(n => n.visible).slice(0, 3);
-                    
-                    if (visibleNews.length > 0) {
-                        html += `
-                            <!-- Latest News Section -->
-                            <section class="section-padding" style="background-color: var(--bg-sec); border-bottom: 1px solid var(--border-color);">
-                                <div class="container text-center">
-                                    <h2 class="section-title">${this.lang === 'th' ? sec.content.title_th : sec.content.title_en}</h2>
-                                    <p class="section-subtitle">${this.lang === 'th' ? (sec.content.subtitle_th || 'เกร็ดความรู้การเลือกสเปกแก้วและข่าวสารสำคัญ') : (sec.content.subtitle_en || 'Learn about food-safe packing specs & company news')}</p>
-                                    
+                    const visibleNews = news.filter(n => n.visible !== false && n.visible !== 'false');
+
+                    // Sort: Featured first, then order ascending
+                    visibleNews.sort((a, b) => {
+                        const featA = a.featured ? 1 : 0;
+                        const featB = b.featured ? 1 : 0;
+                        if (featA !== featB) return featB - featA;
+                        return Number(a.order || 0) - Number(b.order || 0);
+                    });
+
+                    // Limit homepage display to max 3 items
+                    const homepageNews = visibleNews.slice(0, 3);
+
+                    const secTitle = this.lang === 'th' ? (sec.content.title_th || sec.content.title_en || 'กิจกรรมและการสนับสนุน') : (sec.content.title_en || sec.content.title_th || 'Activities & Support');
+                    let secDesc = this.lang === 'th' ? (sec.content.desc_th || sec.content.subtitle_th || '') : (sec.content.desc_en || sec.content.subtitle_en || '');
+                    if (secDesc === 'null' || secDesc === 'undefined') secDesc = '';
+
+                    const descHtml = secDesc ? `<p class="section-subtitle" style="margin-top:10px; font-size:1.05rem; color:var(--text-sec);">${secDesc}</p>` : '';
+
+                    html += `
+                        <!-- Activities & Support Section -->
+                        <section class="section-padding" style="background-color: var(--bg-sec); border-bottom: 1px solid var(--border-color);">
+                            <div class="container text-center">
+                                <h2 class="section-title">${secTitle}</h2>
+                                ${descHtml}
+                                
+                                ${homepageNews.length > 0 ? `
                                     <div class="grid-3" style="margin-top:45px; text-align:left;">
-                                        ${visibleNews.map(n => `
-                                            <div class="portfolio-card" onclick="window.location.hash='#/news-detail?id=${n.id}'" style="cursor:pointer; background:var(--bg-main);">
+                                        ${homepageNews.map(n => {
+                                            const title = this.lang === 'th' ? (n.title_th || n.title_en || '') : (n.title_en || n.title_th || '');
+                                            const summary = this.lang === 'th' ? (n.summary_th || n.summary_en || '') : (n.summary_en || n.summary_th || '');
+                                            const date = n.date || '';
+                                            const location = this.lang === 'th' ? (n.location_th || n.location_en || '') : (n.location_en || n.location_th || '');
+                                            const thumbnail = n.thumbnail || '';
+
+                                            const imgHtml = thumbnail ? `
                                                 <div class="portfolio-img-box" style="height:190px;">
-                                                    <img src="${n.thumbnail || 'coffee_bg.jpg'}" alt="${n.title_th}">
+                                                    <img src="${thumbnail}" alt="${title}" style="width:100%; height:100%; object-fit:cover;">
                                                 </div>
-                                                <div class="portfolio-info" style="padding:20px;">
-                                                    <span style="font-size:0.75rem; color:var(--text-sec);"><i class="far fa-calendar-alt"></i> ${n.date}</span>
-                                                    <h3 style="font-size:1.15rem; font-weight:700; margin-top:8px; margin-bottom:12px; color:var(--primary); line-height:1.4; min-height:48px;">${this.lang === 'th' ? n.title_th : n.title_en}</h3>
-                                                    <p style="font-size:0.88rem; color:var(--text-sec); line-height:1.5; margin-bottom:15px;">${this.lang === 'th' ? n.summary_th : n.summary_en}</p>
-                                                    <a href="#/news-detail?id=${n.id}" style="font-size:0.88rem; font-weight:700; color:var(--secondary); text-decoration:none;">${this.lang === 'th' ? 'อ่านเพิ่มเติม <i class="fas fa-arrow-right" style="font-size:0.75rem; margin-left:4px;"></i>' : 'Read More <i class="fas fa-arrow-right" style="font-size:0.75rem; margin-left:4px;"></i>'}</a>
+                                            ` : '';
+
+                                            const dateHtml = date ? `<span style="font-size:0.75rem; color:var(--text-sec); margin-right:12px;"><i class="far fa-calendar-alt"></i> ${date}</span>` : '';
+                                            const locHtml = location ? `<span style="font-size:0.75rem; color:var(--text-sec);"><i class="fas fa-map-marker-alt"></i> ${location}</span>` : '';
+                                            
+                                            const metaHtml = (dateHtml || locHtml) ? `
+                                                <div style="margin-bottom:8px; display:flex; flex-wrap:wrap; gap:10px;">
+                                                    ${dateHtml}
+                                                    ${locHtml}
                                                 </div>
-                                            </div>
-                                        `).join('')}
+                                            ` : '';
+
+                                            const summaryHtml = summary ? `<p style="font-size:0.88rem; color:var(--text-sec); line-height:1.5; margin-bottom:15px;">${summary}</p>` : '';
+
+                                            return `
+                                                <div class="portfolio-card" onclick="window.location.hash='#/news-detail?id=${n.id}'" style="cursor:pointer; background:var(--bg-main); border:1px solid var(--border-color); border-radius:var(--radius-md); overflow:hidden; display:flex; flex-direction:column;">
+                                                    ${imgHtml}
+                                                    <div class="portfolio-info" style="padding:20px; flex-grow:1; display:flex; flex-direction:column; justify-content:space-between;">
+                                                        <div>
+                                                            ${metaHtml}
+                                                            <h3 style="font-size:1.15rem; font-weight:700; margin-top:8px; margin-bottom:12px; color:var(--primary); line-height:1.4;">${title}</h3>
+                                                            ${summaryHtml}
+                                                        </div>
+                                                        <div style="margin-top:15px;">
+                                                            <a href="#/news-detail?id=${n.id}" style="font-size:0.88rem; font-weight:700; color:var(--secondary); text-decoration:none;">
+                                                                ${this.lang === 'th' ? 'อ่านเพิ่มเติม <i class="fas fa-arrow-right" style="font-size:0.75rem; margin-left:4px;"></i>' : 'Read More <i class="fas fa-arrow-right" style="font-size:0.75rem; margin-left:4px;"></i>'}
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            `;
+                                        }).join('')}
                                     </div>
                                     
                                     <div style="margin-top:45px; display:flex; justify-content:center; gap:20px;">
-                                        <a href="#/news" class="btn btn-outline" style="border-color:var(--primary); color:var(--primary);"><i class="far fa-newspaper"></i> ดูข่าวสารทั้งหมด</a>
-                                        <a href="#/articles" class="btn btn-primary"><i class="fas fa-graduation-cap"></i> บทความแนะนำความรู้</a>
+                                        <a href="#/news" class="btn btn-outline" style="border-color:var(--primary); color:var(--primary);"><i class="far fa-calendar-alt"></i> ดูข้อมูลกิจกรรมทั้งหมด</a>
                                     </div>
-                                </div>
-                            </section>
-                        `;
-                    }
+                                ` : ''}
+                            </div>
+                        </section>
+                    `;
                     break;
 
                 case 'contact_info':
@@ -1008,7 +1056,16 @@ class CharoenApp {
 
     async renderNewsView(container) {
         const news = await this.db.getAll('news');
-        const visibleNews = news.filter(n => n.visible).sort((a, b) => new Date(b.date) - new Date(a.date));
+        const visibleNews = news.filter(n => n.visible !== false && n.visible !== 'false');
+        visibleNews.sort((a, b) => {
+            const featA = a.featured ? 1 : 0;
+            const featB = b.featured ? 1 : 0;
+            if (featA !== featB) return featB - featA;
+            const orderA = Number(a.order || 0);
+            const orderB = Number(b.order || 0);
+            if (orderA !== orderB) return orderA - orderB;
+            return new Date(b.date || 0) - new Date(a.date || 0);
+        });
         
         let html = `
             <div class="breadcrumb-container" style="background: var(--bg-sec); padding: 15px 0; border-bottom: 1px solid var(--border-color);">
@@ -1016,47 +1073,73 @@ class CharoenApp {
                     <span style="font-size: 0.9rem; color: var(--text-sec);">
                         <a href="#/home" style="color: var(--primary); text-decoration: none;"><i class="fas fa-home"></i> ${this.lang === 'th' ? 'หน้าแรก' : 'Home'}</a> 
                         <i class="fas fa-chevron-right" style="font-size: 0.75rem; margin: 0 8px;"></i> 
-                        ${this.lang === 'th' ? 'ข่าวสารและกิจกรรม' : 'News & Events'}
+                        ${this.lang === 'th' ? 'กิจกรรมและการสนับสนุน' : 'Activities & Support'}
                     </span>
                 </div>
             </div>
             <section class="section-padding">
                 <div class="container">
                     <div class="text-center" style="margin-bottom: 50px;">
-                        <h1 class="section-title" style="font-size: 2.3rem; margin-bottom:15px;">${this.lang === 'th' ? 'ข่าวสารประชาสัมพันธ์และกิจกรรม' : 'News & Announcements'}</h1>
-                        <p class="section-subtitle">${this.lang === 'th' ? 'เกาะติดโปรโมชั่น ข่าวสารกิจกรรม และความเคลื่อนไหวจาก เจริญ ออน คัพ' : 'Stay updated with promotions and events from Charoen On Cup'}</p>
+                        <h1 class="section-title" style="font-size: 2.3rem; margin-bottom:15px;">${this.lang === 'th' ? 'กิจกรรมและการสนับสนุน' : 'Activities & Support'}</h1>
+                        <p class="section-subtitle">${this.lang === 'th' ? 'ติดตามการสนับสนุนชุมชน ข่าวสารกิจกรรม และความเคลื่อนไหวจาก เจริญ ออน คัพ' : 'Follow our community support, news, and activity updates from Charoen On Cup'}</p>
                     </div>
         `;
         
         if (visibleNews.length === 0) {
             html += `
                 <div class="text-center" style="padding: 60px 0; background: var(--bg-sec); border-radius: var(--radius-md);">
-                    <i class="far fa-newspaper" style="font-size: 3.5rem; color: var(--text-sec); margin-bottom: 20px;"></i>
-                    <p style="color: var(--text-sec);">${this.lang === 'th' ? 'ขณะนี้ยังไม่มีรายการข่าวสารประกาศในระบบ' : 'No news available at the moment.'}</p>
+                    <i class="far fa-calendar-alt" style="font-size: 3.5rem; color: var(--text-sec); margin-bottom: 20px;"></i>
+                    <p style="color: var(--text-sec);">${this.lang === 'th' ? 'ขณะนี้ยังไม่มีกิจกรรมประกาศในระบบ' : 'No activities available at the moment.'}</p>
                 </div>
             `;
         } else {
             html += `
                 <div class="grid-3">
-                    ${visibleNews.map(n => `
-                        <div class="portfolio-card" onclick="window.location.hash='#/news-detail?id=${n.id}'" style="cursor:pointer; background:var(--bg-main); border:1px solid var(--border-color);">
+                    ${visibleNews.map(n => {
+                        const title = this.lang === 'th' ? (n.title_th || n.title_en || '') : (n.title_en || n.title_th || '');
+                        const summary = this.lang === 'th' ? (n.summary_th || n.summary_en || '') : (n.summary_en || n.summary_th || '');
+                        const date = n.date || '';
+                        const location = this.lang === 'th' ? (n.location_th || n.location_en || '') : (n.location_en || n.location_th || '');
+                        const thumbnail = n.thumbnail || '';
+
+                        const imgHtml = thumbnail ? `
                             <div class="portfolio-img-box" style="height:200px;">
-                                <img src="${n.thumbnail || 'coffee_bg.jpg'}" alt="${n.title_th}">
+                                <img src="${thumbnail}" alt="${title}" style="width:100%; height:100%; object-fit:cover;">
                             </div>
-                            <div class="portfolio-info" style="padding:20px;">
-                                <span style="font-size:0.78rem; color:var(--text-sec);"><i class="far fa-calendar-alt"></i> ${n.date}</span>
-                                <h3 style="font-size:1.15rem; font-weight:700; margin-top:8px; margin-bottom:12px; color:var(--primary); line-height:1.4; min-height:48px;">
-                                    ${this.lang === 'th' ? n.title_th : n.title_en}
-                                </h3>
-                                <p style="font-size:0.88rem; color:var(--text-sec); line-height:1.5; margin-bottom:15px;">
-                                    ${this.lang === 'th' ? n.summary_th : n.summary_en}
-                                </p>
-                                <a href="#/news-detail?id=${n.id}" style="font-size:0.88rem; font-weight:700; color:var(--secondary); text-decoration:none;">
-                                    ${this.lang === 'th' ? 'อ่านรายละเอียด <i class="fas fa-arrow-right" style="font-size:0.75rem; margin-left:4px;"></i>' : 'Read Full Story <i class="fas fa-arrow-right" style="font-size:0.75rem; margin-left:4px;"></i>'}
-                                </a>
+                        ` : '';
+
+                        const dateHtml = date ? `<span style="font-size:0.78rem; color:var(--text-sec); margin-right:12px;"><i class="far fa-calendar-alt"></i> ${date}</span>` : '';
+                        const locHtml = location ? `<span style="font-size:0.78rem; color:var(--text-sec);"><i class="fas fa-map-marker-alt"></i> ${location}</span>` : '';
+                        
+                        const metaHtml = (dateHtml || locHtml) ? `
+                            <div style="margin-bottom:8px; display:flex; flex-wrap:wrap; gap:10px;">
+                                ${dateHtml}
+                                ${locHtml}
                             </div>
-                        </div>
-                    `).join('')}
+                        ` : '';
+
+                        const summaryHtml = summary ? `<p style="font-size:0.88rem; color:var(--text-sec); line-height:1.5; margin-bottom:15px;">${summary}</p>` : '';
+
+                        return `
+                            <div class="portfolio-card" onclick="window.location.hash='#/news-detail?id=${n.id}'" style="cursor:pointer; background:var(--bg-main); border:1px solid var(--border-color); display:flex; flex-direction:column;">
+                                ${imgHtml}
+                                <div class="portfolio-info" style="padding:20px; flex-grow:1; display:flex; flex-direction:column; justify-content:space-between;">
+                                    <div>
+                                        ${metaHtml}
+                                        <h3 style="font-size:1.15rem; font-weight:700; margin-top:8px; margin-bottom:12px; color:var(--primary); line-height:1.4;">
+                                            ${title}
+                                        </h3>
+                                        ${summaryHtml}
+                                    </div>
+                                    <div style="margin-top:15px;">
+                                        <a href="#/news-detail?id=${n.id}" style="font-size:0.88rem; font-weight:700; color:var(--secondary); text-decoration:none;">
+                                            ${this.lang === 'th' ? 'อ่านรายละเอียด <i class="fas fa-arrow-right" style="font-size:0.75rem; margin-left:4px;"></i>' : 'Read Full Story <i class="fas fa-arrow-right" style="font-size:0.75rem; margin-left:4px;"></i>'}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
                 </div>
             `;
         }
@@ -1074,9 +1157,61 @@ class CharoenApp {
         const newsItem = await this.db.get('news', id);
         
         if (!newsItem) {
-            container.innerHTML = `<div class="container text-center" style="padding:100px 0;"><h2>${this.lang === 'th' ? 'ไม่พบข่าวสารที่ท่านค้นหา' : 'News Not Found'}</h2><a href="#/news" class="btn btn-primary">Back to News</a></div>`;
+            container.innerHTML = `<div class="container text-center" style="padding:100px 0;"><h2>${this.lang === 'th' ? 'ไม่พบข้อมูลกิจกรรมที่ท่านค้นหา' : 'Activity Not Found'}</h2><a href="#/news" class="btn btn-primary">Back to Activities</a></div>`;
             return;
         }
+
+        const title = this.lang === 'th' ? (newsItem.title_th || newsItem.title_en || '') : (newsItem.title_en || newsItem.title_th || '');
+        const content = this.lang === 'th' ? (newsItem.content_th || newsItem.content_en || '') : (newsItem.content_en || newsItem.content_th || '');
+        const date = newsItem.date || '';
+        const location = this.lang === 'th' ? (newsItem.location_th || newsItem.location_en || '') : (newsItem.location_en || newsItem.location_th || '');
+        const thumbnail = newsItem.thumbnail || '';
+        
+        let galleryList = [];
+        if (Array.isArray(newsItem.gallery_images)) {
+            galleryList = newsItem.gallery_images;
+        } else if (typeof newsItem.gallery_images === 'string') {
+            try {
+                galleryList = JSON.parse(newsItem.gallery_images);
+            } catch (e) {
+                galleryList = [];
+            }
+        }
+
+        const dateHtml = date ? `<span style="font-size: 0.95rem; font-weight:700; color: var(--secondary); text-transform: uppercase; margin-right:20px;"><i class="far fa-calendar-alt"></i> ${date}</span>` : '';
+        const locHtml = location ? `<span style="font-size: 0.95rem; font-weight:700; color: var(--text-sec); text-transform: uppercase;"><i class="fas fa-map-marker-alt"></i> ${location}</span>` : '';
+        
+        const metaHtml = (dateHtml || locHtml) ? `
+            <div style="margin-bottom:15px;">
+                ${dateHtml}
+                ${locHtml}
+            </div>
+        ` : '';
+
+        const coverHtml = thumbnail ? `
+            <div style="width: 100%; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 40px; box-shadow: var(--shadow-sm);">
+                <img src="${thumbnail}" alt="${title}" style="width: 100%; height: auto; display: block; object-fit: cover;">
+            </div>
+        ` : '';
+
+        const contentHtml = content ? `
+            <div style="font-size: 1.1rem; line-height: 1.95; color: var(--text-main); font-family: 'Prompt', sans-serif; white-space: pre-line; margin-bottom:40px;">
+                ${content}
+            </div>
+        ` : '';
+
+        const galleryHtml = (galleryList && galleryList.length > 0) ? `
+            <div style="margin-top:40px; margin-bottom:40px;">
+                <h3 style="font-size:1.35rem; font-weight:800; color:var(--primary); margin-bottom:20px; font-family:'Kanit', sans-serif;"><i class="fas fa-images"></i> ${this.lang === 'th' ? 'รูปภาพประกอบกิจกรรม' : 'Gallery Images'}</h3>
+                <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px;">
+                    ${galleryList.map(img => `
+                        <div style="width:100%; aspect-ratio:4/3; border-radius:var(--radius-sm); border:1px solid var(--border-color); overflow:hidden; background:var(--bg-sec);">
+                            <img src="${img}" style="width:100%; height:100%; object-fit:cover; cursor:pointer;" onclick="window.open('${img}', '_blank')">
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : '';
         
         let html = `
             <div class="breadcrumb-container" style="background: var(--bg-sec); padding: 15px 0; border-bottom: 1px solid var(--border-color);">
@@ -1084,34 +1219,28 @@ class CharoenApp {
                     <span style="font-size: 0.9rem; color: var(--text-sec);">
                         <a href="#/home" style="color: var(--primary); text-decoration: none;"><i class="fas fa-home"></i> ${this.lang === 'th' ? 'หน้าแรก' : 'Home'}</a> 
                         <i class="fas fa-chevron-right" style="font-size: 0.75rem; margin: 0 8px;"></i> 
-                        <a href="#/news" style="color: var(--primary); text-decoration: none;">${this.lang === 'th' ? 'ข่าวสารและกิจกรรม' : 'News'}</a> 
+                        <a href="#/news" style="color: var(--primary); text-decoration: none;">${this.lang === 'th' ? 'กิจกรรมและการสนับสนุน' : 'Activities & Support'}</a> 
                         <i class="fas fa-chevron-right" style="font-size: 0.75rem; margin: 0 8px;"></i> 
-                        ${this.lang === 'th' ? newsItem.title_th : newsItem.title_en}
+                        ${title}
                     </span>
                 </div>
             </div>
             <section class="section-padding">
                 <div class="container" style="max-width: 900px;">
                     <div style="margin-bottom:30px;">
-                        <span style="font-size: 0.9rem; font-weight:700; color: var(--secondary); text-transform: uppercase;"><i class="far fa-calendar-alt"></i> ${newsItem.date}</span>
+                        ${metaHtml}
                         <h1 style="font-size: 2.4rem; font-weight: 800; color: var(--primary); margin-top: 10px; margin-bottom: 20px; line-height: 1.3;">
-                            ${this.lang === 'th' ? newsItem.title_th : newsItem.title_en}
+                            ${title}
                         </h1>
                     </div>
                     
-                    ${newsItem.thumbnail ? `
-                        <div style="width: 100%; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 40px; box-shadow: var(--shadow-sm);">
-                            <img src="${newsItem.thumbnail}" alt="${newsItem.title_th}" style="width: 100%; height: auto; display: block; object-fit: cover;">
-                        </div>
-                    ` : ''}
-                    
-                    <div style="font-size: 1.1rem; line-height: 1.9; color: var(--text-main); font-family: 'Prompt', sans-serif; white-space: pre-line;">
-                        ${this.lang === 'th' ? newsItem.content_th : newsItem.content_en}
-                    </div>
+                    ${coverHtml}
+                    ${contentHtml}
+                    ${galleryHtml}
                     
                     <div style="margin-top: 50px; border-top: 1px solid var(--border-color); padding-top: 30px; display: flex; justify-content: space-between; align-items:center;">
-                        <a href="#/news" class="btn btn-outline" style="border-color:var(--primary); color:var(--primary);"><i class="fas fa-chevron-left"></i> ย้อนกลับไปหน้าข่าวสาร</a>
-                        <button class="btn btn-primary" onclick="window.location.hash='#/quote'"><i class="fas fa-file-invoice-dollar"></i> สนใจสกรีนแก้วขอใบเสนอราคา</button>
+                        <a href="#/news" class="btn btn-outline" style="border-color:var(--primary); color:var(--primary);"><i class="fas fa-chevron-left"></i> ย้อนกลับ</a>
+                        <button class="btn btn-primary" onclick="window.location.hash='#/contact'"><i class="fas fa-file-invoice-dollar"></i> ติดต่อขอใบเสนอราคา</button>
                     </div>
                 </div>
             </section>
@@ -1246,7 +1375,7 @@ class CharoenApp {
                             <i class="fas fa-search"></i> ${this.lang === 'th' ? 'ค้นหาข้อมูลเว็บไซต์' : 'Search Website'}
                         </h1>
                         <div style="max-width:600px; margin: 0 auto; display:flex; gap:10px;">
-                            <input type="text" id="main-search-input-field" class="form-control" value="${query}" placeholder="${this.lang === 'th' ? 'ค้นหาแก้ว PET, หมวดหมู่สินค้า, ข่าวสาร...' : 'Search PET Cups, News, specs...'}">
+                            <input type="text" id="main-search-input-field" class="form-control" value="${query}" placeholder="${this.lang === 'th' ? 'ค้นหาแก้ว PET, หมวดหมู่สินค้า, กิจกรรม...' : 'Search PET Cups, Activities, specs...'}">
                             <button class="btn btn-primary" onclick="window.charoenApp.triggerMainSearch()"><i class="fas fa-search"></i> ค้นหา</button>
                         </div>
                     </div>
@@ -1304,7 +1433,7 @@ class CharoenApp {
                         ${this.lang === 'th' ? `รายการสินค้า (${matchProducts.length})` : `Products (${matchProducts.length})`}
                     </button>
                     <button class="search-tab-btn" id="stab-news" onclick="window.charoenApp.switchSearchTab('news')" style="background:none; border:none; padding:15px 5px; font-weight:700; font-size:1.05rem; color:var(--text-sec); cursor:pointer;">
-                        ${this.lang === 'th' ? `ข่าวสาร & บทความ (${matchNews.length + matchArticles.length})` : `News & Articles (${matchNews.length + matchArticles.length})`}
+                        ${this.lang === 'th' ? `กิจกรรม & บทความ (${matchNews.length + matchArticles.length})` : `Activities & Articles (${matchNews.length + matchArticles.length})`}
                     </button>
                 </div>
                 
@@ -1339,7 +1468,7 @@ class CharoenApp {
                     <!-- News and Articles Search Results tab -->
                     <div class="search-tab-pane" id="spane-news" style="display:none;">
                         ${(matchNews.length === 0 && matchArticles.length === 0) ? `
-                            <p style="color:var(--text-sec); padding:30px 0;">${this.lang === 'th' ? 'ไม่พบข่าวสารหรือบทความความรู้ที่ตรงกับคำค้นหา' : 'No matching news or articles found.'}</p>
+                            <p style="color:var(--text-sec); padding:30px 0;">${this.lang === 'th' ? 'ไม่พบกิจกรรมหรือบทความความรู้ที่ตรงกับคำค้นหา' : 'No matching activities or articles found.'}</p>
                         ` : `
                             <div class="grid-3">
                                 ${matchNews.map(n => `
@@ -1348,7 +1477,7 @@ class CharoenApp {
                                             <img src="${n.thumbnail || 'coffee_bg.jpg'}" alt="${n.title_th}">
                                         </div>
                                         <div class="portfolio-info" style="padding:20px;">
-                                            <span style="font-size:0.75rem; color:var(--secondary); font-weight:700; text-transform:uppercase;">[ข่าวสาร]</span>
+                                            <span style="font-size:0.75rem; color:var(--secondary); font-weight:700; text-transform:uppercase;">${this.lang === 'th' ? '[กิจกรรม]' : '[Activity]'}</span>
                                             <h3 style="font-size:1.1rem; font-weight:700; margin-top:5px; margin-bottom:10px; color:var(--primary); line-height:1.4;">${this.lang === 'th' ? n.title_th : n.title_en}</h3>
                                             <p style="font-size:0.85rem; color:var(--text-sec); line-height:1.5;">${this.lang === 'th' ? n.summary_th : n.summary_en}</p>
                                         </div>

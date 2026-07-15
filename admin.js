@@ -2897,7 +2897,7 @@ class CharoenAdmin {
                                 if (sec.type === 'featured_portfolio') label = 'ผลงานสกรีนล่าสุด (Featured Gallery)';
                                 if (sec.type === 'clients') label = 'โลโก้ร้านค้าลูกค้าพันธมิตร (Partners Logos)';
                                 if (sec.type === 'reviews') label = 'รีวิวลูกค้า (Customer Reviews)';
-                                if (sec.type === 'latest_news') label = 'ข่าวสารกิจกรรมแนะนำ (Latest News)';
+                                if (sec.type === 'latest_news') label = 'กิจกรรมและการสนับสนุน (Activities & Support)';
                                 if (sec.type === 'contact_info') label = 'ฟอร์มการติดต่อรวดเร็ว (Quick Contact)';
 
                                 return `
@@ -3177,11 +3177,24 @@ class CharoenAdmin {
             `;
         }
 
+        let secLabel = sec.type;
+        if (sec.type === 'hero_banner') secLabel = 'ภาพสไลด์แบนเนอร์หลัก (Hero Slider)';
+        if (sec.type === 'about_company') secLabel = 'ข้อมูลแนะนำบริษัทร้าน (About Us)';
+        if (sec.type === 'strengths') secLabel = 'จุดเด่นแบรนด์บริษัท (Strengths)';
+        if (sec.type === 'services') secLabel = 'หมวดหมู่สินค้าหลัก (Services/Categories)';
+        if (sec.type === 'why_us') secLabel = 'ทำไมต้องเลือกเรา (Why Choose Us)';
+        if (sec.type === 'steps') secLabel = 'ขั้นตอนการผลิตสั่งพิมพ์ (Steps)';
+        if (sec.type === 'featured_portfolio') secLabel = 'ผลงานสกรีนล่าสุด (Featured Gallery)';
+        if (sec.type === 'clients') secLabel = 'โลโก้ร้านค้าลูกค้าพันธมิตร (Partners Logos)';
+        if (sec.type === 'reviews') secLabel = 'รีวิวลูกค้า (Customer Reviews)';
+        if (sec.type === 'latest_news') secLabel = 'กิจกรรมและการสนับสนุน (Activities & Support)';
+        if (sec.type === 'contact_info') secLabel = 'ฟอร์มการติดต่อรวดเร็ว (Quick Contact)';
+
         overlay.innerHTML = `
             <div class="modal-window" style="max-width:680px; padding:30px;">
                 <button class="modal-close-btn" id="close-modal-btn"><i class="fas fa-times"></i></button>
                 <h3 style="font-size:1.2rem; font-weight:800; color:var(--secondary); margin-bottom:20px; border-bottom:1.5px solid var(--border-color); padding-bottom:8px;">
-                    แก้ไขข้อมูลเซกชัน: ${sec.type}
+                    แก้ไขข้อมูลเซกชัน: ${secLabel}
                 </h3>
                 
                 <form id="edit-sec-content-form">
@@ -3354,7 +3367,12 @@ class CharoenAdmin {
                 if (sec.type !== 'clients') {
                     const descVal = document.getElementById('sec-desc-th').value;
                     const descEnVal = document.getElementById('sec-desc-en').value;
-                    if (sec.content.desc_th !== undefined) {
+                    if (sec.type === 'latest_news') {
+                        sec.content.desc_th = descVal;
+                        sec.content.desc_en = descEnVal;
+                        sec.content.subtitle_th = descVal;
+                        sec.content.subtitle_en = descEnVal;
+                    } else if (sec.content.desc_th !== undefined) {
                         sec.content.desc_th = descVal;
                         sec.content.desc_en = descEnVal;
                     } else {
@@ -3384,25 +3402,32 @@ class CharoenAdmin {
     // --- News CRUD Manager ---
     async loadNewsView(container) {
         const news = await this.db.getAll('news');
-        const sortedNews = [...news].sort((a, b) => new Date(b.date) - new Date(a.date));
+        const sortedNews = [...news].sort((a, b) => {
+            const featA = a.featured ? 1 : 0;
+            const featB = b.featured ? 1 : 0;
+            if (featA !== featB) return featB - featA; // Featured first
+            return Number(a.order || 0) - Number(b.order || 0); // Order ascending
+        });
 
         container.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <p style="color:var(--text-muted); font-size:0.9rem;">สร้าง แก้ไข หรือตั้งค่าซ่อนข่าวสารกิจกรรมประชาสัมพันธ์ของร้านลงเว็บบล็อกข่าวสาร</p>
-                <button class="btn btn-primary" id="add-news-btn"><i class="fas fa-plus"></i> เขียนข่าวสารใหม่</button>
+                <p style="color:var(--text-muted); font-size:0.9rem;">สร้าง แก้ไข หรือตั้งค่าซ่อนกิจกรรมและการสนับสนุนเพื่อแสดงบนหน้าเว็บไซต์</p>
+                <button class="btn btn-primary" id="add-news-btn"><i class="fas fa-plus"></i> เพิ่มกิจกรรมใหม่</button>
             </div>
             
             <div class="admin-card">
                 ${sortedNews.length === 0 ? `
-                    <p style="color:var(--text-muted); font-size:0.9rem; text-align:center; padding:45px 0;">ยังไม่มีข่าวสารใดๆ ในสารระบบคอมพิวเตอร์ของคุณ</p>
+                    <p style="color:var(--text-muted); font-size:0.9rem; text-align:center; padding:45px 0;">ยังไม่มีรายการกิจกรรมและการสนับสนุนในระบบ</p>
                 ` : `
                     <div style="overflow-x:auto;">
                         <table class="admin-table">
                             <thead>
                                 <tr>
+                                    <th style="width:70px; text-align:center;">ลำดับ</th>
                                     <th>รูปย่อ</th>
-                                    <th>หัวข้อข่าวสาร (TH)</th>
-                                    <th>วันที่เขียน</th>
+                                    <th>หัวข้อกิจกรรม (TH)</th>
+                                    <th>สถานที่จัด</th>
+                                    <th>วันที่จัด</th>
                                     <th>สถานะแสดงผล</th>
                                     <th style="text-align:right;">จัดการ</th>
                                 </tr>
@@ -3410,19 +3435,21 @@ class CharoenAdmin {
                             <tbody>
                                 ${sortedNews.map(n => `
                                     <tr>
+                                        <td style="text-align:center; font-weight:700;">${n.order !== undefined ? n.order : 0}</td>
                                         <td style="width:75px;">
                                             <div style="width:55px; height:55px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-sec); display:flex; align-items:center; justify-content:center; overflow:hidden;">
-                                                ${n.thumbnail ? `<img src="${n.thumbnail}" style="width:100%; height:100%; object-fit:cover;">` : `<i class="fas fa-newspaper" style="color:var(--text-muted);"></i>`}
+                                                ${n.thumbnail ? `<img src="${n.thumbnail}" style="width:100%; height:100%; object-fit:cover;">` : `<i class="fas fa-calendar-alt" style="color:var(--text-muted);"></i>`}
                                             </div>
                                         </td>
                                         <td>
                                             <strong>${n.title_th}</strong><br>
                                             <span style="font-size:0.78rem; color:var(--text-muted);">${(n.summary_th || '').slice(0, 70)}...</span>
                                         </td>
-                                        <td>${n.date}</td>
+                                        <td>${n.location_th || '-'}</td>
+                                        <td>${n.date || '-'}</td>
                                         <td>
-                                            ${n.visible ? '<span class="badge badge-success">เผยแพร่</span>' : '<span class="badge" style="background:#e2e8f0; color:#475569;">แบบร่าง</span>'}
-                                            ${n.featured ? '<span class="badge badge-secondary" style="margin-left:5px;">แนะนำ</span>' : ''}
+                                            ${n.visible !== false ? '<span class="badge badge-success">แสดงผล</span>' : '<span class="badge" style="background:#e2e8f0; color:#475569;">ซ่อน</span>'}
+                                            ${n.featured ? '<span class="badge badge-secondary" style="margin-left:5px; background:var(--secondary); color:white;">แนะนำ</span>' : ''}
                                         </td>
                                         <td style="text-align:right;">
                                             <button class="btn btn-outline edit-news-btn" data-id="${n.id}" style="padding:6px 12px; font-size:0.75rem; border-color:var(--secondary); color:var(--secondary); margin-right:8px;"><i class="fas fa-edit"></i> แก้ไข</button>
@@ -3443,7 +3470,7 @@ class CharoenAdmin {
         });
         document.querySelectorAll('.del-news-btn').forEach(btn => {
             btn.onclick = async () => {
-                if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบข่าวสารประชาสัมพันธ์รายการนี้ออกอย่างถาวร?')) {
+                if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบกิจกรรมและการสนับสนุนรายการนี้ออกอย่างถาวร?')) {
                     await this.db.delete('news', btn.dataset.id);
                     this.renderActiveView();
                 }
@@ -3462,8 +3489,12 @@ class CharoenAdmin {
             content_th: '',
             content_en: '',
             date: new Date().toISOString().split('T')[0],
+            location_th: '',
+            location_en: '',
+            order: 1,
             visible: true,
             featured: false,
+            gallery_images: [],
             seo_title: '',
             seo_desc: ''
         };
@@ -3477,6 +3508,18 @@ class CharoenAdmin {
             }
         }
 
+        let parsedGallery = [];
+        if (Array.isArray(n.gallery_images)) {
+            parsedGallery = n.gallery_images;
+        } else if (typeof n.gallery_images === 'string') {
+            try {
+                parsedGallery = JSON.parse(n.gallery_images);
+            } catch (e) {
+                parsedGallery = [];
+            }
+        }
+        window.currentActivityGallery = [...parsedGallery];
+
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay active';
         overlay.id = 'admin-edit-modal';
@@ -3485,34 +3528,54 @@ class CharoenAdmin {
             <div class="modal-window" style="max-width:700px; padding:30px;">
                 <button class="modal-close-btn" id="close-modal-btn"><i class="fas fa-times"></i></button>
                 <h3 style="font-size:1.25rem; font-weight:800; color:var(--secondary); margin-bottom:20px; border-bottom:1.5px solid var(--border-color); padding-bottom:8px;">
-                    ${isEdit ? 'แก้ไขข่าวสารประชาสัมพันธ์' : 'เขียนและสร้างข่าวสารใหม่'}
+                    ${isEdit ? 'แก้ไขกิจกรรมและการสนับสนุน' : 'เพิ่มกิจกรรมและการสนับสนุนใหม่'}
                 </h3>
                 
                 <form id="edit-news-form">
                     <div style="display:flex; flex-direction:column; gap:12px; max-height:60vh; overflow-y:auto; padding-right:8px;">
                         <div class="form-group">
-                            <label style="font-weight:600; font-size:0.85rem;">หัวข้อข่าวสารภาษาไทย (Title TH) <span style="color:var(--danger)">*</span></label>
+                            <label style="font-weight:600; font-size:0.85rem;">หัวข้อกิจกรรมภาษาไทย (Title TH) <span style="color:var(--danger)">*</span></label>
                             <input type="text" id="news-form-title-th" class="form-control" value="${n.title_th}" required>
                         </div>
                         <div class="form-group">
-                            <label style="font-weight:600; font-size:0.85rem;">หัวข้อข่าวสารภาษาอังกฤษ (Title EN) <span style="color:var(--danger)">*</span></label>
-                            <input type="text" id="news-form-title-en" class="form-control" value="${n.title_en}" required>
+                            <label style="font-weight:600; font-size:0.85rem;">หัวข้อกิจกรรมภาษาอังกฤษ (Title EN)</label>
+                            <input type="text" id="news-form-title-en" class="form-control" value="${n.title_en || ''}">
                         </div>
                         
                         <div class="grid-2">
                             <div class="form-group">
-                                <label style="font-weight:600; font-size:0.85rem;">วันที่เผยแพร่ (Date)</label>
-                                <input type="date" id="news-form-date" class="form-control" value="${n.date}" required>
+                                <label style="font-weight:600; font-size:0.85rem;">วันที่จัดกิจกรรม (Date)</label>
+                                <input type="date" id="news-form-date" class="form-control" value="${n.date || ''}">
                             </div>
-                            <div style="display:flex; align-items:center; gap:20px; padding-top:25px;">
-                                <label style="cursor:pointer; font-weight:700; font-size:0.85rem;"><input type="checkbox" id="news-form-vis" ${n.visible ? 'checked' : ''}> แสดงหน้าเว็บ</label>
-                                <label style="cursor:pointer; font-weight:700; font-size:0.85rem;"><input type="checkbox" id="news-form-feat" ${n.featured ? 'checked' : ''}> ข่าวเด่นแนะนำ</label>
+                            <div class="form-group">
+                                <label style="font-weight:600; font-size:0.85rem;">ลำดับการแสดงผล (Order)</label>
+                                <input type="number" id="news-form-order" class="form-control" value="${n.order !== undefined ? n.order : 1}" required min="0">
                             </div>
+                        </div>
+
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label style="font-weight:600; font-size:0.85rem;">สถานที่จัดภาษาไทย (Location TH)</label>
+                                <input type="text" id="news-form-location-th" class="form-control" value="${n.location_th || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-weight:600; font-size:0.85rem;">สถานที่จัดภาษาอังกฤษ (Location EN)</label>
+                                <input type="text" id="news-form-location-en" class="form-control" value="${n.location_en || ''}">
+                            </div>
+                        </div>
+
+                        <div style="display:flex; align-items:center; gap:20px; padding:10px 0;">
+                            <label style="cursor:pointer; font-weight:700; font-size:0.85rem; display:inline-flex; align-items:center; gap:6px;">
+                                <input type="checkbox" id="news-form-vis" style="width:18px; height:18px;" ${n.visible !== false ? 'checked' : ''}> แสดงผลบนหน้าเว็บ
+                            </label>
+                            <label style="cursor:pointer; font-weight:700; font-size:0.85rem; display:inline-flex; align-items:center; gap:6px; color:var(--secondary);">
+                                <input type="checkbox" id="news-form-feat" style="width:18px; height:18px;" ${n.featured ? 'checked' : ''}> กิจกรรมเด่นแนะนำ
+                            </label>
                         </div>
 
                         <div class="form-group">
                             <label style="font-weight:600; font-size:0.85rem;">เกริ่นนำ/สรุปสั้นๆ (Summary TH)</label>
-                            <textarea id="news-form-sum-th" class="form-control" style="min-height:50px;" placeholder="จะแสดงเป็นบทคัดย่อในหน้ารวมข่าวสาร...">${n.summary_th || ''}</textarea>
+                            <textarea id="news-form-sum-th" class="form-control" style="min-height:50px;" placeholder="จะแสดงเป็นบทคัดย่อในหน้าแรกและหน้ารวม...">${n.summary_th || ''}</textarea>
                         </div>
                         <div class="form-group">
                             <label style="font-weight:600; font-size:0.85rem;">เกริ่นนำ/สรุปสั้นๆ (Summary EN)</label>
@@ -3520,16 +3583,16 @@ class CharoenAdmin {
                         </div>
 
                         <div class="form-group">
-                            <label style="font-weight:600; font-size:0.85rem;">เนื้อหาข่าวสารฉบับเต็มภาษาไทย (Full Content TH)</label>
-                            <textarea id="news-form-content-th" class="form-control" style="min-height:120px;" placeholder="สามารถเว้นบรรทัด พิมพ์รายละเอียดข้อมูลยาวได้">${n.content_th || ''}</textarea>
+                            <label style="font-weight:600; font-size:0.85rem;">เนื้อหากิจกรรมฉบับเต็มภาษาไทย (Full Content TH)</label>
+                            <textarea id="news-form-content-th" class="form-control" style="min-height:120px;" placeholder="สามารถเว้นบรรทัด รายละเอียดเนื้อหาเต็ม"></textarea>
                         </div>
                         <div class="form-group">
-                            <label style="font-weight:600; font-size:0.85rem;">เนื้อหาข่าวสารฉบับเต็มภาษาอังกฤษ (Full Content EN)</label>
+                            <label style="font-weight:600; font-size:0.85rem;">เนื้อหากิจกรรมฉบับเต็มภาษาอังกฤษ (Full Content EN)</label>
                             <textarea id="news-form-content-en" class="form-control" style="min-height:120px;">${n.content_en || ''}</textarea>
                         </div>
 
                         <div class="form-group">
-                            <label style="font-weight:600; font-size:0.85rem;">รูปภาพข่าวสาร / ภาพโปรโมชั่น</label>
+                            <label style="font-weight:600; font-size:0.85rem;">รูปภาพหน้าปกกิจกรรม (Cover Image)</label>
                             <div style="display:flex; gap:10px; align-items:center;">
                                 <input type="file" id="news-form-file" class="form-control" accept="image/*" style="padding: 6px; flex-grow:1;">
                                 <button type="button" class="btn btn-outline" id="select-news-media-btn" style="padding:8px 12px; font-size:0.75rem;"><i class="fas fa-folder-open"></i> เลือกจากคลังภาพ</button>
@@ -3537,6 +3600,16 @@ class CharoenAdmin {
                             
                             <div style="margin-top:10px; text-align:center;">
                                 <img src="${n.thumbnail || ''}" id="news-form-img-preview" style="max-height:100px; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:${n.thumbnail ? 'inline-block' : 'none'};">
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="background:var(--bg-sec); padding:16px; border:1px solid var(--border-color); border-radius:var(--radius-md);">
+                            <label style="font-weight:800; color:var(--primary); font-size:0.85rem; display:block; margin-bottom:8px;"><i class="fas fa-images"></i> รูปภาพแกลเลอรีเพิ่มเติม (Gallery Images)</label>
+                            <div id="activity-gallery-container"></div>
+                            <div style="display:flex; gap:10px; align-items:center; margin-top:10px;">
+                                <input type="file" id="activity-gallery-file-input" accept="image/*" style="display:none;">
+                                <button type="button" class="btn btn-outline" id="activity-gallery-upload-btn" style="padding:6px 12px; font-size:0.75rem;"><i class="fas fa-upload"></i> อัปโหลดรูปภาพ</button>
+                                <button type="button" class="btn btn-outline" id="activity-gallery-select-btn" style="padding:6px 12px; font-size:0.75rem;"><i class="fas fa-folder-open"></i> เลือกจากคลังภาพ</button>
                             </div>
                         </div>
 
@@ -3560,11 +3633,67 @@ class CharoenAdmin {
 
         document.body.appendChild(overlay);
 
-        // Fill seo description values
+        // Fill descriptions and render gallery
         const descTextarea = document.getElementById('news-form-seo-desc');
         if (descTextarea) descTextarea.value = n.seo_desc || '';
 
-        const closeDialog = () => { overlay.remove(); };
+        const renderGallery = () => {
+            const container = document.getElementById('activity-gallery-container');
+            if (!container) return;
+            if (window.currentActivityGallery.length === 0) {
+                container.innerHTML = `<p style="font-size:0.8rem; color:var(--text-muted); margin:0;">ไม่มีภาพแกลเลอรีเพิ่มเติม</p>`;
+                return;
+            }
+            container.innerHTML = `
+                <div style="display:grid; grid-template-columns: repeat(5, 1fr); gap:8px;">
+                    ${window.currentActivityGallery.map((img, idx) => `
+                        <div style="position:relative; width:100%; aspect-ratio:1/1; border-radius:var(--radius-sm); border:1px solid var(--border-color); overflow:hidden; background:var(--bg-sec);">
+                            <img src="${img}" style="width:100%; height:100%; object-fit:cover;">
+                            <button type="button" class="delete-gallery-img-btn" data-index="${idx}" style="position:absolute; top:2px; right:2px; width:18px; height:18px; border-radius:50%; border:none; background:rgba(239,68,68,0.9); color:white; font-size:0.65rem; cursor:pointer; display:flex; justify-content:center; align-items:center;"><i class="fas fa-times"></i></button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            container.querySelectorAll('.delete-gallery-img-btn').forEach(btn => {
+                btn.onclick = () => {
+                    const idx = parseInt(btn.dataset.index);
+                    window.currentActivityGallery.splice(idx, 1);
+                    renderGallery();
+                };
+            });
+        };
+        renderGallery();
+
+        // Bind media events
+        document.getElementById('activity-gallery-upload-btn').onclick = () => {
+            document.getElementById('activity-gallery-file-input').click();
+        };
+
+        document.getElementById('activity-gallery-file-input').onchange = async (e) => {
+            if (e.target.files && e.target.files.length > 0) {
+                for (let i = 0; i < e.target.files.length; i++) {
+                    const webpData = await this.convertImageToWebP(e.target.files[i]);
+                    window.currentActivityGallery.push(webpData);
+                }
+                renderGallery();
+                e.target.value = '';
+            }
+        };
+
+        document.getElementById('activity-gallery-select-btn').onclick = () => {
+            this.openMediaSelectorDialog((selectedBase64) => {
+                window.currentActivityGallery.push(selectedBase64);
+                renderGallery();
+            });
+        };
+
+        // Textarea raw value settings
+        document.getElementById('news-form-content-th').value = n.content_th || '';
+
+        const closeDialog = () => {
+            overlay.remove();
+            delete window.currentActivityGallery;
+        };
         document.getElementById('close-modal-btn').onclick = closeDialog;
         document.getElementById('close-modal-cancel-btn').onclick = closeDialog;
 
@@ -3598,22 +3727,32 @@ class CharoenAdmin {
             const updatedNews = {
                 id: n.id,
                 title_th: document.getElementById('news-form-title-th').value,
-                title_en: document.getElementById('news-form-title-en').value,
-                thumbnail: n.thumbnail,
-                summary_th: document.getElementById('news-form-sum-th').value,
-                summary_en: document.getElementById('news-form-sum-en').value,
-                content_th: document.getElementById('news-form-content-th').value,
-                content_en: document.getElementById('news-form-content-en').value,
-                date: document.getElementById('news-form-date').value,
+                title_en: document.getElementById('news-form-title-en').value || '',
+                thumbnail: n.thumbnail || '',
+                summary_th: document.getElementById('news-form-sum-th').value || '',
+                summary_en: document.getElementById('news-form-sum-en').value || '',
+                content_th: document.getElementById('news-form-content-th').value || '',
+                content_en: document.getElementById('news-form-content-en').value || '',
+                date: document.getElementById('news-form-date').value || '',
+                location_th: document.getElementById('news-form-location-th').value || '',
+                location_en: document.getElementById('news-form-location-en').value || '',
+                gallery_images: window.currentActivityGallery || [],
                 visible: document.getElementById('news-form-vis').checked,
                 featured: document.getElementById('news-form-feat').checked,
-                seo_title: document.getElementById('news-form-seo-title').value,
-                seo_desc: document.getElementById('news-form-seo-desc').value
+                order: parseInt(document.getElementById('news-form-order').value) || 0,
+                seo_title: document.getElementById('news-form-seo-title').value || '',
+                seo_desc: document.getElementById('news-form-seo-desc').value || '',
+                created_at: n.created_at || new Date().toISOString(),
+                updated_at: new Date().toISOString()
             };
 
-            await this.db.put('news', updatedNews);
-            closeDialog();
-            this.renderActiveView();
+            try {
+                await this.db.put('news', updatedNews);
+                closeDialog();
+                this.renderActiveView();
+            } catch (err) {
+                alert(err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+            }
         };
     }
 
