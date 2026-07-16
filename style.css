@@ -1045,3 +1045,134 @@ h1, h2, h3, h4, h5, h6 {
     .product-grid { grid-template-columns: 1fr; }
     .portfolio-grid { grid-template-columns: 1fr; }
 }
+
+/* Footer QR Code Tooltip Styles */
+.footer-line-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.footer-qr-tooltip {
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background-color: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    box-shadow: var(--shadow-lg);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 150px;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.footer-qr-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: var(--bg-main) transparent transparent transparent;
+}
+
+.footer-line-link:hover .footer-qr-tooltip {
+    display: flex;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+}
+
+.footer-qr-tooltip img {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+    background-color: white;
+}
+
+.footer-qr-tooltip span {
+    font-size: 0.75rem;
+    color: var(--text-sec);
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* LINE QR Lightbox Modal Styles */
+.line-qr-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 20000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.line-qr-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.line-qr-modal-content {
+    background-color: var(--bg-main);
+    padding: 30px;
+    border-radius: var(--radius-lg);
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    position: relative;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+}
+
+.line-qr-modal.active .line-qr-modal-content {
+    transform: scale(1);
+}
+
+.line-qr-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    border: none;
+    background: none;
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    line-height: 1;
+    transition: var(--transition);
+}
+
+.line-qr-modal-close:hover {
+    color: var(--secondary);
+}
+
+.line-qr-modal-img {
+    width: 250px;
+    height: 250px;
+    object-fit: contain;
+    margin: 15px auto;
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    border-radius: var(--radius-md);
+    background: white;
+}

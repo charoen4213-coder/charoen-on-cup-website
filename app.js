@@ -60,11 +60,11 @@ class CharoenApp {
                 home_services_sub: 'เลือกชมหมวดหมู่ถ้วยแก้ว บรรจุภัณฑ์ และอุปกรณ์ต่างๆ ที่ได้รับความนิยมจากแบรนด์เครื่องดื่มชั้นนำ',
                 
                 products_all: 'สินค้าทั้งหมด',
-                products_empty: 'ยังไม่มีรายการสินค้าในขณะนี้ แอดมินสามารถเข้าหลังบ้านเพื่อเพิ่มสินค้าใหม่ได้',
-                products_empty_link: 'คลิกเข้าสู่หน้าจัดการระบบหลังบ้าน',
+                products_empty: 'ขณะนี้กำลังอัปเดตข้อมูลสินค้า',
+                products_empty_link: 'ติดต่อเรา',
                 
                 portfolio_all: 'ผลงานทั้งหมด',
-                portfolio_empty: 'ยังไม่มีรูปภาพผลงานสกรีนในขณะนี้ แอดมินสามารถเพิ่มภาพผลงานสวยๆ ได้หลังบ้าน',
+                portfolio_empty: 'ขณะนี้กำลังอัปเดตผลงาน',
                 
                 quote_title: 'ประเมินราคาและขอใบเสนอราคา',
                 quote_sub: 'กรุณากรอกข้อมูลด้านล่างให้ครบถ้วน เจ้าหน้าที่จะส่งราคาให้ท่านทาง LINE หรือเบอร์โทรศัพท์โดยเร็วที่สุด',
@@ -117,11 +117,11 @@ class CharoenApp {
                 home_services_sub: 'Browse our catalog of custom print drinkware, lids, films and bags popular among top beverage brands.',
                 
                 products_all: 'All Products',
-                products_empty: 'No products available at the moment. Admin can log in to add new products.',
-                products_empty_link: 'Click to open Admin Panel',
+                products_empty: 'Currently updating product information',
+                products_empty_link: 'Contact Us',
                 
                 portfolio_all: 'All Showcase',
-                portfolio_empty: 'No portfolio items uploaded yet. Admin can upload beautiful samples in the backend.',
+                portfolio_empty: 'Currently updating portfolio',
                 
                 quote_title: 'Request a Free Quote',
                 quote_sub: 'Please fill in the form below. Our staff will send you pricing and a 3D mock-up as soon as possible.',
@@ -153,6 +153,18 @@ class CharoenApp {
 
     t(key) {
         return this.dictionary[this.lang][key] || key;
+    }
+
+    async getSetting(key, fallback = '') {
+        try {
+            const item = await this.db.get('settings', key);
+            if (!item || item.value === null || item.value === undefined || item.value === 'null' || item.value === 'undefined') {
+                return fallback;
+            }
+            return item.value;
+        } catch (e) {
+            return fallback;
+        }
     }
 
     async init() {
@@ -268,12 +280,27 @@ class CharoenApp {
     }
 
     async updateFooterContactInfo() {
-        const address = await this.db.get('settings', this.lang === 'th' ? 'address_th' : 'address_en');
-        const phone = await this.db.get('settings', 'phone');
-        const line = await this.db.get('settings', 'line');
-        const hours = await this.db.get('settings', this.lang === 'th' ? 'business_hours_th' : 'business_hours_en');
-        const facebook = await this.db.get('settings', 'facebook');
-        const email = await this.db.get('settings', 'email');
+        const address = await this.getSetting(this.lang === 'th' ? 'address_th' : 'address_en') || await this.getSetting('address_th');
+        const phone = await this.getSetting('phone');
+        const lineId = await this.getSetting('line') || '@charoenoncup';
+        const hours = await this.getSetting(this.lang === 'th' ? 'business_hours_th' : 'business_hours_en') || await this.getSetting('business_hours_th');
+        const email = await this.getSetting('email');
+
+        const googleMapsUrl = await this.getSetting('google_maps_url');
+        const lineUrl = await this.getSetting('line_url');
+        const lineQrImage = await this.getSetting('line_qr_image');
+        const lineQrVisible = await this.getSetting('line_qr_visible', 'true');
+
+        const facebookUrl = await this.getSetting('facebook_url');
+        const facebookVisible = await this.getSetting('facebook_visible', 'true');
+        const instagramUrl = await this.getSetting('instagram_url');
+        const instagramVisible = await this.getSetting('instagram_visible', 'true');
+        const tiktokUrl = await this.getSetting('tiktok_url');
+        const tiktokVisible = await this.getSetting('tiktok_visible', 'true');
+        const youtubeUrl = await this.getSetting('youtube_url');
+        const youtubeVisible = await this.getSetting('youtube_visible', 'true');
+        const lineVisible = await this.getSetting('line_visible', 'true');
+        const contactVisible = await this.getSetting('contact_visible', 'true');
 
         const addrEl = document.getElementById('footer-address');
         const phoneEl = document.getElementById('footer-phone');
@@ -281,34 +308,80 @@ class CharoenApp {
         const hoursEl = document.getElementById('footer-hours');
         const lineLink = document.getElementById('footer-line-link');
 
-        if (addrEl) addrEl.textContent = address?.value || '';
-        if (phoneEl) phoneEl.textContent = phone?.value || '';
-        if (lineEl) lineEl.textContent = line?.value || '';
-        if (hoursEl) hoursEl.textContent = hours?.value || '';
+        if (addrEl) {
+            if (address && contactVisible !== 'false') {
+                addrEl.textContent = address;
+                addrEl.closest('li').style.display = 'flex';
+            } else {
+                addrEl.closest('li').style.display = 'none';
+            }
+        }
+        if (phoneEl) {
+            if (phone && contactVisible !== 'false') {
+                phoneEl.textContent = phone;
+                phoneEl.closest('li').style.display = 'flex';
+            } else {
+                phoneEl.closest('li').style.display = 'none';
+            }
+        }
+        if (hoursEl) {
+            if (hours && contactVisible !== 'false') {
+                hoursEl.textContent = hours;
+                hoursEl.closest('li').style.display = 'flex';
+            } else {
+                hoursEl.closest('li').style.display = 'none';
+            }
+        }
         
-        if (lineLink && line?.value) {
-            lineLink.href = `https://line.me/R/ti/p/~${line.value.replace('@', '')}`;
+        const lineItem = document.querySelector('.footer-line-item');
+        if (lineItem) {
+            if (lineUrl && lineVisible !== 'false' && contactVisible !== 'false') {
+                if (lineEl) lineEl.textContent = lineId;
+                if (lineLink) {
+                    lineLink.href = lineUrl;
+                }
+                
+                const tooltipImg = lineItem.querySelector('.footer-qr-tooltip img');
+                const tooltipSpan = lineItem.querySelector('.footer-qr-tooltip');
+                if (tooltipImg) {
+                    if (lineQrImage && lineQrVisible !== 'false') {
+                        tooltipImg.src = lineQrImage;
+                        tooltipImg.style.display = 'block';
+                        if (tooltipSpan) tooltipSpan.style.display = 'flex';
+                    } else {
+                        tooltipImg.style.display = 'none';
+                        if (tooltipSpan) tooltipSpan.style.display = 'none';
+                    }
+                }
+                lineItem.style.display = 'flex';
+            } else {
+                lineItem.style.display = 'none';
+            }
         }
 
-        const fbIcon = document.getElementById('footer-fb-icon');
-        const emailIcon = document.getElementById('footer-email-icon');
-        const lineIcon = document.getElementById('footer-line-icon');
-
-        if (fbIcon && facebook?.value) {
-            fbIcon.href = `https://facebook.com/${facebook.value}`;
-            fbIcon.style.display = 'inline-flex';
-        } else if (fbIcon) {
-            fbIcon.style.display = 'none';
-        }
-
-        if (lineIcon && line?.value) {
-            lineIcon.href = `https://line.me/R/ti/p/~${line.value.replace('@', '')}`;
-            lineIcon.style.display = 'inline-flex';
-        }
-
-        if (emailIcon && email?.value) {
-            emailIcon.href = `mailto:${email.value}`;
-            emailIcon.style.display = 'inline-flex';
+        // Dynamically rebuild footer socials
+        const footerSocials = document.querySelector('.footer-socials');
+        if (footerSocials) {
+            let socialButtons = '';
+            if (facebookUrl && facebookVisible !== 'false') {
+                socialButtons += `<a href="${facebookUrl}" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>`;
+            }
+            if (lineUrl && lineVisible !== 'false') {
+                socialButtons += `<a href="${lineUrl}" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="Line"><i class="fab fa-line"></i></a>`;
+            }
+            if (instagramUrl && instagramVisible === 'true') {
+                socialButtons += `<a href="${instagramUrl}" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="Instagram" style="background:#db2777; color:white;"><i class="fab fa-instagram"></i></a>`;
+            }
+            if (tiktokUrl && tiktokVisible === 'true') {
+                socialButtons += `<a href="${tiktokUrl}" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="TikTok" style="background:#000; color:white;"><i class="fab fa-tiktok"></i></a>`;
+            }
+            if (youtubeUrl && youtubeVisible === 'true') {
+                socialButtons += `<a href="${youtubeUrl}" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="YouTube" style="background:#e53e3e; color:white;"><i class="fab fa-youtube"></i></a>`;
+            }
+            if (email) {
+                socialButtons += `<a href="mailto:${email}" class="social-btn" aria-label="Email"><i class="fas fa-envelope"></i></a>`;
+            }
+            footerSocials.innerHTML = socialButtons;
         }
 
         // Update Topbar contacts & Cart badge dynamically
@@ -317,10 +390,43 @@ class CharoenApp {
         const topbarFbLink = document.getElementById('topbar-fb-link');
         const topbarLineLink = document.getElementById('topbar-line-link');
 
-        if (topbarPhoneVal && phone?.value) topbarPhoneVal.textContent = phone.value;
-        if (topbarPhoneLink && phone?.value) topbarPhoneLink.href = `tel:${phone.value}`;
-        if (topbarFbLink && facebook?.value) topbarFbLink.href = `https://facebook.com/${facebook.value}`;
-        if (topbarLineLink && line?.value) topbarLineLink.href = `https://line.me/R/ti/p/~${line.value.replace('@', '')}`;
+        if (phone && contactVisible !== 'false') {
+            const cleanPhone = phone.replace(/[^0-9+]/g, '');
+            if (topbarPhoneVal) topbarPhoneVal.textContent = phone;
+            if (topbarPhoneLink) {
+                topbarPhoneLink.href = `tel:${cleanPhone}`;
+                topbarPhoneLink.style.display = 'flex';
+            }
+        } else {
+            if (topbarPhoneLink) topbarPhoneLink.style.display = 'none';
+        }
+
+        if (topbarFbLink) {
+            if (facebookUrl && facebookVisible !== 'false' && contactVisible !== 'false') {
+                topbarFbLink.href = facebookUrl;
+                topbarFbLink.style.display = 'inline-block';
+            } else {
+                topbarFbLink.style.display = 'none';
+            }
+        }
+
+        if (topbarLineLink) {
+            if (lineUrl && lineVisible !== 'false' && contactVisible !== 'false') {
+                topbarLineLink.href = lineUrl;
+                topbarLineLink.style.display = 'inline-block';
+            } else {
+                topbarLineLink.style.display = 'none';
+            }
+        }
+
+        const footerContactCol = document.querySelector('.footer-contact-col');
+        if (footerContactCol) {
+            if (contactVisible === 'false') {
+                footerContactCol.style.display = 'none';
+            } else {
+                footerContactCol.style.display = 'block';
+            }
+        }
 
         try {
             const quotes = await this.db.getAll('quotes');
@@ -367,6 +473,35 @@ class CharoenApp {
                 trigger.innerHTML = isOpened ? `<i class="fas fa-times"></i>` : `<i class="fas fa-bars"></i>`;
             };
         }
+
+        window.openLineQrModal = (imgSrc) => {
+            let modal = document.getElementById('line-qr-modal-overlay');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'line-qr-modal-overlay';
+                modal.className = 'line-qr-modal';
+                modal.innerHTML = `
+                    <div class="line-qr-modal-content">
+                        <button class="line-qr-modal-close" onclick="window.closeLineQrModal()">&times;</button>
+                        <h4 style="font-family:'Kanit', sans-serif; margin-bottom:10px; color:var(--primary); font-weight:700;"><i class="fab fa-line" style="color:#10b981;"></i> LINE Official QR Code</h4>
+                        <img src="" class="line-qr-modal-img" id="line-qr-modal-image">
+                        <p style="font-size:0.9rem; color:var(--text-sec); margin:0;">${this.lang === 'th' ? 'สแกน QR Code เพื่อสอบถามทาง LINE' : 'Scan QR Code to contact us on LINE'}</p>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                modal.onclick = (e) => {
+                    if (e.target === modal) window.closeLineQrModal();
+                };
+            }
+            const modalImg = document.getElementById('line-qr-modal-image');
+            if (modalImg) modalImg.src = imgSrc;
+            modal.classList.add('active');
+        };
+
+        window.closeLineQrModal = () => {
+            const modal = document.getElementById('line-qr-modal-overlay');
+            if (modal) modal.classList.remove('active');
+        };
     }
 
     async handleRouting() {
@@ -583,6 +718,8 @@ class CharoenApp {
                         }
                     }
 
+                    if (strengthItems.length === 0) break;
+
                     html += `
                         <!-- Company Strengths Section -->
                         <section class="section-padding" style="background-color: var(--bg-main); border-bottom: 1px solid var(--border-color);">
@@ -650,6 +787,8 @@ class CharoenApp {
                         }
                     }
 
+                    if (whyItems.length === 0) break;
+
                     html += `
                         <!-- Why Choose Us Section -->
                         <section class="section-padding" style="background-color: var(--bg-main); border-bottom: 1px solid var(--border-color);">
@@ -687,6 +826,8 @@ class CharoenApp {
                             }
                         }
                     }
+
+                    if (stepsList.length === 0) break;
 
                     html += `
                         <!-- Ordering Steps Section -->
@@ -793,6 +934,8 @@ class CharoenApp {
                         }
                     }
 
+                    if (reviewsList.length === 0) break;
+
                     html += `
                         <!-- Reviews Section -->
                         <section class="section-padding" style="background-color: var(--bg-main); border-bottom: 1px solid var(--border-color);">
@@ -821,6 +964,8 @@ class CharoenApp {
 
                     const news = await this.db.getAll('news');
                     const visibleNews = news.filter(n => n.visible !== false && n.visible !== 'false');
+
+                    if (visibleNews.length === 0) break;
 
                     // Sort: Featured first, then order ascending
                     visibleNews.sort((a, b) => {
@@ -902,7 +1047,88 @@ class CharoenApp {
                     `;
                     break;
 
-                case 'contact_info':
+                case 'contact_info': {
+                    const contactVisible = await this.getSetting('contact_visible', 'true');
+                    if (contactVisible === 'false') break;
+
+                    const phoneVal = await this.getSetting('phone');
+                    const emailVal = await this.getSetting('email');
+                    const addressVal = await this.getSetting(this.lang === 'th' ? 'address_th' : 'address_en') || await this.getSetting('address_th');
+                    const hoursVal = await this.getSetting(this.lang === 'th' ? 'business_hours_th' : 'business_hours_en') || await this.getSetting('business_hours_th');
+                    
+                    const contactTitleVal = await this.getSetting(this.lang === 'th' ? 'contact_title_th' : 'contact_title_en') || await this.getSetting('contact_title_th') || (this.lang === 'th' ? 'สอบถามข้อมูลสกรีนแก้วและประเมินราคารวดเร็ว' : 'Get an Instant Printing Quote');
+                    const contactDescVal = await this.getSetting(this.lang === 'th' ? 'contact_description_th' : 'contact_description_en') || await this.getSetting('contact_description_th');
+
+                    const mapsUrlVal = await this.getSetting('google_maps_url');
+                    const lineUrlVal = await this.getSetting('line_url');
+                    const facebookUrlVal = await this.getSetting('facebook_url');
+                    const facebookVisibleVal = await this.getSetting('facebook_visible', 'true');
+                    const lineVisibleVal = await this.getSetting('line_visible', 'true');
+
+                    let detailsHtml = '';
+                    if (phoneVal) {
+                        const cleanPhone = phoneVal.replace(/[^0-9+]/g, '');
+                        detailsHtml += `
+                            <p style="font-size:0.95rem; margin-bottom:12px; color:var(--text-sec); display:flex; align-items:center; gap:8px;">
+                                <i class="fas fa-phone-alt" style="color:var(--primary);"></i> 
+                                <strong>${this.lang === 'th' ? 'โทรศัพท์:' : 'Phone:'}</strong> 
+                                <a href="tel:${cleanPhone}" style="color:var(--secondary); font-weight:700; text-decoration:none;">${phoneVal}</a>
+                            </p>
+                        `;
+                    }
+                    if (emailVal) {
+                        detailsHtml += `
+                            <p style="font-size:0.95rem; margin-bottom:12px; color:var(--text-sec); display:flex; align-items:center; gap:8px;">
+                                <i class="fas fa-envelope" style="color:var(--primary);"></i> 
+                                <strong>Email:</strong> 
+                                <a href="mailto:${emailVal}" style="color:var(--secondary); font-weight:700; text-decoration:none;">${emailVal}</a>
+                            </p>
+                        `;
+                    }
+                    if (addressVal) {
+                        detailsHtml += `
+                            <p style="font-size:0.95rem; margin-bottom:12px; color:var(--text-sec); display:flex; align-items:center; gap:8px;">
+                                <i class="fas fa-map-marker-alt" style="color:var(--primary);"></i> 
+                                <strong>${this.lang === 'th' ? 'ที่อยู่:' : 'Address:'}</strong> 
+                                ${addressVal}
+                            </p>
+                        `;
+                    }
+                    if (hoursVal) {
+                        detailsHtml += `
+                            <p style="font-size:0.95rem; margin-bottom:12px; color:var(--text-sec); display:flex; align-items:center; gap:8px;">
+                                <i class="far fa-clock" style="color:var(--primary);"></i> 
+                                <strong>${this.lang === 'th' ? 'เวลาทำการ:' : 'Hours:'}</strong> 
+                                ${hoursVal}
+                            </p>
+                        `;
+                    }
+
+                    let socialsHtml = '';
+                    if (lineUrlVal && lineVisibleVal !== 'false') {
+                        socialsHtml += `
+                            <a href="${lineUrlVal}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="border-color:#10b981; color:#10b981; padding:6px 12px; font-size:0.8rem; font-weight:700; display:inline-flex; align-items:center; gap:6px; text-decoration:none; border-radius:var(--radius-sm);">
+                                <i class="fab fa-line"></i> เพิ่มเพื่อนทาง LINE
+                            </a>
+                        `;
+                    }
+                    if (facebookUrlVal && facebookVisibleVal !== 'false') {
+                        socialsHtml += `
+                            <a href="${facebookUrlVal}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="border-color:var(--secondary); color:var(--secondary); padding:6px 12px; font-size:0.8rem; font-weight:700; display:inline-flex; align-items:center; gap:6px; text-decoration:none; border-radius:var(--radius-sm);">
+                                <i class="fab fa-facebook-f"></i> Facebook
+                            </a>
+                        `;
+                    }
+                    if (mapsUrlVal) {
+                        socialsHtml += `
+                            <a href="${mapsUrlVal}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="border-color:var(--primary); color:var(--primary); padding:6px 12px; font-size:0.8rem; font-weight:700; display:inline-flex; align-items:center; gap:6px; text-decoration:none; border-radius:var(--radius-sm);">
+                                <i class="fas fa-location-arrow"></i> Google Maps
+                            </a>
+                        `;
+                    }
+
+                    const descHtml = contactDescVal ? `<p style="line-height:1.75; color:var(--text-sec); margin-bottom:20px;">${contactDescVal}</p>` : '';
+
                     html += `
                         <!-- Quick Contact Information & Inquiry Section on Homepage -->
                         <section class="section-padding" style="background-color: var(--bg-main);">
@@ -911,11 +1137,15 @@ class CharoenApp {
                                     <div>
                                         <span style="font-weight:700; color:var(--secondary); text-transform:uppercase; font-size:0.85rem; letter-spacing:1px;"><i class="fas fa-paper-plane"></i> QUICK INQUIRY FORM</span>
                                         <h2 style="font-size:2.2rem; font-weight:800; color:var(--primary); margin-top:10px; margin-bottom:20px;">
-                                            ${this.lang === 'th' ? sec.content.title_th : sec.content.title_en}
+                                            ${contactTitleVal}
                                         </h2>
-                                        <p style="line-height:1.75; color:var(--text-sec); margin-bottom:30px;">
-                                            หากต้องการขอตัวอย่างสเปกความหนา ขึ้นรูปม็อคอัปแบบดิจิตอล 3D หรือสั่งสกรีนโลโก้ด่วน สามารถกรอกข้อมูลช่องทางติดต่อกลับที่สะดวกด้านขวา หรือกดขอใบเสนอราคาโดยตรงเพื่อประเมินราคาได้ทันทีครับ
-                                        </p>
+                                        ${descHtml}
+                                        <div style="margin-bottom:25px; display:flex; flex-direction:column; gap:8px;">
+                                            ${detailsHtml}
+                                        </div>
+                                        <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:30px;">
+                                            ${socialsHtml}
+                                        </div>
                                         <a href="#/quote" class="btn btn-primary"><i class="fas fa-file-invoice-dollar"></i> ขอใบเสนอราคาอย่างละเอียด</a>
                                     </div>
                                     
@@ -941,6 +1171,7 @@ class CharoenApp {
                         </section>
                     `;
                     break;
+                }
             }
         }
 
@@ -1811,7 +2042,7 @@ class CharoenApp {
         const slides = await this.db.getAll('slider');
         const sortedSlides = [...slides].sort((a, b) => a.order - b.order);
         
-        const activeCatId = params && params.category ? params.category : 'all';
+        const activeCatId = params?.get('category') || 'all';
         const filteredProducts = activeCatId === 'all' 
             ? products 
             : products.filter(p => p.category === activeCatId);
@@ -1840,12 +2071,14 @@ class CharoenApp {
             setTimeout(() => this.initLocalSlider('products-hero-slider'), 100);
         }
 
+        const hasCategories = categories.length > 0;
         let html = `
             ${sliderHtml}
             
             <div class="container">
-                <div class="catalog-layout">
+                <div class="catalog-layout" ${hasCategories ? '' : 'style="grid-template-columns: 1fr;"'}>
                     <!-- Left Sidebar Filters -->
+                    ${hasCategories ? `
                     <aside class="sidebar-filters">
                         <h4 class="filter-title">${this.lang === 'th' ? 'หมวดหมู่สินค้า' : 'Categories'}</h4>
                         <ul class="filter-list">
@@ -1854,34 +2087,32 @@ class CharoenApp {
                                     ${this.t('products_all')}
                                 </a>
                             </li>
-        `;
-
-        categories.forEach(cat => {
-            html += `
-                <li>
-                    <a href="#/products?category=${cat.id}" class="filter-btn ${activeCatId === cat.id ? 'active' : ''}">
-                        ${this.lang === 'th' ? cat.name_th : cat.name_en}
-                    </a>
-                </li>
-            `;
-        });
-
-        html += `
+                            ${categories.map(cat => `
+                                <li>
+                                    <a href="#/products?category=${cat.id}" class="filter-btn ${activeCatId === cat.id ? 'active' : ''}">
+                                        ${this.lang === 'th' ? cat.name_th : cat.name_en}
+                                    </a>
+                                </li>
+                            `).join('')}
                         </ul>
                     </aside>
+                    ` : ''}
                     
                     <!-- Right Product Grid -->
                     <main>
         `;
 
         if (filteredProducts.length === 0) {
+            const contactVisible = await this.getSetting('contact_visible', 'true');
             html += `
                 <div style="text-align:center; padding:80px 20px; border:1px dashed var(--border-color); border-radius:var(--radius-lg); background:var(--bg-main);">
                     <i class="fas fa-box-open" style="font-size:3rem; color:var(--text-muted); margin-bottom:16px;"></i>
-                    <p style="color:var(--text-muted); margin-bottom:16px;">${this.t('products_empty')}</p>
-                    <a href="admin.html" class="btn btn-outline" style="font-size:0.9rem;">
-                        <i class="fas fa-sign-in-alt"></i> ${this.t('products_empty_link')}
-                    </a>
+                    <p style="color:var(--text-muted); margin-bottom:16px; font-weight:500;">${this.t('products_empty')}</p>
+                    ${contactVisible !== 'false' ? `
+                        <a href="#/contact" class="btn btn-primary" style="font-size:0.9rem; display:inline-flex; align-items:center; gap:8px;">
+                            <i class="fas fa-envelope"></i> ${this.t('products_empty_link')}
+                        </a>
+                    ` : ''}
                 </div>
             `;
         } else {
@@ -1933,7 +2164,7 @@ class CharoenApp {
             .filter(item => item.visible !== false && item.visible !== 'false')
             .sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
 
-        const activeCatId = params && params.category ? params.category : 'all';
+        const activeCatId = params?.get('category') || 'all';
         const filteredPortfolio = activeCatId === 'all'
             ? visiblePortfolio 
             : visiblePortfolio.filter(item => item.category === activeCatId);
@@ -1968,13 +2199,16 @@ class CharoenApp {
         `;
 
         if (filteredPortfolio.length === 0) {
+            const contactVisible = await this.getSetting('contact_visible', 'true');
             html += `
                 <div style="text-align:center; padding:80px 20px; border:1px dashed var(--border-color); border-radius:var(--radius-lg); background:var(--bg-main);">
                     <i class="fas fa-images" style="font-size:3rem; color:var(--text-muted); margin-bottom:16px;"></i>
-                    <p style="color:var(--text-muted); margin-bottom:16px;">${this.t('portfolio_empty')}</p>
-                    <a href="admin.html" class="btn btn-outline" style="font-size:0.9rem;">
-                        <i class="fas fa-upload"></i> ${this.lang === 'th' ? 'เข้าสู่ระบบหลังบ้านเพื่อเพิ่มรูปภาพผลงานของคุณ' : 'Log in to Admin CMS to upload your portfolio work'}
-                    </a>
+                    <p style="color:var(--text-muted); margin-bottom:16px; font-weight:500;">${this.t('portfolio_empty')}</p>
+                    ${contactVisible !== 'false' ? `
+                        <a href="#/contact" class="btn btn-primary" style="font-size:0.9rem; display:inline-flex; align-items:center; gap:8px;">
+                            <i class="fas fa-envelope"></i> ${this.lang === 'th' ? 'ติดต่อเรา' : 'Contact Us'}
+                        </a>
+                    ` : ''}
                 </div>
             `;
         } else {
@@ -2148,11 +2382,188 @@ class CharoenApp {
     }
 
     async renderContactView(container) {
-        const address = await this.db.get('settings', this.lang === 'th' ? 'address_th' : 'address_en');
-        const phone = await this.db.get('settings', 'phone');
-        const line = await this.db.get('settings', 'line');
-        const facebook = await this.db.get('settings', 'facebook');
-        const email = await this.db.get('settings', 'email');
+        const contactVisible = await this.getSetting('contact_visible', 'true');
+        if (contactVisible === 'false') {
+            container.innerHTML = `
+                <div class="container text-center" style="padding:120px 20px; font-family:'Kanit', sans-serif;">
+                    <div style="font-size:4rem; color:var(--text-muted); margin-bottom:20px;"><i class="fas fa-eye-slash"></i></div>
+                    <h2 style="font-weight:700; color:var(--secondary); margin-bottom:15px;">${this.lang === 'th' ? 'ขออภัย หน้านี้ไม่เปิดให้บริการชั่วคราว' : 'Page Temporarily Unavailable'}</h2>
+                    <p style="color:var(--text-sec); max-width:500px; margin:0 auto 30px auto; line-height:1.6;">${this.lang === 'th' ? 'ช่องทางการติดต่อสื่อสารกำลังอยู่ในระหว่างปรับปรุงข้อมูลโดยระบบบริหารจัดการเว็บไซต์' : 'The contact channels are currently being updated by the administrator.'}</p>
+                    <a href="#/home" class="btn btn-primary"><i class="fas fa-home"></i> ${this.lang === 'th' ? 'กลับสู่หน้าหลัก' : 'Back to Home'}</a>
+                </div>
+            `;
+            return;
+        }
+
+        const phone = await this.getSetting('phone');
+        const email = await this.getSetting('email');
+        const address = await this.getSetting(this.lang === 'th' ? 'address_th' : 'address_en') || await this.getSetting('address_th');
+        const hours = await this.getSetting(this.lang === 'th' ? 'business_hours_th' : 'business_hours_en') || await this.getSetting('business_hours_th');
+        
+        const contactTitle = await this.getSetting(this.lang === 'th' ? 'contact_title_th' : 'contact_title_en') || await this.getSetting('contact_title_th') || (this.lang === 'th' ? 'ช่องทางการติดต่อสอบถามและขอราคา' : 'Contact Methods & Customer Support');
+        const contactDesc = await this.getSetting(this.lang === 'th' ? 'contact_description_th' : 'contact_description_en') || await this.getSetting('contact_description_th');
+
+        const mapsUrl = await this.getSetting('google_maps_url');
+        const mapsEmbedUrl = await this.getSetting('google_maps_embed_url');
+        const lineUrl = await this.getSetting('line_url');
+        const lineQrImage = await this.getSetting('line_qr_image');
+        const lineQrVisible = await this.getSetting('line_qr_visible', 'true');
+
+        const facebookUrl = await this.getSetting('facebook_url');
+        const facebookVisible = await this.getSetting('facebook_visible', 'true');
+        const instagramUrl = await this.getSetting('instagram_url');
+        const instagramVisible = await this.getSetting('instagram_visible', 'true');
+        const tiktokUrl = await this.getSetting('tiktok_url');
+        const tiktokVisible = await this.getSetting('tiktok_visible', 'true');
+        const youtubeUrl = await this.getSetting('youtube_url');
+        const youtubeVisible = await this.getSetting('youtube_visible', 'true');
+        const lineVisible = await this.getSetting('line_visible', 'true');
+
+        let contactItemsHtml = '';
+        if (phone) {
+            const cleanPhone = phone.replace(/[^0-9+]/g, '');
+            contactItemsHtml += `
+                <li style="display:flex; align-items:center; gap:16px;">
+                    <div style="width:44px; height:44px; background-color:var(--primary-light); color:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2rem;"><i class="fas fa-phone-alt"></i></div>
+                    <div>
+                        <span style="display:block; font-size:0.8rem; color:var(--text-muted); font-weight:700;">${this.lang === 'th' ? 'เบอร์โทรศัพท์สายด่วน' : 'Hotline Number'}</span>
+                        <a href="tel:${cleanPhone}" style="font-weight:700; font-size:1.15rem; color:var(--secondary); text-decoration:none;">${phone}</a>
+                    </div>
+                </li>
+            `;
+        }
+
+        if (email) {
+            contactItemsHtml += `
+                <li style="display:flex; align-items:center; gap:16px;">
+                    <div style="width:44px; height:44px; background-color:#fee2e2; color:var(--danger); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2rem;"><i class="fas fa-envelope"></i></div>
+                    <div>
+                        <span style="display:block; font-size:0.8rem; color:var(--text-muted); font-weight:700;">Email Address</span>
+                        <a href="mailto:${email}" style="font-weight:700; font-size:1.1rem; color:var(--secondary); text-decoration:none;">${email}</a>
+                    </div>
+                </li>
+            `;
+        }
+
+        if (hours) {
+            contactItemsHtml += `
+                <li style="display:flex; align-items:center; gap:16px;">
+                    <div style="width:44px; height:44px; background-color:var(--bg-sec); color:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2rem;"><i class="far fa-clock"></i></div>
+                    <div>
+                        <span style="display:block; font-size:0.8rem; color:var(--text-muted); font-weight:700;">${this.lang === 'th' ? 'เวลาทำการ' : 'Business Hours'}</span>
+                        <span style="font-weight:700; font-size:1rem; color:var(--text-main);">${hours}</span>
+                    </div>
+                </li>
+            `;
+        }
+
+        let socialsHtml = '';
+        if (lineUrl && lineVisible !== 'false') {
+            socialsHtml += `
+                <li style="display:flex; align-items:center; gap:16px;">
+                    <div style="width:44px; height:44px; background-color:#e6f9eb; color:#10b981; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2rem;"><i class="fab fa-line"></i></div>
+                    <div>
+                        <span style="display:block; font-size:0.8rem; color:var(--text-muted); font-weight:700;">LINE Official</span>
+                        <a href="${lineUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="padding:6px 12px; font-size:0.8rem; font-weight:700; border-color:#10b981; color:#10b981; text-decoration:none; margin-top:4px; display:inline-flex; align-items:center; gap:6px; border-radius:var(--radius-sm);">
+                            <i class="fab fa-line"></i> เพิ่มเพื่อนทาง LINE
+                        </a>
+                    </div>
+                </li>
+            `;
+        }
+
+        if (facebookUrl && facebookVisible !== 'false') {
+            socialsHtml += `
+                <li style="display:flex; align-items:center; gap:16px;">
+                    <div style="width:44px; height:44px; background-color:var(--secondary-light); color:var(--secondary); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2rem;"><i class="fab fa-facebook-f"></i></div>
+                    <div>
+                        <span style="display:block; font-size:0.8rem; color:var(--text-muted); font-weight:700;">Facebook Page</span>
+                        <a href="${facebookUrl}" target="_blank" rel="noopener noreferrer" style="font-weight:700; font-size:1rem; color:var(--secondary); text-decoration:none; display:inline-block; margin-top:4px;">
+                            <i class="fab fa-facebook-square"></i> ${this.lang === 'th' ? 'เปิดเพจ Facebook' : 'Open Facebook Page'}
+                        </a>
+                    </div>
+                </li>
+            `;
+        }
+
+        if (instagramUrl && instagramVisible === 'true') {
+            socialsHtml += `
+                <li style="display:flex; align-items:center; gap:16px;">
+                    <div style="width:44px; height:44px; background-color:#fdf2f8; color:#db2777; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2rem;"><i class="fab fa-instagram"></i></div>
+                    <div>
+                        <span style="display:block; font-size:0.8rem; color:var(--text-muted); font-weight:700;">Instagram</span>
+                        <a href="${instagramUrl}" target="_blank" rel="noopener noreferrer" style="font-weight:700; font-size:1.05rem; color:#db2777; text-decoration:none;">Instagram</a>
+                    </div>
+                </li>
+            `;
+        }
+
+        if (tiktokUrl && tiktokVisible === 'true') {
+            socialsHtml += `
+                <li style="display:flex; align-items:center; gap:16px;">
+                    <div style="width:44px; height:44px; background-color:var(--bg-sec); color:var(--text-main); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2rem;"><i class="fab fa-tiktok"></i></div>
+                    <div>
+                        <span style="display:block; font-size:0.8rem; color:var(--text-muted); font-weight:700;">TikTok</span>
+                        <a href="${tiktokUrl}" target="_blank" rel="noopener noreferrer" style="font-weight:700; font-size:1.05rem; color:var(--text-main); text-decoration:none;">TikTok</a>
+                    </div>
+                </li>
+            `;
+        }
+
+        if (youtubeUrl && youtubeVisible === 'true') {
+            socialsHtml += `
+                <li style="display:flex; align-items:center; gap:16px;">
+                    <div style="width:44px; height:44px; background-color:#fff5f5; color:#e53e3e; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2rem;"><i class="fab fa-youtube"></i></div>
+                    <div>
+                        <span style="display:block; font-size:0.8rem; color:var(--text-muted); font-weight:700;">YouTube</span>
+                        <a href="${youtubeUrl}" target="_blank" rel="noopener noreferrer" style="font-weight:700; font-size:1.05rem; color:#e53e3e; text-decoration:none;">YouTube</a>
+                    </div>
+                </li>
+            `;
+        }
+
+        let lineQrCardHtml = '';
+        if (lineQrImage && lineQrVisible !== 'false') {
+            lineQrCardHtml = `
+                <div class="line-qr-card-box" style="background-color:var(--bg-sec); border-radius:var(--radius-lg); padding:24px; border:1px solid var(--border-color); text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-top:30px;">
+                    <h5 style="font-size:1.05rem; font-weight:700; margin-top:0; margin-bottom:12px; color:var(--primary); font-family:'Kanit', sans-serif;"><i class="fas fa-qrcode"></i> LINE QR Code</h5>
+                    <div style="width:140px; height:140px; background:white; border:1px solid var(--border-color); border-radius:var(--radius-md); padding:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:var(--shadow-sm);" onclick="window.openLineQrModal('${lineQrImage}')" title="${this.lang === 'th' ? 'คลิกขยายรูป QR Code' : 'Click to enlarge QR Code'}">
+                        <img src="${lineQrImage}" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="const card = this.closest('.line-qr-card-box'); if (card) card.style.display='none';">
+                    </div>
+                    <span style="font-size:0.75rem; color:var(--text-sec); margin-top:8px; display:block;">${this.lang === 'th' ? 'คลิกที่ QR Code เพื่อสแกนแอดไลน์' : 'Click QR Code to Scan & Add LINE'}</span>
+                </div>
+            `;
+        }
+
+        let mapAreaHtml = '';
+        let mapInnerHtml = '';
+        if (mapsEmbedUrl) {
+            mapInnerHtml += `
+                <div style="position:relative; width:100%; height:320px; border-radius:var(--radius-md); overflow:hidden; border:1px solid var(--border-color); margin-bottom:20px; background-color:#e2e8f0;">
+                    <iframe src="${mapsEmbedUrl}" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                </div>
+            `;
+        }
+        if (mapsUrl) {
+            mapInnerHtml += `
+                <div style="text-align:center;">
+                    <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width:100%; display:inline-flex; justify-content:center; align-items:center; gap:8px; padding:12px; font-weight:700;">
+                        <i class="fas fa-location-arrow"></i> ${this.lang === 'th' ? 'เปิดใน Google Maps' : 'Open in Google Maps'}
+                    </a>
+                </div>
+            `;
+        }
+        if (mapInnerHtml) {
+            mapAreaHtml = `
+                <div style="background-color:var(--bg-sec); border-radius:var(--radius-lg); padding:30px; border:1px solid var(--border-color); height:100%;">
+                    <h4 style="font-size:1.2rem; font-weight:700; color:var(--secondary); margin-bottom:20px; border-bottom:2px solid var(--primary); padding-bottom:8px;"><i class="fas fa-map-marked-alt"></i> ${this.lang === 'th' ? 'แผนที่ตั้งโรงงานสกรีน' : 'Factory Map Location'}</h4>
+                    ${address ? `<p style="font-size:0.95rem; margin-bottom:20px; line-height:1.6;"><i class="fas fa-home" style="color:var(--primary)"></i> <strong>${this.lang === 'th' ? 'ที่อยู่:' : 'Address:'}</strong> ${address}</p>` : ''}
+                    ${mapInnerHtml}
+                </div>
+            `;
+        }
+
+        const descHtml = contactDesc ? `<p style="line-height:1.75; color:var(--text-sec); margin-bottom:30px;">${contactDesc}</p>` : '';
 
         container.innerHTML = `
             <div class="subpage-hero-banner" style="background-image: url('contact_banner.jpg')">
@@ -2166,56 +2577,26 @@ class CharoenApp {
                 <div class="container">
                     <div class="grid-2" style="gap:50px;">
                         <div>
-                            <h3 style="font-size:1.8rem; font-weight:800; color:var(--secondary); margin-bottom:24px;">${this.lang === 'th' ? 'ช่องทางการติดต่อสอบถามและขอราคา' : 'Contact Methods & Customer Support'}</h3>
-                            <p style="line-height:1.7; color:var(--text-muted); margin-bottom:30px;">
-                                ${this.lang === 'th' ? 'ยินดีต้อนรับสู่ศูนย์บริการลูกค้า เจริญ ออน คัพ ท่านสามารถติดต่อสอบถามเรื่องขนาดแก้ว สเปกการสกรีน ราคาโปรโมชั่น หรือขอคำแนะนำการเตรียมไฟล์โลโก้ได้ผ่านช่องทางด้านล่างนี้ได้ตลอดเวลาครับ' : 'Welcome to Charoen On Cup support. Feel free to reach out to us regarding cup sizes, printing specifications, pricing promotions, or logo file preparations. We are ready to help you anytime.'}
-                            </p>
+                            <h3 style="font-size:1.8rem; font-weight:800; color:var(--secondary); margin-bottom:24px;">${contactTitle}</h3>
+                            ${descHtml}
                             
-                            <ul style="list-style:none; display:flex; flex-direction:column; gap:20px;">
-                                <li style="display:flex; align-items:center; gap:16px;">
-                                    <div style="width:44px; height:44px; background-color:var(--primary-light); color:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2rem;"><i class="fas fa-phone-alt"></i></div>
-                                    <div>
-                                        <span style="display:block; font-size:0.8rem; color:var(--text-muted); font-weight:700;">${this.lang === 'th' ? 'เบอร์โทรศัพท์สายด่วน' : 'Hotline Number'}</span>
-                                        <a href="tel:${phone?.value || ''}" style="font-weight:700; font-size:1.1rem; color:var(--secondary);">${phone?.value || ''}</a>
-                                    </div>
-                                </li>
-                                <li style="display:flex; align-items:center; gap:16px;">
-                                    <div style="width:44px; height:44px; background-color:#e6f9eb; color:#10b981; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2rem;"><i class="fab fa-line"></i></div>
-                                    <div>
-                                        <span style="display:block; font-size:0.8rem; color:var(--text-muted); font-weight:700;">Official Line ID</span>
-                                        <a href="https://line.me/R/ti/p/~${line?.value ? line.value.replace('@', '') : ''}" target="_blank" style="font-weight:700; font-size:1.1rem; color:#10b981;">${line?.value || ''}</a>
-                                    </div>
-                                </li>
-                                <li style="display:flex; align-items:center; gap:16px;">
-                                    <div style="width:44px; height:44px; background-color:var(--secondary-light); color:var(--secondary); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2rem;"><i class="fab fa-facebook-f"></i></div>
-                                    <div>
-                                        <span style="display:block; font-size:0.8rem; color:var(--text-muted); font-weight:700;">Facebook Page</span>
-                                        <a href="https://facebook.com/${facebook?.value || ''}" target="_blank" style="font-weight:700; font-size:1rem; color:var(--secondary);">${facebook?.value || ''}</a>
-                                    </div>
-                                </li>
-                                <li style="display:flex; align-items:center; gap:16px;">
-                                    <div style="width:44px; height:44px; background-color:#fee2e2; color:var(--danger); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2rem;"><i class="fas fa-envelope"></i></div>
-                                    <div>
-                                        <span style="display:block; font-size:0.8rem; color:var(--text-muted); font-weight:700;">Email Address</span>
-                                        <a href="mailto:${email?.value || ''}" style="font-weight:700; font-size:1rem; color:var(--secondary);">${email?.value || ''}</a>
-                                    </div>
-                                </li>
+                            <h4 style="font-size:1.15rem; font-weight:700; color:var(--primary); margin-bottom:15px; border-bottom:1px solid var(--border-color); padding-bottom:6px;"><i class="fas fa-info-circle"></i> ช่องทางติดต่อ (Contact Channels)</h4>
+                            <ul style="list-style:none; display:flex; flex-direction:column; gap:20px; padding-left:0; margin-bottom:35px;">
+                                ${contactItemsHtml}
                             </ul>
+
+                            ${socialsHtml ? `
+                                <h4 style="font-size:1.15rem; font-weight:700; color:var(--primary); margin-bottom:15px; border-bottom:1px solid var(--border-color); padding-bottom:6px;"><i class="fas fa-share-alt"></i> สื่อสังคมออนไลน์ (Social Networks)</h4>
+                                <ul style="list-style:none; display:flex; flex-direction:column; gap:20px; padding-left:0; margin-bottom:20px;">
+                                    ${socialsHtml}
+                                </ul>
+                            ` : ''}
+
+                            ${lineQrCardHtml}
                         </div>
                         
                         <div>
-                            <div style="background-color:var(--bg-sec); border-radius:var(--radius-lg); padding:30px; border:1px solid var(--border-color); height:100%;">
-                                <h4 style="font-size:1.2rem; font-weight:700; color:var(--secondary); margin-bottom:20px; border-bottom:2px solid var(--primary); padding-bottom:8px;"><i class="fas fa-map-marked-alt"></i> ${this.lang === 'th' ? 'แผนที่ตั้งโรงงานสกรีน' : 'Factory Map Location'}</h4>
-                                <p style="font-size:0.95rem; margin-bottom:20px; line-height:1.6;"><i class="fas fa-home" style="color:var(--primary)"></i> <strong>${this.lang === 'th' ? 'ที่อยู่:' : 'Address:'}</strong> ${address?.value || ''}</p>
-                                
-                                <div style="width:100%; height:250px; background-color:#e2e8f0; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; flex-direction:column; color:var(--text-muted); border:1px solid var(--border-color); text-align:center; padding:20px;">
-                                    <i class="fas fa-map-marked-alt" style="font-size:3rem; color:var(--text-muted); margin-bottom:12px;"></i>
-                                    <strong style="color:var(--secondary);">${this.lang === 'th' ? 'เปิดพิกัดนำทางด้วย Google Maps' : 'Get Location Directions on Google Maps'}</strong>
-                                    <a href="https://maps.google.com/?q=${encodeURIComponent(address?.value || 'เจริญ ออน คัพ สกรีนแก้วหาดใหญ่')}" target="_blank" class="btn btn-primary" style="margin-top:16px; font-size:0.85rem; padding:8px 16px;">
-                                        <i class="fas fa-location-arrow"></i> ${this.lang === 'th' ? 'เปิดใน Google Maps นำทาง' : 'Open in Google Maps'}
-                                    </a>
-                                </div>
-                            </div>
+                            ${mapAreaHtml}
                         </div>
                     </div>
                 </div>

@@ -1122,6 +1122,42 @@ class CharoenOnCupDB {
             }
         } catch (e) {}
 
+        // 4. Seed default contact & social settings if they do not exist
+        try {
+            const defaults = [
+                { key: 'phone', value: '064-356-4466' },
+                { key: 'facebook_url', value: 'https://www.facebook.com/CharoenOnCups/' },
+                { key: 'google_maps_url', value: 'https://www.google.com/maps/place/%E0%B9%80%E0%B8%85%E0%B8%A3%E0%B8%B4%E0%B8%8D+%E0%B8%AD%E0%B8%AD%E0%B8%99+%E0%B8%84%E0%B8%B1%E0%B8%9E/@6.9951145,100.4805677,18.75z/data=!4m6!3m5!1s0x304d29ff5f3b4259:0x265d6f60ca965a53!8m2!3d6.9952709!4d100.4811865!16s%2Fg%2F11xzdvzpnw?authuser=0&entry=ttu&g_ep=EgoyMDI2MDcxMi4wIKXMDSoASAFQAw%3D%3D' },
+                { key: 'google_maps_embed_url', value: 'https://www.google.com/maps?q=6.9952709,100.4811865&output=embed' },
+                { key: 'line_qr_image', value: 'line_qr.jpg' },
+                { key: 'contact_title_th', value: 'ติดต่อเรา' },
+                { key: 'contact_title_en', value: 'Contact Us' },
+                { key: 'contact_description_th', value: 'หากต้องการสกรีนแก้ว สอบถามข้อมูล หรือประเมินราคา สามารถกรอกแบบฟอร์มหรือติดต่อผ่านช่องทางด้านล่างได้ทันที' },
+                { key: 'contact_description_en', value: 'For screen printing inquiries, pricing, or product specifications, please fill out the form or contact us below.' },
+                { key: 'contact_visible', value: 'true' },
+                { key: 'facebook_visible', value: 'true' },
+                { key: 'instagram_visible', value: 'false' },
+                { key: 'tiktok_visible', value: 'false' },
+                { key: 'youtube_visible', value: 'false' },
+                { key: 'line_visible', value: 'true' },
+                { key: 'line_qr_visible', value: 'true' },
+                { key: 'instagram_url', value: '' },
+                { key: 'tiktok_url', value: '' },
+                { key: 'youtube_url', value: '' },
+                { key: 'line_url', value: 'https://line.me/R/ti/p/%40charoenoncup' }
+            ];
+
+            for (const d of defaults) {
+                const existing = await this.get('settings', d.key);
+                if (!existing || existing.value === '' || existing.value === null || existing.value === undefined) {
+                    await this.put('settings', { key: d.key, value: d.value });
+                    console.log(`CharoenOnCupDB: Seeded default setting for ${d.key}`);
+                }
+            }
+        } catch (e) {
+            console.error("CharoenOnCupDB: Failed to verify/seed default contact settings:", e);
+        }
+
         // Set the flag
         await this.put('settings', { key: 'homepage_reorganized_v1', value: true });
     }

@@ -1380,84 +1380,145 @@ class CharoenAdmin {
         const seoTitle = await this.db.get('settings', 'seo_title');
         const seoDesc = await this.db.get('settings', 'seo_desc');
 
+        // Contact and Social Settings
+        const contactTitleTh = await this.db.get('settings', 'contact_title_th');
+        const contactTitleEn = await this.db.get('settings', 'contact_title_en');
+        const contactDescTh = await this.db.get('settings', 'contact_description_th');
+        const contactDescEn = await this.db.get('settings', 'contact_description_en');
+        const googleMapsUrl = await this.db.get('settings', 'google_maps_url');
+        const googleMapsEmbedUrl = await this.db.get('settings', 'google_maps_embed_url');
+        const lineUrl = await this.db.get('settings', 'line_url');
+        const lineQrImage = await this.db.get('settings', 'line_qr_image');
+        
+        const contactVisible = await this.db.get('settings', 'contact_visible');
+        const lineQrVisible = await this.db.get('settings', 'line_qr_visible');
+        const facebookUrl = await this.db.get('settings', 'facebook_url');
+        const facebookVisible = await this.db.get('settings', 'facebook_visible');
+        const instagramUrl = await this.db.get('settings', 'instagram_url');
+        const instagramVisible = await this.db.get('settings', 'instagram_visible');
+        const tiktokUrl = await this.db.get('settings', 'tiktok_url');
+        const tiktokVisible = await this.db.get('settings', 'tiktok_visible');
+        const youtubeUrl = await this.db.get('settings', 'youtube_url');
+        const youtubeVisible = await this.db.get('settings', 'youtube_visible');
+        const lineVisible = await this.db.get('settings', 'line_visible');
+
         const fbConfig = await this.db.getLocalSetting('firebase_config');
         const fbConfigText = fbConfig ? JSON.stringify(fbConfig, null, 2) : '';
 
         container.innerHTML = `
             <div class="grid-2">
-                <!-- Store information settings -->
-                <div class="admin-card">
-                    <h3 style="font-size:1.1rem; font-weight:700; color:var(--secondary); margin-bottom:16px; border-bottom:1.5px solid var(--border-color); padding-bottom:8px;"><i class="fas fa-store"></i> ข้อมูลหน้าร้านหลัก</h3>
-                    
-                    <form id="store-settings-form">
-                        <div style="display:flex; flex-direction:column; gap:12px;">
-                            <div class="form-group" style="margin-bottom:12px;">
-                                <label style="font-weight:600; font-size:0.85rem; color:var(--secondary);">โลโก้ร้านค้าหลัก (Logo Image)</label>
-                                <div style="display:flex; gap:16px; align-items:center; margin-top:8px;">
-                                    <div id="set-logo-drop-zone" style="width:72px; height:72px; border-radius:50%; border:2px dashed var(--border-color); background:var(--bg-sec); display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer; position:relative; transition:all 0.3s ease;">
-                                        ${logoImg?.value ? `<img src="${logoImg.value}" id="set-logo-preview" style="width:100%; height:100%; object-fit:contain;">` : `<i class="fas fa-image" style="color:var(--text-muted); font-size:1.2rem;"></i>`}
-                                        <div id="set-logo-drag-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255,107,0,0.15); display:none; align-items:center; justify-content:center; color:var(--primary); font-size:0.75rem; font-weight:700;"><i class="fas fa-cloud-upload-alt"></i></div>
-                                    </div>
-                                    <div style="display:flex; flex-direction:column; gap:6px;">
-                                        <div style="display:flex; gap:6px;">
-                                            <button type="button" class="btn btn-outline" id="set-logo-uploader-btn" style="padding:4px 10px; font-size:0.72rem;"><i class="fas fa-upload"></i> อัปโหลดรูป</button>
-                                            <button type="button" class="btn btn-outline" id="set-logo-library-btn" style="padding:4px 10px; font-size:0.72rem; border-color:var(--secondary); color:var(--secondary);"><i class="fas fa-folder-open"></i> เลือกจากคลัง</button>
-                                            ${logoImg?.value ? `<button type="button" class="btn btn-outline" id="set-logo-clear-btn" style="padding:4px 10px; font-size:0.72rem; border-color:var(--danger); color:var(--danger);"><i class="fas fa-times"></i> ล้างค่า</button>` : ''}
+                <!-- Left Column: Forms -->
+                <div style="display:flex; flex-direction:column; gap:24px;">
+                    <!-- General Settings Form -->
+                    <div class="admin-card">
+                        <h3 style="font-size:1.1rem; font-weight:700; color:var(--secondary); margin-bottom:16px; border-bottom:1.5px solid var(--border-color); padding-bottom:8px;"><i class="fas fa-store"></i> ข้อมูลหน้าร้านและบริษัท (General Settings)</h3>
+                        
+                        <form id="store-settings-form">
+                            <div style="display:flex; flex-direction:column; gap:12px;">
+                                <div class="form-group" style="margin-bottom:12px;">
+                                    <label style="font-weight:600; font-size:0.85rem; color:var(--secondary);">โลโก้ร้านค้าหลัก (Logo Image)</label>
+                                    <div style="display:flex; gap:16px; align-items:center; margin-top:8px;">
+                                        <div id="set-logo-drop-zone" style="width:72px; height:72px; border-radius:50%; border:2px dashed var(--border-color); background:var(--bg-sec); display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer; position:relative; transition:all 0.3s ease;">
+                                            ${logoImg?.value ? `<img src="${logoImg.value}" id="set-logo-preview" style="width:100%; height:100%; object-fit:contain;">` : `<i class="fas fa-image" style="color:var(--text-muted); font-size:1.2rem;"></i>`}
+                                            <div id="set-logo-drag-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255,107,0,0.15); display:none; align-items:center; justify-content:center; color:var(--primary); font-size:0.75rem; font-weight:700;"><i class="fas fa-cloud-upload-alt"></i></div>
                                         </div>
-                                        <span style="font-size:0.68rem; color:var(--text-muted);">ลากรูปมาวางในวงกลม หรือกดปุ่มด้านบน</span>
+                                        <div style="display:flex; flex-direction:column; gap:6px;">
+                                            <div style="display:flex; gap:6px;">
+                                                <button type="button" class="btn btn-outline" id="set-logo-uploader-btn" style="padding:4px 10px; font-size:0.72rem;"><i class="fas fa-upload"></i> อัปโหลดรูป</button>
+                                                <button type="button" class="btn btn-outline" id="set-logo-library-btn" style="padding:4px 10px; font-size:0.72rem; border-color:var(--secondary); color:var(--secondary);"><i class="fas fa-folder-open"></i> เลือกจากคลัง</button>
+                                                ${logoImg?.value ? `<button type="button" class="btn btn-outline" id="set-logo-clear-btn" style="padding:4px 10px; font-size:0.72rem; border-color:var(--danger); color:var(--danger);"><i class="fas fa-times"></i> ล้างค่า</button>` : ''}
+                                            </div>
+                                            <span style="font-size:0.68rem; color:var(--text-muted);">ลากรูปมาวางในวงกลม หรือกดปุ่มด้านบน</span>
+                                        </div>
                                     </div>
+                                    <input type="file" id="set-logo-file-input" accept="image/*" style="display:none;">
+                                    <input type="hidden" id="set-logo-img-src" value="${logoImg?.value || ''}">
                                 </div>
-                                <input type="file" id="set-logo-file-input" accept="image/*" style="display:none;">
-                                <input type="hidden" id="set-logo-img-src" value="${logoImg?.value || ''}">
+                                <div class="form-group">
+                                    <label style="font-weight:600; font-size:0.85rem;">ชื่อบริษัทภาษาไทย (Company Name TH)</label>
+                                    <input type="text" id="set-company-name-th" class="form-control" value="${compNameTh?.value || ''}">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-weight:600; font-size:0.85rem;">ชื่อบริษัทภาษาอังกฤษ (Company Name EN)</label>
+                                    <input type="text" id="set-company-name-en" class="form-control" value="${compNameEn?.value || ''}">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-weight:600; font-size:0.85rem;">หัวข้อหน้าเกี่ยวกับเราภาษาไทย (About Title TH)</label>
+                                    <input type="text" id="set-about-title-th" class="form-control" value="${aboutTitleTh?.value || ''}">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-weight:600; font-size:0.85rem;">หัวข้อหน้าเกี่ยวกับเราภาษาอังกฤษ (About Title EN)</label>
+                                    <input type="text" id="set-about-title-en" class="form-control" value="${aboutTitleEn?.value || ''}">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-weight:600; font-size:0.85rem;">รายละเอียดหน้าเกี่ยวกับเราภาษาไทย (About Desc TH)</label>
+                                    <textarea id="set-about-desc-th" class="form-control" style="min-height:70px;">${aboutDescTh?.value || ''}</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-weight:600; font-size:0.85rem;">รายละเอียดหน้าเกี่ยวกับเราภาษาอังกฤษ (About Desc EN)</label>
+                                    <textarea id="set-about-desc-en" class="form-control" style="min-height:70px;">${aboutDescEn?.value || ''}</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-weight:600; font-size:0.85rem;">SEO Title (หัวข้อเว็บแสดงบนเบราว์เซอร์)</label>
+                                    <input type="text" id="set-seo-title" class="form-control" value="${seoTitle?.value || ''}">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-weight:600; font-size:0.85rem;">SEO Description (รายละเอียดสั้นแนะนำเว็บ)</label>
+                                    <textarea id="set-seo-desc" class="form-control" style="min-height:70px;">${seoDesc?.value || ''}</textarea>
+                                </div>
+                                <div class="form-group" style="flex-direction:row; justify-content:space-between; align-items:center; background:var(--bg-sec); padding:10px; border-radius:var(--radius-sm);">
+                                    <label style="font-weight:700; font-size:0.85rem; color:var(--secondary); cursor:pointer;" for="set-show-video">แสดงผลส่วนวิดีโอแนะนำในหน้าแรก (2 คลิป)</label>
+                                    <input type="checkbox" id="set-show-video" style="width:20px; height:20px; cursor:pointer;" ${showHomeVideo?.value === 'true' ? 'checked' : ''}>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Contact & Maps Settings Form -->
+                    <div class="admin-card">
+                        <h3 style="font-size:1.1rem; font-weight:700; color:var(--secondary); margin-bottom:16px; border-bottom:1.5px solid var(--border-color); padding-bottom:8px;"><i class="fas fa-map-marked-alt"></i> ข้อมูลการติดต่อและแผนที่ (Contact & Map Settings)</h3>
+                        
+                        <div style="display:flex; flex-direction:column; gap:12px;">
+                            <div class="form-group" style="flex-direction:row; align-items:center; gap:8px; background:var(--bg-sec); padding:10px; border-radius:var(--radius-sm);">
+                                <input type="checkbox" id="set-contact-visible" style="width:20px; height:20px; cursor:pointer;" ${contactVisible?.value !== 'false' ? 'checked' : ''}>
+                                <label for="set-contact-visible" style="font-weight:700; font-size:0.85rem; cursor:pointer; margin-bottom:0;">แสดงผลเซกชันการติดต่อในหน้าแรกและหน้าย่อย (Contact Section Visible)</label>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label style="font-weight:600; font-size:0.85rem;">หัวข้อเซกชันภาษาไทย (Contact Title TH)</label>
+                                <input type="text" id="set-contact-title-th" class="form-control" value="${contactTitleTh?.value || ''}">
                             </div>
                             <div class="form-group">
-                                <label style="font-weight:600; font-size:0.85rem;">ชื่อบริษัทภาษาไทย (Company Name TH)</label>
-                                <input type="text" id="set-company-name-th" class="form-control" value="${compNameTh?.value || ''}">
+                                <label style="font-weight:600; font-size:0.85rem;">หัวข้อเซกชันภาษาอังกฤษ (Contact Title EN)</label>
+                                <input type="text" id="set-contact-title-en" class="form-control" value="${contactTitleEn?.value || ''}">
                             </div>
                             <div class="form-group">
-                                <label style="font-weight:600; font-size:0.85rem;">ชื่อบริษัทภาษาอังกฤษ (Company Name EN)</label>
-                                <input type="text" id="set-company-name-en" class="form-control" value="${compNameEn?.value || ''}">
+                                <label style="font-weight:600; font-size:0.85rem;">คำอธิบายเซกชันภาษาไทย (Contact Description TH)</label>
+                                <textarea id="set-contact-desc-th" class="form-control" style="min-height:50px;">${contactDescTh?.value || ''}</textarea>
                             </div>
                             <div class="form-group">
-                                <label style="font-weight:600; font-size:0.85rem;">หัวข้อหน้าเกี่ยวกับเราภาษาไทย (About Title TH)</label>
-                                <input type="text" id="set-about-title-th" class="form-control" value="${aboutTitleTh?.value || ''}">
+                                <label style="font-weight:600; font-size:0.85rem;">คำอธิบายเซกชันภาษาอังกฤษ (Contact Description EN)</label>
+                                <textarea id="set-contact-desc-en" class="form-control" style="min-height:50px;">${contactDescEn?.value || ''}</textarea>
                             </div>
+                            
                             <div class="form-group">
-                                <label style="font-weight:600; font-size:0.85rem;">หัวข้อหน้าเกี่ยวกับเราภาษาอังกฤษ (About Title EN)</label>
-                                <input type="text" id="set-about-title-en" class="form-control" value="${aboutTitleEn?.value || ''}">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-weight:600; font-size:0.85rem;">รายละเอียดหน้าเกี่ยวกับเราภาษาไทย (About Desc TH)</label>
-                                <textarea id="set-about-desc-th" class="form-control" style="min-height:70px;">${aboutDescTh?.value || ''}</textarea>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-weight:600; font-size:0.85rem;">รายละเอียดหน้าเกี่ยวกับเราภาษาอังกฤษ (About Desc EN)</label>
-                                <textarea id="set-about-desc-en" class="form-control" style="min-height:70px;">${aboutDescEn?.value || ''}</textarea>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-weight:600; font-size:0.85rem;">เบอร์โทรศัพท์ (Phone)</label>
+                                <label style="font-weight:600; font-size:0.85rem;">เบอร์โทรศัพท์ร้าน (Phone)</label>
                                 <input type="text" id="set-phone" class="form-control" value="${phone?.value || ''}">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-weight:600; font-size:0.85rem;">Official LINE ID (มี @)</label>
-                                <input type="text" id="set-line" class="form-control" value="${line?.value || ''}">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-weight:600; font-size:0.85rem;">Facebook Page</label>
-                                <input type="text" id="set-facebook" class="form-control" value="${facebook?.value || ''}">
                             </div>
                             <div class="form-group">
                                 <label style="font-weight:600; font-size:0.85rem;">อีเมลร้าน (Email)</label>
                                 <input type="email" id="set-email" class="form-control" value="${email?.value || ''}">
                             </div>
+                            
                             <div class="form-group">
-                                <label style="font-weight:600; font-size:0.85rem;">ที่อยู่ออฟฟิศโรงงานภาษาไทย (Address TH)</label>
-                                <textarea id="set-address-th" class="form-control" style="min-height:70px;">${addressTh?.value || ''}</textarea>
+                                <label style="font-weight:600; font-size:0.85rem;">ที่อยู่ภาษาไทย (Address TH)</label>
+                                <textarea id="set-address-th" class="form-control" style="min-height:60px;">${addressTh?.value || ''}</textarea>
                             </div>
                             <div class="form-group">
-                                <label style="font-weight:600; font-size:0.85rem;">ที่อยู่ออฟฟิศโรงงานภาษาอังกฤษ (Address EN)</label>
-                                <textarea id="set-address-en" class="form-control" style="min-height:70px;">${addressEn?.value || ''}</textarea>
+                                <label style="font-weight:600; font-size:0.85rem;">ที่อยู่ภาษาอังกฤษ (Address EN)</label>
+                                <textarea id="set-address-en" class="form-control" style="min-height:60px;">${addressEn?.value || ''}</textarea>
                             </div>
+                            
                             <div class="form-group">
                                 <label style="font-weight:600; font-size:0.85rem;">เวลาเปิดทำการภาษาไทย (Hours TH)</label>
                                 <input type="text" id="set-hours-th" class="form-control" value="${hoursTh?.value || ''}">
@@ -1466,29 +1527,114 @@ class CharoenAdmin {
                                 <label style="font-weight:600; font-size:0.85rem;">เวลาเปิดทำการภาษาอังกฤษ (Hours EN)</label>
                                 <input type="text" id="set-hours-en" class="form-control" value="${hoursEn?.value || ''}">
                             </div>
+
                             <div class="form-group">
-                                <label style="font-weight:600; font-size:0.85rem;">SEO Title (หัวข้อเว็บแสดงบนเบราว์เซอร์)</label>
-                                <input type="text" id="set-seo-title" class="form-control" value="${seoTitle?.value || ''}">
+                                <label style="font-weight:600; font-size:0.85rem;">ลิงก์ตำแหน่ง Google Maps (google_maps_url)</label>
+                                <input type="text" id="set-maps-url" class="form-control" value="${googleMapsUrl?.value || ''}">
                             </div>
                             <div class="form-group">
-                                <label style="font-weight:600; font-size:0.85rem;">SEO Description (รายละเอียดสั้นแนะนำเว็บ)</label>
-                                <textarea id="set-seo-desc" class="form-control" style="min-height:70px;">${seoDesc?.value || ''}</textarea>
-                            </div>
-                            
-                            <!-- Toggle switch for homepage videos showcase -->
-                            <div class="form-group" style="flex-direction:row; justify-content:space-between; align-items:center; background:var(--bg-sec); padding:10px; border-radius:var(--radius-sm);">
-                                <label style="font-weight:700; font-size:0.85rem; color:var(--secondary); cursor:pointer;" for="set-show-video">แสดงผลส่วนวิดีโอแนะนำในหน้าแรก (2 คลิป)</label>
-                                <input type="checkbox" id="set-show-video" style="width:20px; height:20px; cursor:pointer;" ${showHomeVideo?.value === 'true' ? 'checked' : ''}>
-                            </div>
- 
-                            <div style="margin-top:16px;">
-                                <button type="submit" class="btn btn-primary" style="padding:10px 20px; font-size:0.85rem;"><i class="fas fa-save"></i> บันทึกข้อมูลหน้าร้าน</button>
+                                <label style="font-weight:600; font-size:0.85rem;">ลิงก์แผนที่ฝัง HTML Embed (google_maps_embed_url)</label>
+                                <input type="text" id="set-maps-embed-url" class="form-control" value="${googleMapsEmbedUrl?.value || ''}" placeholder="https://www.google.com/maps?q=...&output=embed">
                             </div>
                         </div>
-                    </form>
+                    </div>
+
+                    <!-- Social Media Links Settings Form -->
+                    <div class="admin-card">
+                        <h3 style="font-size:1.1rem; font-weight:700; color:var(--secondary); margin-bottom:16px; border-bottom:1.5px solid var(--border-color); padding-bottom:8px;"><i class="fas fa-share-alt"></i> ช่องทางโซเชียลมีเดีย (Social Media & LINE QR)</h3>
+                        
+                        <div style="display:flex; flex-direction:column; gap:16px;">
+                            <!-- Facebook -->
+                            <div style="background:var(--bg-sec); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <strong style="font-size:0.85rem; color:var(--primary);"><i class="fab fa-facebook-square"></i> Facebook Page URL</strong>
+                                    <label style="cursor:pointer; font-size:0.8rem; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                                        <input type="checkbox" id="set-facebook-visible" style="width:16px; height:16px;" ${facebookVisible?.value !== 'false' ? 'checked' : ''}> แสดงหน้าเว็บ
+                                    </label>
+                                </div>
+                                <input type="text" id="set-facebook-url" class="form-control" value="${facebookUrl?.value || ''}">
+                                <!-- Keep compatibility settings key 'facebook' -->
+                                <input type="hidden" id="set-facebook" value="${facebook?.value || ''}">
+                            </div>
+
+                            <!-- Instagram -->
+                            <div style="background:var(--bg-sec); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <strong style="font-size:0.85rem; color:var(--primary);"><i class="fab fa-instagram"></i> Instagram URL</strong>
+                                    <label style="cursor:pointer; font-size:0.8rem; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                                        <input type="checkbox" id="set-instagram-visible" style="width:16px; height:16px;" ${instagramVisible?.value === 'true' ? 'checked' : ''}> แสดงหน้าเว็บ
+                                    </label>
+                                </div>
+                                <input type="text" id="set-instagram-url" class="form-control" value="${instagramUrl?.value || ''}">
+                            </div>
+
+                            <!-- TikTok -->
+                            <div style="background:var(--bg-sec); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <strong style="font-size:0.85rem; color:var(--primary);"><i class="fab fa-tiktok"></i> TikTok URL</strong>
+                                    <label style="cursor:pointer; font-size:0.8rem; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                                        <input type="checkbox" id="set-tiktok-visible" style="width:16px; height:16px;" ${tiktokVisible?.value === 'true' ? 'checked' : ''}> แสดงหน้าเว็บ
+                                    </label>
+                                </div>
+                                <input type="text" id="set-tiktok-url" class="form-control" value="${tiktokUrl?.value || ''}">
+                            </div>
+
+                            <!-- YouTube -->
+                            <div style="background:var(--bg-sec); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <strong style="font-size:0.85rem; color:var(--primary);"><i class="fab fa-youtube"></i> YouTube Channel URL</strong>
+                                    <label style="cursor:pointer; font-size:0.8rem; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                                        <input type="checkbox" id="set-youtube-visible" style="width:16px; height:16px;" ${youtubeVisible?.value === 'true' ? 'checked' : ''}> แสดงหน้าเว็บ
+                                    </label>
+                                </div>
+                                <input type="text" id="set-youtube-url" class="form-control" value="${youtubeUrl?.value || ''}">
+                            </div>
+
+                            <!-- LINE Link -->
+                            <div style="background:var(--bg-sec); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <strong style="font-size:0.85rem; color:var(--primary);"><i class="fab fa-line"></i> LINE URL</strong>
+                                    <label style="cursor:pointer; font-size:0.8rem; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                                        <input type="checkbox" id="set-line-visible" style="width:16px; height:16px;" ${lineVisible?.value !== 'false' ? 'checked' : ''}> แสดงหน้าเว็บ
+                                    </label>
+                                </div>
+                                <input type="text" id="set-line-url" class="form-control" value="${lineUrl?.value || ''}">
+                                <!-- Keep compatibility settings key 'line' -->
+                                <input type="hidden" id="set-line" value="${line?.value || ''}">
+                            </div>
+
+                            <!-- LINE QR Image Selector -->
+                            <div style="background:var(--bg-sec); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <strong style="font-size:0.85rem; color:var(--primary);"><i class="fas fa-qrcode"></i> LINE QR Code Image</strong>
+                                    <label style="cursor:pointer; font-size:0.8rem; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                                        <input type="checkbox" id="set-line-qr-visible" style="width:16px; height:16px;" ${lineQrVisible?.value !== 'false' ? 'checked' : ''}> แสดงหน้าเว็บ
+                                    </label>
+                                </div>
+                                <div style="display:flex; gap:16px; align-items:center; margin-top:8px;">
+                                    <div id="set-line-qr-zone" style="width:72px; height:72px; border-radius:var(--radius-sm); border:2px dashed var(--border-color); background:var(--bg-main); display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer; position:relative;">
+                                        ${lineQrImage?.value ? `<img src="${lineQrImage.value}" id="set-line-qr-preview" style="width:100%; height:100%; object-fit:contain;">` : `<i class="fas fa-qrcode" style="color:var(--text-muted); font-size:1.5rem;"></i>`}
+                                    </div>
+                                    <div style="display:flex; flex-direction:column; gap:6px;">
+                                        <div style="display:flex; gap:6px;">
+                                            <button type="button" class="btn btn-outline" id="set-line-qr-uploader-btn" style="padding:4px 10px; font-size:0.72rem;"><i class="fas fa-upload"></i> อัปโหลดรูป</button>
+                                            <button type="button" class="btn btn-outline" id="set-line-qr-library-btn" style="padding:4px 10px; font-size:0.72rem; border-color:var(--secondary); color:var(--secondary);"><i class="fas fa-folder-open"></i> เลือกจากคลัง</button>
+                                            ${lineQrImage?.value ? `<button type="button" class="btn btn-outline" id="set-line-qr-clear-btn" style="padding:4px 10px; font-size:0.72rem; border-color:var(--danger); color:var(--danger);"><i class="fas fa-times"></i> ลบภาพ</button>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="file" id="set-line-qr-file-input" accept="image/*" style="display:none;">
+                                <input type="hidden" id="set-line-qr-img-src" value="${lineQrImage?.value || ''}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:16px; padding:0 12px;">
+                        <button type="button" id="master-save-btn" class="btn btn-primary" style="padding:12px 24px; font-size:1rem; width:100%;"><i class="fas fa-save"></i> บันทึกการตั้งค่าทั้งหมด (Save All Settings)</button>
+                    </div>
                 </div>
                 
-                <!-- System Config (Firebase & Database Backup) -->
+                <!-- Right Column: System Config (Firebase & Database Backup) -->
                 <div>
                     <!-- Custom Firebase Config Panel -->
                     <div class="admin-card">
@@ -1537,7 +1683,7 @@ class CharoenAdmin {
             configTextarea.value = fbConfigText;
         }
 
-        // Logo Drag and Drop / Library picker bindings
+        // --- Logo Drag and Drop / Library picker bindings ---
         const logoDropZone = document.getElementById('set-logo-drop-zone');
         const logoFileInput = document.getElementById('set-logo-file-input');
         const logoImgSrcInput = document.getElementById('set-logo-img-src');
@@ -1545,7 +1691,6 @@ class CharoenAdmin {
 
         if (logoDropZone) {
             logoDropZone.onclick = (e) => {
-                // Only click if we didn't click inside buttons
                 if (e.target.tagName !== 'BUTTON' && e.target.parentElement.tagName !== 'BUTTON') {
                     logoFileInput.click();
                 }
@@ -1570,7 +1715,6 @@ class CharoenAdmin {
                     if (file.type.startsWith('image/')) {
                         const base64 = await this.convertImageToWebP(file);
                         
-                        // Automatically back up logo to media library under 'med-logo'
                         const newMedia = {
                             id: 'med_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
                             name: 'logo_' + file.name.substring(0, file.name.lastIndexOf('.')) + '.webp',
@@ -1581,11 +1725,8 @@ class CharoenAdmin {
                         await this.db.put('media', newMedia);
 
                         logoImgSrcInput.value = base64;
-                        await this.db.put('settings', { key: 'logo_img', value: base64 });
-                        alert('อัปโหลดและอัปเดตโลโก้ร้านค้าสำเร็จ!');
-                        this.renderActiveView();
-                    } else {
-                        alert('กรุณาเลือกเฉพาะไฟล์รูปภาพครับ');
+                        document.getElementById('set-logo-preview').src = base64;
+                        alert('อัปโหลดและอัปเดตโลโก้ร้านค้าสำเร็จ! (กดปุ่มบันทึกเพื่อบันทึกข้อมูลหน้าร้านหลัก)');
                     }
                 }
             };
@@ -1607,9 +1748,8 @@ class CharoenAdmin {
                     await this.db.put('media', newMedia);
 
                     logoImgSrcInput.value = base64;
-                    await this.db.put('settings', { key: 'logo_img', value: base64 });
-                    alert('อัปโหลดและอัปเดตโลโก้ร้านค้าสำเร็จ!');
-                    this.renderActiveView();
+                    document.getElementById('set-logo-preview').src = base64;
+                    alert('อัปโหลดและอัปเดตโลโก้ร้านค้าสำเร็จ! (กดปุ่มบันทึกเพื่อบันทึกข้อมูลหน้าร้านหลัก)');
                 }
             };
         }
@@ -1622,29 +1762,99 @@ class CharoenAdmin {
         const setLogoLibraryBtn = document.getElementById('set-logo-library-btn');
         if (setLogoLibraryBtn) {
             setLogoLibraryBtn.onclick = () => {
-                this.openMediaSelectorDialog(async (selectedBase64) => {
+                this.openMediaSelectorDialog((selectedBase64) => {
                     logoImgSrcInput.value = selectedBase64;
-                    await this.db.put('settings', { key: 'logo_img', value: selectedBase64 });
-                    alert('เลือกโลโก้ร้านค้าจากคลังสำเร็จ!');
-                    this.renderActiveView();
+                    document.getElementById('set-logo-preview').src = selectedBase64;
+                    alert('เลือกโลโก้ร้านค้าจากคลังสำเร็จ! (กดปุ่มบันทึกเพื่อบันทึกข้อมูลหน้าร้านหลัก)');
                 });
             };
         }
 
         const setLogoClearBtn = document.getElementById('set-logo-clear-btn');
         if (setLogoClearBtn) {
-            setLogoClearBtn.onclick = async () => {
+            setLogoClearBtn.onclick = () => {
                 if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบภาพโลโก้ร้านค้าหลักออก?')) {
                     logoImgSrcInput.value = '';
-                    await this.db.put('settings', { key: 'logo_img', value: '' });
-                    this.renderActiveView();
+                    logoDropZone.innerHTML = `<i class="fas fa-image" style="color:var(--text-muted); font-size:1.2rem;"></i>`;
+                    alert('ล้างภาพโลโก้แล้ว (กดปุ่มบันทึกเพื่อบันทึกข้อมูลหน้าร้านหลัก)');
                 }
             };
         }
 
-        // Store settings submit
-        document.getElementById('store-settings-form').onsubmit = async (e) => {
-            e.preventDefault();
+        // --- LINE QR image uploader & library selector bindings ---
+        const lineQrZone = document.getElementById('set-line-qr-zone');
+        const lineQrFileInput = document.getElementById('set-line-qr-file-input');
+        const lineQrImgSrcInput = document.getElementById('set-line-qr-img-src');
+
+        if (lineQrZone) {
+            lineQrZone.onclick = (e) => {
+                if (e.target.tagName !== 'BUTTON' && e.target.parentElement.tagName !== 'BUTTON') {
+                    lineQrFileInput.click();
+                }
+            };
+        }
+
+        if (lineQrFileInput) {
+            lineQrFileInput.onchange = async (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0];
+                    const base64 = await this.convertImageToWebP(file);
+
+                    const newMedia = {
+                        id: 'med_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                        name: 'line_qr_' + file.name.substring(0, file.name.lastIndexOf('.')) + '.webp',
+                        category: 'med-logo',
+                        image_src: base64,
+                        created_at: new Date().toISOString()
+                    };
+                    await this.db.put('media', newMedia);
+
+                    lineQrImgSrcInput.value = base64;
+                    const preview = document.getElementById('set-line-qr-preview');
+                    if (preview) {
+                        preview.src = base64;
+                    } else {
+                        lineQrZone.innerHTML = `<img src="${base64}" id="set-line-qr-preview" style="width:100%; height:100%; object-fit:contain;">`;
+                    }
+                    alert('อัปโหลดและพรีวิวรูปภาพ LINE QR สำเร็จ (กดปุ่มบันทึกสีส้มด้านล่างสุดเพื่อบันทึกข้อมูล)');
+                }
+            };
+        }
+
+        const setLineQrUploaderBtn = document.getElementById('set-line-qr-uploader-btn');
+        if (setLineQrUploaderBtn) {
+            setLineQrUploaderBtn.onclick = () => lineQrFileInput.click();
+        }
+
+        const setLineQrLibraryBtn = document.getElementById('set-line-qr-library-btn');
+        if (setLineQrLibraryBtn) {
+            setLineQrLibraryBtn.onclick = () => {
+                this.openMediaSelectorDialog((selectedBase64) => {
+                    lineQrImgSrcInput.value = selectedBase64;
+                    const preview = document.getElementById('set-line-qr-preview');
+                    if (preview) {
+                        preview.src = selectedBase64;
+                    } else {
+                        lineQrZone.innerHTML = `<img src="${selectedBase64}" id="set-line-qr-preview" style="width:100%; height:100%; object-fit:contain;">`;
+                    }
+                    alert('เลือกรูปภาพ LINE QR จากคลังสำเร็จ (กดปุ่มบันทึกสีส้มด้านล่างสุดเพื่อบันทึกข้อมูล)');
+                });
+            };
+        }
+
+        const setLineQrClearBtn = document.getElementById('set-line-qr-clear-btn');
+        if (setLineQrClearBtn) {
+            setLineQrClearBtn.onclick = () => {
+                if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรูปภาพ LINE QR Code?')) {
+                    lineQrImgSrcInput.value = '';
+                    lineQrZone.innerHTML = `<i class="fas fa-qrcode" style="color:var(--text-muted); font-size:1.5rem;"></i>`;
+                    alert('ล้างค่ารูปภาพ LINE QR แล้ว (กดปุ่มบันทึกสีส้มด้านล่างสุดเพื่อยืนยัน)');
+                }
+            };
+        }
+
+        // --- Master Save Button Action ---
+        document.getElementById('master-save-btn').onclick = async () => {
             const setObj = {
                 logo_img: document.getElementById('set-logo-img-src').value,
                 company_name_th: document.getElementById('set-company-name-th').value,
@@ -1654,8 +1864,8 @@ class CharoenAdmin {
                 about_desc_th: document.getElementById('set-about-desc-th').value,
                 about_desc_en: document.getElementById('set-about-desc-en').value,
                 phone: document.getElementById('set-phone').value,
-                line: document.getElementById('set-line').value,
-                facebook: document.getElementById('set-facebook').value,
+                line: document.getElementById('set-line-url').value, // compatibility sync
+                facebook: document.getElementById('set-facebook-url').value, // compatibility sync
                 email: document.getElementById('set-email').value,
                 address_th: document.getElementById('set-address-th').value,
                 address_en: document.getElementById('set-address-en').value,
@@ -1663,14 +1873,37 @@ class CharoenAdmin {
                 business_hours_en: document.getElementById('set-hours-en').value,
                 seo_title: document.getElementById('set-seo-title').value,
                 seo_desc: document.getElementById('set-seo-desc').value,
-                show_home_video: document.getElementById('set-show-video').checked ? 'true' : 'false'
+                show_home_video: document.getElementById('set-show-video').checked ? 'true' : 'false',
+
+                // Contact and map keys
+                contact_title_th: document.getElementById('set-contact-title-th').value,
+                contact_title_en: document.getElementById('set-contact-title-en').value,
+                contact_description_th: document.getElementById('set-contact-desc-th').value,
+                contact_description_en: document.getElementById('set-contact-desc-en').value,
+                google_maps_url: document.getElementById('set-maps-url').value,
+                google_maps_embed_url: document.getElementById('set-maps-embed-url').value,
+                line_url: document.getElementById('set-line-url').value,
+                line_qr_image: document.getElementById('set-line-qr-img-src').value,
+                contact_visible: document.getElementById('set-contact-visible').checked ? 'true' : 'false',
+                line_qr_visible: document.getElementById('set-line-qr-visible').checked ? 'true' : 'false',
+
+                // Socials keys
+                facebook_url: document.getElementById('set-facebook-url').value,
+                facebook_visible: document.getElementById('set-facebook-visible').checked ? 'true' : 'false',
+                instagram_url: document.getElementById('set-instagram-url').value,
+                instagram_visible: document.getElementById('set-instagram-visible').checked ? 'true' : 'false',
+                tiktok_url: document.getElementById('set-tiktok-url').value,
+                tiktok_visible: document.getElementById('set-tiktok-visible').checked ? 'true' : 'false',
+                youtube_url: document.getElementById('set-youtube-url').value,
+                youtube_visible: document.getElementById('set-youtube-visible').checked ? 'true' : 'false',
+                line_visible: document.getElementById('set-line-visible').checked ? 'true' : 'false'
             };
 
             try {
                 for (const key of Object.keys(setObj)) {
                     await this.db.put('settings', { key: key, value: setObj[key] });
                 }
-                alert('บันทึกข้อมูลหน้าร้านหลักเรียบร้อยแล้ว!');
+                alert('บันทึกข้อมูลการตั้งค่าและหน้าร้านทั้งหมดเรียบร้อยแล้ว!');
                 this.renderActiveView();
             } catch (err) {
                 alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' + err.message);
