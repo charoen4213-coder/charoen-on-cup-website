@@ -245,12 +245,31 @@ class CharoenApp {
 
         // Render Menu Items
         menuContainer.innerHTML = `
-            <a href="#/home" class="nav-link" data-route="home">${this.t('nav_home')}</a>
-            <a href="#/about" class="nav-link" data-route="about">${this.t('nav_about')}</a>
-            <a href="#/products" class="nav-link" data-route="products">${this.t('nav_products')}</a>
-            <a href="#/portfolio" class="nav-link" data-route="portfolio">${this.t('nav_portfolio')}</a>
-            <a href="#/faq" class="nav-link" data-route="faq">${this.t('nav_faq')}</a>
-            <a href="#/contact" class="nav-link" data-route="contact">${this.t('nav_contact')}</a>
+            <a href="#/home" class="nav-link" data-route="home">${this.lang === 'th' ? 'หน้าแรก' : 'Home'}</a>
+            <a href="#/about" class="nav-link" data-route="about">${this.lang === 'th' ? 'เกี่ยวกับเรา' : 'About Us'}</a>
+            <a href="#/products" class="nav-link" data-route="products">${this.lang === 'th' ? 'สินค้าและบริการ' : 'Products & Services'}</a>
+            <a href="#/portfolio" class="nav-link" data-route="portfolio">${this.lang === 'th' ? 'ผลงานสกรีน' : 'Portfolio'}</a>
+            <a href="#/news" class="nav-link" data-route="news">${this.lang === 'th' ? 'กิจกรรมและการสนับสนุน' : 'Activities & Support'}</a>
+            <a href="#/faq" class="nav-link" data-route="faq">${this.lang === 'th' ? 'คำถามที่พบบ่อย' : 'FAQ'}</a>
+            <a href="#/contact" class="nav-link" data-route="contact">${this.lang === 'th' ? 'ติดต่อเรา' : 'Contact Us'}</a>
+            
+            <div class="mobile-only-drawer-actions">
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                    <span style="font-weight:600; font-size:0.95rem; color:var(--text-sec);">${this.lang === 'th' ? 'สลับภาษา / Language' : 'Toggle Language'}</span>
+                    <button class="btn-lang-toggle" id="mobile-lang-toggle-btn" style="border:1px solid var(--border-color); cursor:pointer; border-radius:var(--radius-sm); font-size:0.85rem; font-weight:700; padding:8px 16px; background:var(--bg-sec); color:var(--text-main);">
+                        ${this.lang === 'th' ? 'ENGLISH (EN)' : 'ภาษาไทย (TH)'}
+                    </button>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                    <span style="font-weight:600; font-size:0.95rem; color:var(--text-sec);">${this.lang === 'th' ? 'โหมดสี / Theme' : 'Theme Toggle'}</span>
+                    <button class="btn-theme-toggle" id="mobile-theme-toggle-btn" style="border:1px solid var(--border-color); cursor:pointer; border-radius:var(--radius-sm); font-size:0.95rem; padding:8px 16px; background:var(--bg-sec); color:var(--text-main); display:inline-flex; align-items:center; gap:8px;">
+                        <i class="fas ${this.theme === 'light' ? 'fa-moon' : 'fa-sun'}"></i> ${this.theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+                    </button>
+                </div>
+                <a href="#/quote" class="btn btn-primary nav-link-quote" style="display:block; text-align:center; padding:12px; font-weight:700; font-size:0.95rem; width:100%; box-sizing:border-box;">
+                    <i class="fas fa-file-invoice-dollar"></i> ${this.t('nav_quote')}
+                </a>
+            </div>
         `;
 
         // Render Action Buttons
@@ -267,8 +286,17 @@ class CharoenApp {
         `;
 
         // Re-bind actions events
-        document.getElementById('theme-toggle-btn').onclick = () => this.toggleTheme();
-        document.getElementById('lang-toggle-btn').onclick = () => this.toggleLanguage();
+        const desktopThemeBtn = document.getElementById('theme-toggle-btn');
+        if (desktopThemeBtn) desktopThemeBtn.onclick = () => this.toggleTheme();
+
+        const desktopLangBtn = document.getElementById('lang-toggle-btn');
+        if (desktopLangBtn) desktopLangBtn.onclick = () => this.toggleLanguage();
+
+        const mobThemeBtn = document.getElementById('mobile-theme-toggle-btn');
+        if (mobThemeBtn) mobThemeBtn.onclick = () => this.toggleTheme();
+
+        const mobLangBtn = document.getElementById('mobile-lang-toggle-btn');
+        if (mobLangBtn) mobLangBtn.onclick = () => this.toggleLanguage();
 
         // Highlight active route
         const hash = window.location.hash || '#/home';
@@ -463,15 +491,64 @@ class CharoenApp {
         }
     }
 
+    closeMobileMenu() {
+        const nav = document.getElementById('navbar-menu-container');
+        const trigger = document.getElementById('mobile-menu-trigger');
+        if (nav && nav.classList.contains('active')) {
+            nav.classList.remove('active');
+            document.body.classList.remove('no-scroll');
+            if (trigger) {
+                trigger.innerHTML = `<i class="fas fa-bars"></i>`;
+                trigger.setAttribute('aria-expanded', 'false');
+            }
+        }
+    }
+
+    openMobileMenu() {
+        const nav = document.getElementById('navbar-menu-container');
+        const trigger = document.getElementById('mobile-menu-trigger');
+        if (nav && !nav.classList.contains('active')) {
+            nav.classList.add('active');
+            document.body.classList.add('no-scroll');
+            if (trigger) {
+                trigger.innerHTML = `<i class="fas fa-times"></i>`;
+                trigger.setAttribute('aria-expanded', 'true');
+            }
+        }
+    }
+
     bindGlobalEvents() {
         const trigger = document.getElementById('mobile-menu-trigger');
         const nav = document.getElementById('navbar-menu-container');
+        
         if (trigger && nav) {
-            trigger.onclick = () => {
-                nav.classList.toggle('active');
-                const isOpened = nav.classList.contains('active');
-                trigger.innerHTML = isOpened ? `<i class="fas fa-times"></i>` : `<i class="fas fa-bars"></i>`;
+            trigger.setAttribute('aria-expanded', 'false');
+            trigger.onclick = (e) => {
+                e.stopPropagation();
+                if (nav.classList.contains('active')) {
+                    this.closeMobileMenu();
+                } else {
+                    this.openMobileMenu();
+                }
             };
+        }
+
+        // Tap outside drawer to close
+        document.addEventListener('click', (e) => {
+            if (nav && nav.classList.contains('active')) {
+                if (!nav.contains(e.target) && !trigger.contains(e.target)) {
+                    this.closeMobileMenu();
+                }
+            }
+        });
+
+        // Close after selecting a link inside the drawer
+        if (nav) {
+            nav.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' || e.target.closest('a')) {
+                    this.closeMobileMenu();
+                }
+            });
         }
 
         window.openLineQrModal = (imgSrc) => {
@@ -514,12 +591,7 @@ class CharoenApp {
             this.sliderUnsubscribe = null;
         }
 
-        const nav = document.getElementById('navbar-menu-container');
-        const trigger = document.getElementById('mobile-menu-trigger');
-        if (nav && nav.classList.contains('active')) {
-            nav.classList.remove('active');
-            if (trigger) trigger.innerHTML = `<i class="fas fa-bars"></i>`;
-        }
+        this.closeMobileMenu();
 
         window.scrollTo(0, 0);
 
