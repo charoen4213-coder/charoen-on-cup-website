@@ -2239,7 +2239,7 @@ class CharoenApp {
         if (filteredProducts.length === 0) {
             const contactVisible = await this.getSetting('contact_visible', 'true');
             html += `
-                <div style="text-align:center; padding:80px 20px; border:1px dashed var(--border-color); border-radius:var(--radius-lg); background:var(--bg-main);">
+                <div class="product-empty-state" style="text-align:center; padding:80px 20px; border:1px dashed var(--border-color); border-radius:var(--radius-lg); background:var(--bg-main);">
                     <i class="fas fa-box-open" style="font-size:3rem; color:var(--text-muted); margin-bottom:16px;"></i>
                     <p style="color:var(--text-muted); margin-bottom:16px; font-weight:500;">${this.t('products_empty')}</p>
                     ${contactVisible !== 'false' ? `
@@ -2268,7 +2268,7 @@ class CharoenApp {
                             <div class="product-spec-brief">${specVolume ? `${this.lang === 'th' ? 'ขนาด' : 'Size'} ${specVolume}` : ''} | ${this.lang === 'th' ? 'ปาก' : 'Dia'} ${prod.spec_diameter || '95/98'} ${this.lang === 'th' ? 'มม.' : 'mm'}.</div>
                             <div class="product-footer">
                                 <span class="product-price">${showPrice ? `฿${prod.price}` : (this.lang === 'th' ? 'ขั้นต่ำ 1,000 ใบ' : 'Min. 1,000 pcs')}</span>
-                                <span style="font-size:0.85rem; font-weight:700; color:var(--primary);">${this.t('cta_view_details')} <i class="fas fa-arrow-right"></i></span>
+                                <span class="product-cta">${this.t('cta_view_details')} <i class="fas fa-arrow-right"></i></span>
                             </div>
                         </div>
                     </div>
@@ -2923,7 +2923,7 @@ class CharoenApp {
                             ` : ''}
                         </table>
                         
-                        <div style="display:flex; gap:12px; margin-top:20px;">
+                        <div class="modal-action-buttons" style="display:flex; gap:12px; margin-top:20px;">
                             <a href="#/quote" class="btn btn-primary" onclick="window.charoenApp.closeActiveModal()">
                                 <i class="fas fa-file-invoice-dollar"></i> ${this.lang === 'th' ? 'สอบถามและขอราคา' : 'Get Quote'}
                             </a>
