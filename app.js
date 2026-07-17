@@ -2182,23 +2182,23 @@ class CharoenApp {
             : products.filter(p => p.category === activeCatId);
 
         let sliderHtml = '';
-        if (activeCatId === 'all' && sortedSlides.length > 0) {
+        if (sortedSlides.length > 0) {
             sliderHtml = `
-                <div class="slider-container" id="products-hero-slider" style="margin-bottom: 40px; height: 320px; overflow:hidden; position:relative; border-radius:var(--radius-lg);">
-                    <div class="slider-wrapper" style="display:flex; width:${sortedSlides.length * 100}%; height:100%; transition: transform 0.5s ease;">
+                <div class="slider-container products-hero-slider" id="products-hero-slider">
+                    <div class="slider-wrapper products-hero-track" style="width:${sortedSlides.length * 100}%;">
                         ${sortedSlides.map(slide => `
-                            <div class="slider-single-slide" style="width:${100 / sortedSlides.length}%; height:100%; background-size:cover; background-position:center; background-image:url('${slide.bg_src || 'coffee_bg.jpg'}'); position:relative; display:flex; align-items:center;">
-                                <div style="position:absolute; inset:0; background:rgba(0,0,0,0.45); z-index:1;"></div>
-                                <div class="container" style="position:relative; z-index:2; color:white; padding:40px;">
-                                    <h3 style="font-size:1.6rem; font-weight:800; margin-bottom:8px;">${this.lang === 'th' ? slide.title_th : slide.title_en}</h3>
-                                    <p style="font-size:0.95rem; opacity:0.9; max-width:600px; line-height:1.5; margin-bottom:15px;">${this.lang === 'th' ? slide.subtitle_th : slide.subtitle_en}</p>
-                                    ${slide.btn_link ? `<a href="${slide.btn_link}" class="btn btn-primary" style="font-size:0.85rem; padding:8px 16px;">${this.lang === 'th' ? 'ดูรายละเอียด' : 'Learn More'}</a>` : ''}
+                            <div class="slider-single-slide products-hero-slide" style="width:${100 / sortedSlides.length}%; background-image:url('${slide.bg_src || 'coffee_bg.jpg'}');">
+                                <div class="products-hero-overlay"></div>
+                                <div class="container products-hero-content">
+                                    <h3 class="products-hero-title">${this.lang === 'th' ? slide.title_th : slide.title_en}</h3>
+                                    <p class="products-hero-subtitle">${this.lang === 'th' ? slide.subtitle_th : slide.subtitle_en}</p>
+                                    ${slide.btn_link ? `<a href="${slide.btn_link}" class="btn btn-primary products-hero-button">${this.lang === 'th' ? 'ดูรายละเอียด' : 'Learn More'}</a>` : ''}
                                 </div>
                             </div>
                         `).join('')}
                     </div>
-                    <div class="slider-dots" style="position:absolute; bottom:15px; left:50%; transform:translateX(-50%); display:flex; gap:8px; z-index:3;">
-                        ${sortedSlides.map((_, i) => `<span class="slider-dot ${i === 0 ? 'active' : ''}" data-idx="${i}" style="width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,0.5); cursor:pointer;"></span>`).join('')}
+                    <div class="slider-dots products-hero-dots">
+                        ${sortedSlides.map((_, i) => `<span class="slider-dot products-hero-dot ${i === 0 ? 'active' : ''}" data-idx="${i}"></span>`).join('')}
                     </div>
                 </div>
             `;
