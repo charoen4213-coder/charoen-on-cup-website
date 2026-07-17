@@ -857,12 +857,12 @@ class CharoenApp {
                 case 'services':
                     html += `
                         <!-- Categories Grid Section (6 Cards matching WorldWide Coffee style) -->
-                        <section class="section-padding" style="background-color: var(--bg-sec); border-bottom: 1px solid var(--border-color);">
+                        <section class="home-category-section section-padding" style="background-color: var(--bg-sec); border-bottom: 1px solid var(--border-color);">
                             <div class="container text-center">
                                 <h2 class="section-title">${this.lang === 'th' ? sec.content.title_th : sec.content.title_en}</h2>
                                 <p class="section-subtitle">${this.lang === 'th' ? sec.content.subtitle_th : sec.content.subtitle_en}</p>
                                 
-                                <div class="grid-3" style="margin-top:40px;">
+                                <div class="home-category-grid">
                                     ${sortedCategories.slice(0, 6).map(cat => {
                                         let iconClass = 'fa-wine-glass';
                                         if (cat.id === 'cat-paper') iconClass = 'fa-mug-hot';
@@ -871,11 +871,30 @@ class CharoenApp {
                                         if (cat.id === 'cat-lid') iconClass = 'fa-circle-notch';
                                         if (cat.id === 'cat-bag') iconClass = 'fa-shopping-bag';
                                         
+                                        const catImage = cat.bg_src || cat.image || cat.img;
+                                        const catDesc = this.lang === 'th' 
+                                            ? (cat.description_th || `บริการสกรีนโลโก้และพิมพ์ลายบน${cat.name_th} ลายเส้นสีคมชัด รวดเร็วทันใจ`)
+                                            : (cat.description_en || `Custom printing & branding on ${cat.name_en} with sharp colors and fast delivery`);
+                                            
                                         return `
-                                            <div class="service-card" onclick="window.location.hash='#/products?category=${cat.id}'" style="cursor:pointer;">
-                                                <div class="service-icon-box"><i class="fas ${iconClass}"></i></div>
-                                                <h3>${this.lang === 'th' ? cat.name_th : cat.name_en}</h3>
-                                                <p>พิมพ์สกรีนแบรนด์ลงบนบรรจุภัณฑ์สเปก ${this.lang === 'th' ? cat.name_th : cat.name_en} ลายเส้นสีคมชัด ขั้นต่ำต่ำ จัดส่งรวดเร็ว</p>
+                                            <div class="home-category-card" onclick="window.location.hash='#/products?category=${cat.id}'" tabindex="0">
+                                                <div class="home-category-image-wrapper">
+                                                    ${catImage ? `
+                                                        <img class="home-category-image" src="${catImage}" alt="${this.lang === 'th' ? cat.name_th : cat.name_en}" loading="lazy">
+                                                    ` : `
+                                                        <div class="home-category-image-fallback">
+                                                            <i class="fas ${iconClass}"></i>
+                                                        </div>
+                                                    `}
+                                                </div>
+                                                <div class="home-category-overlay"></div>
+                                                <div class="home-category-content">
+                                                    <h3 class="home-category-title">${this.lang === 'th' ? cat.name_th : cat.name_en}</h3>
+                                                    <p class="home-category-description">${catDesc}</p>
+                                                    <span class="home-category-link">
+                                                        ${this.lang === 'th' ? 'ดูสินค้า' : 'View Products'} <i class="fas fa-arrow-right"></i>
+                                                    </span>
+                                                </div>
                                             </div>
                                         `;
                                     }).join('')}
