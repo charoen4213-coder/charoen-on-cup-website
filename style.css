@@ -26,12 +26,23 @@
     --text-main: #1e293b;
     --text-muted: #64748b;
     
-    /* Border Radius & Shadow */
+    /* Spacing Tokens */
+    --space-xxs: 4px;
+    --space-xs: 8px;
+    --space-sm: 12px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-2xl: 40px;
+    --space-3xl: 60px;
+
+    /* Border Radius */
     --radius-sm: 8px;
     --radius-md: 16px;
     --radius-lg: 24px;
     --radius-full: 9999px;
     
+    /* Shadows */
     --shadow-sm: 0 1px 3px rgba(4, 53, 106, 0.05);
     --shadow-md: 0 4px 12px rgba(4, 53, 106, 0.08);
     --shadow-lg: 0 10px 25px rgba(4, 53, 106, 0.12);
@@ -175,23 +186,56 @@ h1, h2, h3, h4, h5, h6 {
     color: white;
 }
 
+.topbar-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    padding-inline: clamp(16px, 3vw, 4%);
+    box-sizing: border-box;
+}
+
+.main-menu-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding-inline: clamp(16px, 3vw, 4%);
+    box-sizing: border-box;
+    height: 100%;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 0 1 auto;
+    width: auto;
+    min-width: 0;
+    max-width: clamp(180px, 18vw, 280px);
+    margin-right: clamp(8px, 1.2vw, 20px);
+}
+
 .main-nav {
     display: flex;
-    gap: 4px;
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: flex-end;
     align-items: center;
-    flex: 1;
-    justify-content: center;
+    gap: clamp(2px, 0.6vw, 12px);
 }
 
 .nav-link {
-    font-size: 0.88rem;
-    font-weight: 600;
     color: rgba(255, 255, 255, 0.85) !important;
     position: relative;
-    padding: 6px 14px !important;
+    white-space: nowrap;
+    padding: 6px clamp(5px, 0.7vw, 14px);
+    font-size: clamp(0.78rem, 0.75vw, 0.88rem);
     border-radius: var(--radius-sm);
     transition: var(--transition);
-    white-space: nowrap;
 }
 
 .nav-link:hover {
@@ -207,9 +251,10 @@ h1, h2, h3, h4, h5, h6 {
 
 .nav-actions {
     display: flex;
+    flex: 0 0 auto;
     align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
+    gap: clamp(4px, 0.6vw, 10px);
+    margin-left: clamp(4px, 0.8vw, 12px);
 }
 
 .mobile-menu-trigger {
@@ -893,6 +938,17 @@ h1, h2, h3, h4, h5, h6 {
 .badge-danger { background-color: #fee2e2; color: #991b1b; }
 
 /* DYNAMIC HERO SLIDER STYLES */
+.slider-section {
+    height: 540px;
+    min-height: 500px;
+}
+
+.slider-single-slide {
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+}
+
 .hero-overlay {
     position: absolute;
     top: 0;
@@ -1021,14 +1077,29 @@ h1, h2, h3, h4, h5, h6 {
 @media (max-width: 768px) {
     .admin-layout-container { grid-template-columns: 1fr; }
     .admin-sidebar { display: none; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr; }
+    .grid-4 { grid-template-columns: 1fr; }
+    .product-grid { grid-template-columns: 1fr; }
+    .portfolio-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 1200px) {
     .mobile-menu-trigger {
-        display: block !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
         background: none;
         border: none;
         font-size: 1.5rem;
         color: white !important;
         cursor: pointer;
-        padding: 8px;
+        padding: 0;
+        margin-left: auto !important;
+        flex: 0 0 auto !important;
+        position: static !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
     }
     .header-topbar {
         display: none !important;
@@ -1039,7 +1110,7 @@ h1, h2, h3, h4, h5, h6 {
     body {
         padding-top: 56px !important;
     }
-    .main-nav {
+    .site-header-double .main-nav {
         position: fixed;
         top: 56px !important;
         left: -100%;
@@ -1057,11 +1128,11 @@ h1, h2, h3, h4, h5, h6 {
         overflow-y: auto;
         display: flex;
     }
-    .main-nav.active {
+    .site-header-double .main-nav.active {
         left: 0 !important;
     }
     /* Readable dark text for navigation links in mobile drawer */
-    .main-nav .nav-link {
+    .site-header-double .main-nav .nav-link {
         color: var(--text-main) !important;
         font-size: 1.05rem !important;
         font-weight: 600;
@@ -1073,36 +1144,113 @@ h1, h2, h3, h4, h5, h6 {
         box-sizing: border-box;
         text-align: left;
     }
-    .main-nav .nav-link:hover,
-    .main-nav .nav-link.active {
+    .site-header-double .main-nav .nav-link:hover,
+    .site-header-double .main-nav .nav-link.active {
         color: var(--secondary) !important;
         background-color: var(--bg-sec) !important;
     }
-    .logo-container {
+    .site-header-double .logo-container {
         max-width: calc(100% - 60px);
         flex-shrink: 1;
     }
-    .logo-text {
+    .site-header-double .logo-text {
         font-size: clamp(1.05rem, 4.5vw, 1.25rem) !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
         max-width: 180px;
     }
-    .logo-icon-img {
+    .site-header-double .logo-icon-img {
         width: 32px !important;
         height: 32px !important;
         flex-shrink: 0;
     }
-    .logo-icon {
+    .site-header-double .logo-icon {
         font-size: 1.15rem !important;
         flex-shrink: 0;
     }
-    .grid-2 { grid-template-columns: 1fr; }
-    .grid-3 { grid-template-columns: 1fr; }
-    .grid-4 { grid-template-columns: 1fr; }
-    .product-grid { grid-template-columns: 1fr; }
-    .portfolio-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 1024px) {
+    .slider-section {
+        height: 360px !important;
+        min-height: 320px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Hero Slider Mobile Overrides */
+    .slider-section {
+        height: 210px !important;
+        min-height: 170px !important;
+    }
+    
+    .slider-single-slide {
+        background-size: cover !important;
+        background-position: center center !important;
+        background-repeat: no-repeat !important;
+    }
+    
+    .slider-arrow {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 0.8rem !important;
+    }
+    
+    .prev-arrow {
+        left: 10px !important;
+    }
+    
+    .next-arrow {
+        right: 10px !important;
+    }
+    
+    .slider-dots {
+        bottom: 10px !important;
+    }
+    
+    .slider-dot {
+        width: 8px !important;
+        height: 8px !important;
+    }
+
+    /* Subpage Hero and Section Spacing mobile tuning */
+    .subpage-hero-banner {
+        padding: 40px 0 !important;
+    }
+    .subpage-hero-banner h2 {
+        font-size: 1.6rem !important;
+    }
+    .subpage-hero-banner p {
+        font-size: 0.95rem !important;
+    }
+    .store-intro-brand-section {
+        padding: 30px 0 !important;
+    }
+}
+
+@media (min-width: 360px) and (max-width: 390px) {
+    /* Mobile M Hero Slider adjustments only */
+    .slider-section {
+        height: 195px !important;
+        min-height: 160px !important;
+    }
+    
+    .slider-arrow {
+        width: 26px !important;
+        height: 26px !important;
+        font-size: 0.7rem !important;
+        opacity: 0.55 !important;
+        background-color: rgba(0, 0, 0, 0.25) !important;
+    }
+    
+    .prev-arrow {
+        left: 4px !important;
+    }
+    
+    .next-arrow {
+        right: 4px !important;
+    }
 }
 
 /* Footer QR Code Tooltip Styles */
@@ -1238,4 +1386,256 @@ h1, h2, h3, h4, h5, h6 {
 
 body.no-scroll {
     overflow: hidden !important;
+}
+
+/* Mobile-only drawer actions container: Hidden on desktop */
+.mobile-only-drawer-actions {
+    display: none !important;
+}
+
+@media (max-width: 1200px) {
+    .mobile-only-drawer-actions {
+        display: flex !important;
+        flex-direction: column;
+        gap: 16px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+/* Site-scoped Footer Styling */
+.site-footer {
+    background-color: var(--secondary) !important; /* Deep Navy Slate */
+    color: rgba(255, 255, 255, 0.85);
+    padding: 60px 0 20px 0;
+    font-size: 0.9rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    width: 100% !important;
+}
+
+.site-footer h4,
+.site-footer h5 {
+    color: white;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+.site-footer h4 span {
+    color: var(--accent);
+}
+
+.site-footer p {
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 20px;
+}
+
+/* Remove default browser list bullets from footer lists only */
+.site-footer ul {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.site-footer ul li {
+    margin-bottom: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.site-footer ul li a {
+    color: rgba(255, 255, 255, 0.75);
+    transition: var(--transition);
+}
+
+.site-footer ul li a:hover {
+    color: var(--accent);
+    padding-left: 4px;
+}
+
+.site-footer .footer-socials {
+    display: flex;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.site-footer .social-btn {
+    width: 36px;
+    height: 36px;
+    background-color: rgba(255, 255, 255, 0.08);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.site-footer .social-btn:hover {
+    background-color: var(--accent);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 40px;
+}
+
+.footer-contact-info li i {
+    color: var(--accent);
+    margin-top: 4px;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.footer-bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+@media (max-width: 768px) {
+    .footer-grid {
+        grid-template-columns: 1fr !important;
+        gap: 30px;
+    }
+    
+    .footer-bottom {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+}
+
+/* Public Desktop Header Sizing, Layout, and Padding Fixes (>=1201px) */
+@media (min-width: 1201px) {
+    .site-header-double {
+        height: 96px !important;
+        position: fixed !important;
+        display: flex !important;
+        flex-direction: column !important;
+        background-color: var(--primary) !important;
+    }
+    
+    .header-topbar {
+        display: block !important;
+        height: 40px !important;
+    }
+    
+    .header-main-menu {
+        display: flex !important;
+        height: 56px !important;
+        align-items: center !important;
+    }
+    
+    body {
+        padding-top: 92px !important; /* Restore correct top offset spacing */
+    }
+
+    .site-header-double .main-nav {
+        flex-direction: row !important;
+        position: static !important;
+        width: auto !important;
+        height: auto !important;
+        background: none !important;
+        padding: 0 !important;
+        border-top: none !important;
+        overflow: visible !important;
+    }
+    
+    .site-header-double .logo-text {
+        font-size: 1.25rem !important;
+        font-weight: 800 !important;
+        color: white !important;
+        white-space: nowrap !important;
+        max-width: none !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+    }
+    
+    .site-header-double .logo-icon-img {
+        width: 36px !important;
+        height: 36px !important;
+    }
+    
+    .site-header-double .logo-icon {
+        font-size: 1.3rem !important;
+    }
+}
+
+/* Narrow Desktop / Laptop Layout overrides (1201px - 1280px) */
+@media (min-width: 1201px) and (max-width: 1280px) {
+    .site-header-double .quote-btn-text {
+        display: none !important; /* Hide quote button text to keep it compact */
+    }
+    .site-header-double .logo-text {
+        font-size: 1.15rem !important;
+    }
+}
+
+/* Premium Footer Desktop Spacing & Alignment Tuning (>=1024px) */
+@media (min-width: 1024px) {
+    .site-footer {
+        padding: 40px 0 15px 0 !important; /* Reduced vertical padding by 33% */
+    }
+    
+    .site-footer .container {
+        width: 90% !important;
+        max-width: 1200px !important;
+        margin: 0 auto !important;
+    }
+    
+    .footer-grid {
+        display: grid !important;
+        grid-template-columns: 2fr 1fr 1.2fr !important; /* Balanced 3-column layout */
+        gap: 80px !important; /* Reduced horizontal gaps to 80px */
+        margin-bottom: 25px !important; /* Reduced spacing above bottom divider */
+    }
+    
+    .site-footer h4,
+    .site-footer h5 {
+        margin-bottom: 12px !important; /* Reduced spacing between heading and links */
+    }
+    
+    .site-footer p {
+        margin-bottom: 12px !important;
+    }
+    
+    .site-footer ul li {
+        margin-bottom: 8px !important; /* Reduced spacing between navigation/contact list items */
+    }
+    
+    .footer-bottom {
+        padding-top: 15px !important; /* Reduced spacing below bottom divider */
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important; /* Vertically center copyright and tagline */
+    }
+}
+
+@media (min-width: 1281px) {
+    /* Homepage Hero Desktop adjustment only */
+    #hero-slider-section {
+        height: clamp(540px, 36vw, 650px) !important;
+        min-height: 0 !important;
+    }
+    
+    #hero-slider-section .slider-single-slide {
+        background-position: center 42% !important;
+        background-size: cover !important;
+        background-repeat: no-repeat !important;
+    }
 }

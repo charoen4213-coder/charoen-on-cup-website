@@ -2706,7 +2706,7 @@ class CharoenAdmin {
                         </div>
                         
                         <div class="form-group">
-                            <label style="font-weight:600; font-size:0.85rem;">ภาพพื้นหลังแบนเนอร์สไลด์</label>
+                            <label style="font-weight:600; font-size:0.85rem;">ภาพพื้นหลังแบนเนอร์สไลด์ (Desktop Background)</label>
                             <div style="display:flex; gap:10px; align-items:center;">
                                 <input type="file" id="slide-form-file" class="form-control" accept="image/*" style="padding: 6px; flex-grow:1;">
                                 <button type="button" class="btn btn-outline" id="select-slide-media-btn" style="padding:8px 12px; font-size:0.75rem;"><i class="fas fa-folder-open"></i> เลือกจากคลังภาพ</button>
@@ -2714,6 +2714,18 @@ class CharoenAdmin {
                             
                             <div style="margin-top:10px; text-align:center;">
                                 <img src="${slide.bg_src || ''}" id="slide-form-img-preview" style="max-height:120px; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:${slide.bg_src ? 'inline-block' : 'none'};">
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 12px;">
+                            <label style="font-weight:600; font-size:0.85rem;">ภาพพื้นหลังสไลด์สำหรับมือถือ (Optional Mobile Background)</label>
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <input type="file" id="slide-form-file-mobile" class="form-control" accept="image/*" style="padding: 6px; flex-grow:1;">
+                                <button type="button" class="btn btn-outline" id="select-slide-media-mobile-btn" style="padding:8px 12px; font-size:0.75rem;"><i class="fas fa-folder-open"></i> เลือกจากคลังภาพ</button>
+                            </div>
+                            
+                            <div style="margin-top:10px; text-align:center;">
+                                <img src="${slide.bg_src_mobile || ''}" id="slide-form-img-mobile-preview" style="max-height:120px; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:${slide.bg_src_mobile ? 'inline-block' : 'none'};">
                             </div>
                         </div>
                     </div>
@@ -2741,6 +2753,16 @@ class CharoenAdmin {
             });
         };
 
+        // Select from media library (Mobile)
+        document.getElementById('select-slide-media-mobile-btn').onclick = () => {
+            this.openMediaSelectorDialog((selectedBase64) => {
+                const preview = document.getElementById('slide-form-img-mobile-preview');
+                preview.src = selectedBase64;
+                preview.style.display = 'inline-block';
+                slide.bg_src_mobile = selectedBase64;
+            });
+        };
+
         // File Uploader
         const fileInput = document.getElementById('slide-form-file');
         if (fileInput) {
@@ -2751,6 +2773,20 @@ class CharoenAdmin {
                     preview.src = webpData;
                     preview.style.display = 'inline-block';
                     slide.bg_src = webpData;
+                }
+            };
+        }
+
+        // File Uploader (Mobile)
+        const fileMobileInput = document.getElementById('slide-form-file-mobile');
+        if (fileMobileInput) {
+            fileMobileInput.onchange = async (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    const webpData = await this.convertImageToWebP(e.target.files[0]);
+                    const preview = document.getElementById('slide-form-img-mobile-preview');
+                    preview.src = webpData;
+                    preview.style.display = 'inline-block';
+                    slide.bg_src_mobile = webpData;
                 }
             };
         }
@@ -2767,6 +2803,7 @@ class CharoenAdmin {
                 btn_link: document.getElementById('slide-form-link').value,
                 order: parseInt(document.getElementById('slide-form-order').value),
                 bg_src: slide.bg_src,
+                bg_src_mobile: slide.bg_src_mobile || '',
                 published: document.getElementById('slide-form-published').checked,
                 visible: document.getElementById('slide-form-visible').checked,
                 created_at: slide.created_at || new Date().toISOString(),

@@ -281,7 +281,7 @@ class CharoenApp {
                 ${this.lang === 'th' ? 'EN' : 'TH'}
             </button>
             <a href="#/quote" class="btn btn-primary" style="padding: 8px 16px; font-size:0.9rem;">
-                <i class="fas fa-file-invoice-dollar"></i> ${this.t('nav_quote')}
+                <i class="fas fa-file-invoice-dollar"></i> <span class="quote-btn-text">${this.t('nav_quote')}</span>
             </a>
         `;
 
@@ -387,30 +387,16 @@ class CharoenApp {
             }
         }
 
-        // Dynamically rebuild footer socials
-        const footerSocials = document.querySelector('.footer-socials');
-        if (footerSocials) {
-            let socialButtons = '';
-            if (facebookUrl && facebookVisible !== 'false') {
-                socialButtons += `<a href="${facebookUrl}" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>`;
-            }
-            if (lineUrl && lineVisible !== 'false') {
-                socialButtons += `<a href="${lineUrl}" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="Line"><i class="fab fa-line"></i></a>`;
-            }
-            if (instagramUrl && instagramVisible === 'true') {
-                socialButtons += `<a href="${instagramUrl}" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="Instagram" style="background:#db2777; color:white;"><i class="fab fa-instagram"></i></a>`;
-            }
-            if (tiktokUrl && tiktokVisible === 'true') {
-                socialButtons += `<a href="${tiktokUrl}" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="TikTok" style="background:#000; color:white;"><i class="fab fa-tiktok"></i></a>`;
-            }
-            if (youtubeUrl && youtubeVisible === 'true') {
-                socialButtons += `<a href="${youtubeUrl}" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="YouTube" style="background:#e53e3e; color:white;"><i class="fab fa-youtube"></i></a>`;
-            }
-            if (email) {
-                socialButtons += `<a href="mailto:${email}" class="social-btn" aria-label="Email"><i class="fas fa-envelope"></i></a>`;
-            }
-            footerSocials.innerHTML = socialButtons;
-        }
+        // Rebuild footer socials using the reusable renderer
+        this.renderFooterSocials(
+            facebookUrl, facebookVisible,
+            lineUrl, lineVisible,
+            lineQrImage, lineQrVisible,
+            instagramUrl, instagramVisible,
+            tiktokUrl, tiktokVisible,
+            youtubeUrl, youtubeVisible,
+            email, lineId
+        );
 
         // Update Topbar contacts & Cart badge dynamically
         const topbarPhoneVal = document.getElementById('topbar-phone-val');
@@ -469,26 +455,83 @@ class CharoenApp {
         // Update footer logo dynamically
         try {
             const logoImg = await this.db.get('settings', 'logo_img');
-            const footerBrand = document.querySelector('.footer-brand');
-            if (footerBrand) {
+            const logoWrapper = document.getElementById('footer-logo-img-wrapper');
+            const logoImgEl = document.getElementById('footer-logo-img');
+            if (logoWrapper && logoImgEl) {
                 if (logoImg && logoImg.value) {
-                    footerBrand.innerHTML = `
-                        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
-                            <div style="width:40px; height:40px; border-radius:50%; overflow:hidden; background:white; display:flex; align-items:center; justify-content:center; padding:2px; border:2px solid var(--primary);">
-                                <img src="${logoImg.value}" style="width:100%; height:100%; object-fit:contain;">
-                            </div>
-                            <h4 id="footer-logo-title" style="margin-bottom:0; color:white; font-weight:800; font-size:1.2rem;">เจริญ ออน คัพ<span>.</span></h4>
-                        </div>
-                    `;
+                    logoImgEl.src = logoImg.value;
+                    logoWrapper.style.display = 'flex';
                 } else {
-                    footerBrand.innerHTML = `
-                        <h4 id="footer-logo-title">เจริญ ออน คัพ<span>.</span></h4>
-                    `;
+                    logoWrapper.style.display = 'none';
+                }
+            }
+
+            // Update footer description
+            const footerDescEl = document.getElementById('footer-description');
+            if (footerDescEl) {
+                const customDescTh = await this.getSetting('footer_desc_th', '');
+                const customDescEn = await this.getSetting('footer_desc_en', '');
+                
+                const fallbackTh = "ผู้ผลิตและจัดจำหน่าย พร้อมรับสกรีนโลโก้แก้วพลาสติก แก้วกระดาษ บรรจุภัณฑ์อาหารและเครื่องดื่ม ด้วยระบบพิมพ์ที่ทันสมัย สีคมชัด ส่งตรงถึงหน้าร้านทั่วประเทศ";
+                const fallbackEn = "Custom printing and packaging solutions for plastic cups, paper cups and beverage businesses, with modern production and nationwide delivery.";
+                
+                if (this.lang === 'th') {
+                    footerDescEl.textContent = customDescTh || fallbackTh;
+                } else {
+                    footerDescEl.textContent = customDescEn || fallbackEn;
                 }
             }
         } catch (logoErr) {
-            console.warn("Failed to load footer logo:", logoErr);
+            console.warn("Failed to load footer logo or description:", logoErr);
         }
+    }
+
+    renderFooterSocials(facebookUrl, facebookVisible, lineUrl, lineVisible, lineQrImage, lineQrVisible, instagramUrl, instagramVisible, tiktokUrl, tiktokVisible, youtubeUrl, youtubeVisible, email, lineId) {
+        const footerSocials = document.querySelector('.footer-socials');
+        if (!footerSocials) return;
+
+        let socialButtons = '';
+        
+        // Facebook
+        if (facebookUrl && facebookVisible !== 'false') {
+            socialButtons += `<a href="${facebookUrl}" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>`;
+        }
+        
+        // LINE - Display LINE whenever the existing Contact module considers LINE available
+        const hasLine = (lineUrl && lineVisible !== 'false') || (lineQrImage && lineQrVisible !== 'false') || (lineId && lineVisible !== 'false');
+        if (hasLine) {
+            let lineHref = '#';
+            if (lineUrl) {
+                lineHref = lineUrl;
+            } else if (lineId) {
+                lineHref = `https://line.me/R/ti/p/~${lineId.replace('@', '')}`;
+            } else if (lineQrImage) {
+                lineHref = lineQrImage;
+            }
+            socialButtons += `<a href="${lineHref}" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="Line"><i class="fab fa-line"></i></a>`;
+        }
+        
+        // Instagram
+        if (instagramUrl && instagramVisible === 'true') {
+            socialButtons += `<a href="${instagramUrl}" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="Instagram" style="background:#db2777; color:white;"><i class="fab fa-instagram"></i></a>`;
+        }
+        
+        // TikTok
+        if (tiktokUrl && tiktokVisible === 'true') {
+            socialButtons += `<a href="${tiktokUrl}" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="TikTok" style="background:#000; color:white;"><i class="fab fa-tiktok"></i></a>`;
+        }
+        
+        // YouTube
+        if (youtubeUrl && youtubeVisible === 'true') {
+            socialButtons += `<a href="${youtubeUrl}" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="YouTube" style="background:#e53e3e; color:white;"><i class="fab fa-youtube"></i></a>`;
+        }
+        
+        // Email
+        if (email) {
+            socialButtons += `<a href="mailto:${email}" class="social-btn" aria-label="Email"><i class="fas fa-envelope"></i></a>`;
+        }
+        
+        footerSocials.innerHTML = socialButtons;
     }
 
     closeMobileMenu() {
@@ -736,10 +779,10 @@ class CharoenApp {
                 case 'hero_banner':
                     html += `
                         <!-- Image Only Hero Banner Slider -->
-                        <section class="slider-section" id="hero-slider-section" style="position:relative; overflow:hidden; background:#0a192f; height:68vh; min-height:420px; width:100%; display:${sortedSlides.length > 0 ? 'block' : 'none'};">
+                        <section class="slider-section" id="hero-slider-section" style="position:relative; overflow:hidden; background:#0a192f; width:100%; display:${sortedSlides.length > 0 ? 'block' : 'none'};">
                             <div class="slider-slides-container" style="display:flex; width:${(sortedSlides.length || 1) * 100}%; height:100%; transition: transform 0.65s cubic-bezier(0.25, 0.8, 0.25, 1);">
                                 ${sortedSlides.map(slide => `
-                                    <div class="slider-single-slide" style="width:${100 / (sortedSlides.length || 1)}%; height:100%; background-size:cover; background-position:center; background-image:url('${slide.bg_src || 'coffee_bg.jpg'}'); position:relative;">
+                                    <div class="slider-single-slide" style="width:${100 / (sortedSlides.length || 1)}%; height:100%; background-image:url('${slide.bg_src || 'coffee_bg.jpg'}'); position:relative;">
                                     </div>
                                 `).join('')}
                             </div>
