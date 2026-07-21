@@ -1044,9 +1044,10 @@ h1, h2, h3, h4, h5, h6 {
     color: white;
     display: flex;
     flex-direction: column;
+    justify-content: flex-end;
     gap: 6px;
     z-index: 3;
-    transition: background 0.3s ease;
+    transition: opacity 0.3s ease;
     box-sizing: border-box;
 }
 
