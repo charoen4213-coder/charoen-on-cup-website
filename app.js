@@ -2354,14 +2354,63 @@ class CharoenApp {
                 const catObj = categories.find(c => c.id === item.category);
                 const catName = catObj ? (this.lang === 'th' ? catObj.name_th : catObj.name_en) : '';
 
+                // Safely count gallery images
+                let galleryCount = 0;
+                let productImages = [];
+                if (item.image_src) {
+                    productImages.push(item.image_src);
+                }
+                if (item.gallery_images) {
+                    let parsedGallery = [];
+                    if (Array.isArray(item.gallery_images)) {
+                        parsedGallery = item.gallery_images;
+                    } else if (typeof item.gallery_images === 'string') {
+                        try {
+                            parsedGallery = JSON.parse(item.gallery_images);
+                        } catch(e) {}
+                    }
+                    parsedGallery.forEach(img => {
+                        if (img && !productImages.includes(img)) {
+                            productImages.push(img);
+                        }
+                    });
+                }
+                galleryCount = productImages.length;
+
+                // Validate description text
+                const rawDesc = this.lang === 'th' ? (item.desc_th || item.description_th) : (item.desc_en || item.description_en);
+                const descText = rawDesc && String(rawDesc).trim().toLowerCase() !== 'null' && String(rawDesc).trim().toLowerCase() !== 'undefined' ? String(rawDesc).trim() : '';
+
+                // Helper to validate generic string
+                const isValidString = (val) => {
+                    if (!val) return false;
+                    const s = String(val).trim().toLowerCase();
+                    return s !== '' && s !== 'null' && s !== 'undefined';
+                };
+
                 html += `
-                    <div class="portfolio-card" onclick="window.charoenApp.openPortfolioDetails('${item.id}')">
-                        <div class="portfolio-img-box">
-                            ${item.image_src ? `<img src="${item.image_src}" alt="${item.title_th}">` : `<div style="display:flex; justify-content:center; align-items:center; height:100%; color:var(--text-muted);"><i class="fas fa-image" style="font-size:3rem;"></i></div>`}
+                    <div class="portfolio-card" onclick="window.charoenApp.openPortfolioDetails('${item.id}')" tabindex="0" role="button" aria-label="${this.lang === 'th' ? 'ดูรายละเอียดผลงาน ' + (item.title_th || '') : 'View details of ' + (item.title_en || '')}" onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.charoenApp.openPortfolioDetails('${item.id}'); }">
+                        <div class="portfolio-card-image-wrapper">
+                            <img class="portfolio-card-image" src="${item.image_src || 'coffee_bg.jpg'}" alt="${this.lang === 'th' ? item.title_th : item.title_en}" loading="lazy" onerror="this.src='coffee_bg.jpg';">
                         </div>
-                        <div class="portfolio-card-info">
-                            <span class="portfolio-card-tag">${catName}</span>
-                            <div class="portfolio-card-title">${this.lang === 'th' ? item.title_th : item.title_en}</div>
+                        
+                        ${galleryCount > 1 ? `
+                            <div class="portfolio-card-badge-container">
+                                <span class="portfolio-card-count-badge">
+                                    <i class="fas fa-images"></i> ${galleryCount} ${this.lang === 'th' ? 'รูป' : 'Photos'}
+                                </span>
+                            </div>
+                        ` : ''}
+
+                        <div class="portfolio-card-overlay">
+                            ${isValidString(catName) ? `<span class="portfolio-card-category">${catName}</span>` : ''}
+                            <h3 class="portfolio-card-title">${this.lang === 'th' ? item.title_th : item.title_en}</h3>
+                            ${isValidString(descText) ? `<p class="portfolio-card-desc">${descText}</p>` : ''}
+                            
+                            <div class="portfolio-card-cta">
+                                <span>${this.lang === 'th' ? 'ดูผลงาน' : 'View Project'}</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -3074,19 +3123,44 @@ class CharoenApp {
         const categories = await this.db.getAll('categories');
         if (!item) return;
 
+        // Save active element for focus restoration
+        this.modalTriggerElement = document.activeElement;
+
+        // Manage body scroll locking state
+        this.previousBodyOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        // Keyboard Escape key closure listener
+        this.modalEscapeHandler = (e) => {
+            if (e.key === 'Escape') {
+                this.closeActiveModal();
+            }
+        };
+        document.addEventListener('keydown', this.modalEscapeHandler);
+
         // Safely parse gallery_images
-        let galleryImages = [];
+        let portfolioImages = [];
+        if (item.image_src) {
+            portfolioImages.push(item.image_src);
+        }
         if (item.gallery_images) {
+            let parsedGallery = [];
             if (Array.isArray(item.gallery_images)) {
-                galleryImages = item.gallery_images;
+                parsedGallery = item.gallery_images;
             } else if (typeof item.gallery_images === 'string') {
                 try {
-                    galleryImages = JSON.parse(item.gallery_images);
+                    parsedGallery = JSON.parse(item.gallery_images);
                 } catch (e) {
                     console.warn("Failed to parse gallery_images:", e);
                 }
             }
+            parsedGallery.forEach(img => {
+                if (img && !portfolioImages.includes(img)) {
+                    portfolioImages.push(img);
+                }
+            });
         }
+        const mainImage = portfolioImages[0] || '';
 
         const catObj = categories.find(c => c.id === item.category);
         const catName = catObj ? (this.lang === 'th' ? catObj.name_th : catObj.name_en) : '';
@@ -3094,17 +3168,36 @@ class CharoenApp {
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         overlay.id = 'portfolio-modal';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-labelledby', 'modal-portfolio-title');
 
         overlay.innerHTML = `
             <div class="modal-window" style="max-width:900px;">
-                <button class="modal-close-btn" onclick="window.charoenApp.closeActiveModal()"><i class="fas fa-times"></i></button>
+                <button class="modal-close-btn" onclick="window.charoenApp.closeActiveModal()" aria-label="${this.lang === 'th' ? 'ปิดหน้าต่าง' : 'Close modal'}"><i class="fas fa-times"></i></button>
                 <div class="portfolio-details-grid">
-                    <div style="background-color:var(--bg-sec); border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; overflow:hidden;">
-                        ${item.image_src ? `<img src="${item.image_src}" alt="${item.title_th}" style="width:100%; height:auto; display:block;">` : `<i class="fas fa-image" style="font-size:6rem; color:var(--text-muted); padding:100px;"></i>`}
+                    <div class="product-gallery-container">
+                        <div class="detail-img-box">
+                            <img id="modal-main-image" src="${mainImage || 'coffee_bg.jpg'}" alt="${this.lang === 'th' ? item.title_th : item.title_en}" style="${mainImage ? '' : 'display:none;'}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="fallback-img-box" style="display:${mainImage ? 'none' : 'flex'}; align-items:center; justify-content:center; width:100%; height:100%; min-height:250px;">
+                                <i class="fas fa-image" style="font-size:5rem; color:var(--text-muted);"></i>
+                            </div>
+                        </div>
+                        ${portfolioImages.length > 1 ? `
+                            <div class="product-thumbnails-scroll-container">
+                                <div class="product-thumbnails-wrapper">
+                                    ${portfolioImages.map((img, idx) => `
+                                        <button class="product-thumbnail-btn ${idx === 0 ? 'active' : ''}" data-src="${img}" aria-label="${this.lang === 'th' ? 'ดูรูปภาพที่ ' : 'View image '}${idx + 1}">
+                                            <img src="${img}" alt="Thumbnail ${idx + 1}" onerror="this.closest('.product-thumbnail-btn').style.display='none';">
+                                        </button>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
                     </div>
                     <div class="portfolio-details-sidebar">
                         <span style="font-weight:700; color:var(--primary); font-size:0.8rem; text-transform:uppercase;">${catName}</span>
-                        <h3 style="font-size:1.4rem; font-weight:800; color:var(--secondary);">${this.lang === 'th' ? item.title_th : item.title_en}</h3>
+                        <h3 id="modal-portfolio-title" style="font-size:1.4rem; font-weight:800; color:var(--secondary);">${this.lang === 'th' ? item.title_th : item.title_en}</h3>
                         
                         <div style="border-top:1px solid var(--border-color); padding-top:16px; margin-top:8px;">
                             <h4 style="font-size:0.9rem; font-weight:700; color:var(--text-muted); margin-bottom:10px;">${this.lang === 'th' ? 'รายละเอียดผลงานพิมพ์' : 'Printed Specifications'}</h4>
@@ -3134,6 +3227,55 @@ class CharoenApp {
         overlay.onclick = (e) => {
             if (e.target === overlay) this.closeActiveModal();
         };
+
+        // Setup focus trap inside active modal overlay
+        overlay.onkeydown = (e) => {
+            if (e.key === 'Tab') {
+                const focusables = overlay.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                const visibleFocusables = Array.from(focusables).filter(el => {
+                    const style = window.getComputedStyle(el);
+                    return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetWidth > 0 && el.offsetHeight > 0;
+                });
+                if (visibleFocusables.length === 0) return;
+                const first = visibleFocusables[0];
+                const last = visibleFocusables[visibleFocusables.length - 1];
+                if (e.shiftKey) {
+                    if (document.activeElement === first) {
+                        last.focus();
+                        e.preventDefault();
+                    }
+                } else {
+                    if (document.activeElement === last) {
+                        first.focus();
+                        e.preventDefault();
+                    }
+                }
+            }
+        };
+
+        // Bind image switching callbacks
+        const thumbs = overlay.querySelectorAll('.product-thumbnail-btn');
+        thumbs.forEach(thumb => {
+            thumb.onclick = (e) => {
+                const src = thumb.dataset.src;
+                const mainImg = overlay.querySelector('#modal-main-image');
+                if (mainImg && src) {
+                    mainImg.style.opacity = '0.4';
+                    setTimeout(() => {
+                        mainImg.src = src;
+                        mainImg.style.opacity = '1';
+                    }, 150);
+                }
+                thumbs.forEach(t => t.classList.remove('active'));
+                thumb.classList.add('active');
+            };
+        });
+
+        // Set initial modal focus
+        setTimeout(() => {
+            const closeBtn = overlay.querySelector('.modal-close-btn');
+            if (closeBtn) closeBtn.focus();
+        }, 100);
     }
 
     async openVideoPlayerLightbox(videoId) {

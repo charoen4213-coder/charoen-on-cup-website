@@ -2657,6 +2657,11 @@ class CharoenAdmin {
             }
         }
 
+        // Initialize gallery images list safely
+        let portfolioGalleryImages = Array.isArray(item?.gallery_images)
+            ? item.gallery_images.filter(Boolean).slice(0, 5)
+            : [];
+
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay active';
         overlay.id = 'admin-edit-modal';
@@ -2731,6 +2736,24 @@ class CharoenAdmin {
                                 <img src="${item.image_src || ''}" id="port-form-img-preview" style="max-height:120px; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:${item.image_src ? 'inline-block' : 'none'};">
                             </div>
                         </div>
+
+                        <!-- Gallery images manager section for portfolio -->
+                        <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 16px;">
+                            <label style="font-weight:700; font-size:0.9rem; color:var(--primary); display:flex; justify-content:space-between; align-items:center;">
+                                <span><i class="fas fa-images"></i> รูปเพิ่มเติมของผลงาน</span>
+                                <span id="gallery-counter-label" style="font-size:0.8rem; color:var(--text-sec);">0 / 5 รูป</span>
+                            </label>
+                            <p style="font-size:0.78rem; color:var(--text-sec); margin-top:2px; margin-bottom:12px;">เพิ่มรูปประกอบผลงานได้สูงสุด 5 รูป ระบบจะแสดงเฉพาะรูปที่มีข้อมูลจริง</p>
+                            
+                            <div id="gallery-cards-container" style="display:flex; flex-direction:column; gap:10px; margin-bottom:12px;"></div>
+                            
+                            <div id="add-gallery-actions" style="display:flex; gap:10px; align-items:center;">
+                                <input type="file" id="port-gallery-file-input" accept="image/*" style="display:none;">
+                                <button type="button" class="btn btn-outline" id="upload-gallery-btn" style="padding:8px 12px; font-size:0.75rem;"><i class="fas fa-upload"></i> อัปโหลดจากเครื่อง</button>
+                                <button type="button" class="btn btn-outline" id="select-gallery-btn" style="padding:8px 12px; font-size:0.75rem;"><i class="fas fa-folder-open"></i> เลือกจากคลังภาพ</button>
+                                <span id="gallery-full-msg" style="font-size:0.8rem; color:var(--success); font-weight:700; display:none;">เพิ่มรูปครบ 5 รูปแล้ว</span>
+                            </div>
+                        </div>
                     </div>
                     
                     <div style="margin-top:24px; display:flex; gap:12px; justify-content:flex-end;">
@@ -2746,7 +2769,7 @@ class CharoenAdmin {
         document.getElementById('close-modal-btn').onclick = closeDialog;
         document.getElementById('close-modal-cancel-btn').onclick = closeDialog;
 
-        // Select from media library
+        // Select from media library for main image
         document.getElementById('select-port-media-btn').onclick = () => {
             this.openMediaSelectorDialog((selectedBase64) => {
                 const preview = document.getElementById('port-form-img-preview');
@@ -2756,7 +2779,7 @@ class CharoenAdmin {
             });
         };
 
-        // File Uploader
+        // File Uploader for main image
         const fileInput = document.getElementById('port-form-file');
         if (fileInput) {
             fileInput.onchange = async (e) => {
@@ -2769,6 +2792,155 @@ class CharoenAdmin {
                 }
             };
         }
+
+        // Gallery render block
+        let draggedIndex = null;
+        const renderGallery = () => {
+            const container = document.getElementById('gallery-cards-container');
+            const counter = document.getElementById('gallery-counter-label');
+            const uploadBtn = document.getElementById('upload-gallery-btn');
+            const selectBtn = document.getElementById('select-gallery-btn');
+            const fullMsg = document.getElementById('gallery-full-msg');
+            
+            if (!container) return;
+            
+            counter.textContent = `${portfolioGalleryImages.length} / 5 รูป`;
+            
+            if (portfolioGalleryImages.length >= 5) {
+                uploadBtn.style.display = 'none';
+                selectBtn.style.display = 'none';
+                fullMsg.style.display = 'inline-block';
+            } else {
+                uploadBtn.style.display = 'inline-flex';
+                selectBtn.style.display = 'inline-flex';
+                fullMsg.style.display = 'none';
+            }
+            
+            container.innerHTML = portfolioGalleryImages.map((img, idx) => `
+                <div class="gallery-image-card" draggable="true" data-index="${idx}" style="display:flex; align-items:center; gap:12px; padding:8px; border:1px solid var(--border-color); border-radius:var(--radius-sm); background:var(--bg-main); box-sizing:border-box; width: 100%; transition: transform 0.2s ease, opacity 0.2s ease;">
+                    <div style="width:50px; height:50px; border-radius:var(--radius-sm); overflow:hidden; background:var(--bg-sec); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <img src="${img}" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.src='coffee_bg.jpg';">
+                    </div>
+                    <div style="flex-grow:1; min-width:0; font-size:0.8rem; color:var(--text-sec); display:flex; flex-direction:column; gap:2px;">
+                        <span style="font-weight:700; color:var(--secondary);">ตำแหน่งที่ ${idx + 1}</span>
+                        <span style="font-size:0.75rem; word-break:break-all; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${img.startsWith('data:') ? 'รูปภาพอัปโหลดใหม่ (base64)' : img}</span>
+                    </div>
+                    <div style="display:flex; gap:6px; flex-shrink:0;">
+                        <button type="button" class="btn btn-outline move-up-gallery-btn" data-index="${idx}" aria-label="เลื่อนรูปที่ ${idx + 1} ขึ้น" style="padding:4px 8px; font-size:0.75rem; min-height:36px; min-width:36px;" ${idx === 0 ? 'disabled' : ''}>
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline move-down-gallery-btn" data-index="${idx}" aria-label="เลื่อนรูปที่ ${idx + 1} ลง" style="padding:4px 8px; font-size:0.75rem; min-height:36px; min-width:36px;" ${idx === portfolioGalleryImages.length - 1 ? 'disabled' : ''}>
+                            <i class="fas fa-arrow-down"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline del-gallery-btn" data-index="${idx}" aria-label="ลบรูปเพิ่มเติมลำดับที่ ${idx + 1}" style="padding:4px 8px; font-size:0.75rem; min-height:36px; min-width:36px; border-color:var(--danger); color:var(--danger);">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Re-bind click arrow events
+            container.querySelectorAll('.move-up-gallery-btn').forEach(btn => {
+                btn.onclick = () => {
+                    const idx = parseInt(btn.dataset.index);
+                    if (idx > 0) {
+                        const temp = portfolioGalleryImages[idx];
+                        portfolioGalleryImages[idx] = portfolioGalleryImages[idx - 1];
+                        portfolioGalleryImages[idx - 1] = temp;
+                        renderGallery();
+                    }
+                };
+            });
+            
+            container.querySelectorAll('.move-down-gallery-btn').forEach(btn => {
+                btn.onclick = () => {
+                    const idx = parseInt(btn.dataset.index);
+                    if (idx < portfolioGalleryImages.length - 1) {
+                        const temp = portfolioGalleryImages[idx];
+                        portfolioGalleryImages[idx] = portfolioGalleryImages[idx + 1];
+                        portfolioGalleryImages[idx + 1] = temp;
+                        renderGallery();
+                    }
+                };
+            });
+            
+            container.querySelectorAll('.del-gallery-btn').forEach(btn => {
+                btn.onclick = () => {
+                    const idx = parseInt(btn.dataset.index);
+                    portfolioGalleryImages.splice(idx, 1);
+                    renderGallery();
+                };
+            });
+
+            // HTML5 Drag & Drop events
+            const cards = container.querySelectorAll('.gallery-image-card');
+            cards.forEach(card => {
+                const idx = parseInt(card.dataset.index);
+                card.ondragstart = (e) => {
+                    draggedIndex = idx;
+                    card.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                };
+                card.ondragend = () => {
+                    card.classList.remove('dragging');
+                    draggedIndex = null;
+                };
+                card.ondragover = (e) => {
+                    e.preventDefault();
+                    const targetIndex = idx;
+                    if (draggedIndex !== null && draggedIndex !== targetIndex) {
+                        const temp = portfolioGalleryImages[draggedIndex];
+                        portfolioGalleryImages[draggedIndex] = portfolioGalleryImages[targetIndex];
+                        portfolioGalleryImages[targetIndex] = temp;
+                        draggedIndex = targetIndex;
+                        renderGallery();
+                    }
+                };
+            });
+        };
+
+        const addGalleryImage = (src) => {
+            if (!src) return;
+            if (portfolioGalleryImages.length >= 5) {
+                alert("เพิ่มรูปเพิ่มเติมได้สูงสุด 5 รูปเท่านั้น / Maximum of 5 additional images reached.");
+                return;
+            }
+            if (src === item.image_src) {
+                alert("รูปภาพนี้เป็นรูปภาพหลักแล้ว ไม่สามารถเพิ่มในรูปเพิ่มเติมได้ / This image is already the main image.");
+                return;
+            }
+            if (portfolioGalleryImages.includes(src)) {
+                alert("คุณได้เลือกรูปภาพนี้ไปแล้ว / This image is already in the gallery.");
+                return;
+            }
+            portfolioGalleryImages.push(src);
+            renderGallery();
+        };
+
+        document.getElementById('upload-gallery-btn').onclick = () => {
+            document.getElementById('port-gallery-file-input').click();
+        };
+
+        document.getElementById('port-gallery-file-input').onchange = async (e) => {
+            if (e.target.files && e.target.files[0]) {
+                try {
+                    const webpData = await this.convertImageToWebP(e.target.files[0]);
+                    addGalleryImage(webpData);
+                } catch (err) {
+                    alert("เกิดข้อผิดพลาดในการอัปโหลดไฟล์รูปภาพ / Image upload failed.");
+                }
+                e.target.value = '';
+            }
+        };
+
+        document.getElementById('select-gallery-btn').onclick = () => {
+            this.openMediaSelectorDialog((selectedBase64) => {
+                addGalleryImage(selectedBase64);
+            });
+        };
+
+        // Render initially
+        renderGallery();
 
         // Form Submit
         document.getElementById('edit-portfolio-form').onsubmit = async (e) => {
@@ -2788,7 +2960,14 @@ class CharoenAdmin {
                 description_th: descThVal,
                 description_en: descEnVal,
                 image_src: item.image_src,
-                gallery_images: item.gallery_images || [],
+
+                // Normalize gallery images
+                gallery_images: portfolioGalleryImages
+                    .filter(Boolean)
+                    .filter(url => url !== item.image_src)
+                    .filter((url, index, arr) => arr.indexOf(url) === index)
+                    .slice(0, 5),
+
                 visible: document.getElementById('port-form-visible').checked,
                 featured: document.getElementById('port-form-featured').checked,
                 order: Number(document.getElementById('port-form-order').value) || 1,
