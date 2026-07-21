@@ -831,6 +831,22 @@ h1, h2, h3, h4, h5, h6 {
     }
 }
 
+/* Admin Product Gallery drag & drop styling */
+.gallery-image-card {
+    cursor: grab;
+}
+
+.gallery-image-card:active {
+    cursor: grabbing;
+}
+
+.gallery-image-card.dragging {
+    opacity: 0.4 !important;
+    transform: scale(0.98) !important;
+    border: 2px dashed var(--secondary) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
 /* SUBPAGE: Behance-style Portfolio */
 .portfolio-layout {
     padding: 50px 0;
