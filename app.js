@@ -2298,6 +2298,14 @@ class CharoenApp {
             .filter(item => item.visible !== false && item.visible !== 'false')
             .sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
 
+        // Calculate category counts once in a single pre-rendering pass
+        const counts = { all: visiblePortfolio.length };
+        visiblePortfolio.forEach(item => {
+            if (item.category) {
+                counts[item.category] = (counts[item.category] || 0) + 1;
+            }
+        });
+
         const activeCatId = params?.get('category') || 'all';
         const filteredPortfolio = activeCatId === 'all'
             ? visiblePortfolio 
@@ -2313,16 +2321,18 @@ class CharoenApp {
             
             <div class="container portfolio-layout">
                 <div class="search-filter-bar">
-                    <div class="category-filter-pills">
-                        <a href="#/portfolio?category=all" class="pill ${activeCatId === 'all' ? 'active' : ''}">
-                            ${this.t('portfolio_all')}
+                    <div class="category-filter-pills" role="tablist" aria-label="${this.lang === 'th' ? 'เลือกหมวดหมู่ผลงาน' : 'Select portfolio category'}">
+                        <a href="#/portfolio?category=all" class="pill ${activeCatId === 'all' ? 'active' : ''}" role="tab" aria-selected="${activeCatId === 'all' ? 'true' : 'false'}" aria-label="${this.lang === 'th' ? 'ทั้งหมด ' + counts.all + ' รายการ' : 'All ' + counts.all + ' items'}">
+                            ${this.t('portfolio_all')} (${counts.all})
                         </a>
         `;
 
         categories.forEach(cat => {
+            const count = counts[cat.id] || 0;
+            const catName = this.lang === 'th' ? cat.name_th : cat.name_en;
             html += `
-                <a href="#/portfolio?category=${cat.id}" class="pill ${activeCatId === cat.id ? 'active' : ''}">
-                    ${this.lang === 'th' ? cat.name_th : cat.name_en}
+                <a href="#/portfolio?category=${cat.id}" class="pill ${activeCatId === cat.id ? 'active' : ''}" role="tab" aria-selected="${activeCatId === cat.id ? 'true' : 'false'}" aria-label="${catName} ${count} ${this.lang === 'th' ? 'รายการ' : 'items'}">
+                    ${catName} (${count})
                 </a>
             `;
         });
@@ -2426,6 +2436,16 @@ class CharoenApp {
         `;
 
         container.innerHTML = html;
+
+        // Guarded mobile viewport scroll auto-centering
+        if (window.innerWidth <= 768) {
+            setTimeout(() => {
+                const activePill = container.querySelector('.pill.active');
+                if (activePill) {
+                    activePill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }
+            }, 150);
+        }
     }
 
     async renderQuoteView(container) {
