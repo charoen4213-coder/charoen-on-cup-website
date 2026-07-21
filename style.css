@@ -640,7 +640,7 @@ h1, h2, h3, h4, h5, h6 {
     justify-content: center;
     opacity: 0;
     visibility: hidden;
-    transition: var(--transition);
+    transition: opacity 0.25s ease, visibility 0.25s ease;
 }
 
 .modal-overlay.active {
@@ -657,8 +657,9 @@ h1, h2, h3, h4, h5, h6 {
     overflow-y: auto;
     position: relative;
     box-shadow: var(--shadow-lg);
-    transform: scale(0.9);
-    transition: var(--transition);
+    transform: scale(0.95);
+    transition: transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-sizing: border-box;
 }
 
 .modal-overlay.active .modal-window {
@@ -680,6 +681,17 @@ h1, h2, h3, h4, h5, h6 {
     cursor: pointer;
     border: none;
     z-index: 10;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.modal-close-btn:hover {
+    background-color: var(--primary-light);
+    transform: scale(1.05);
+}
+
+.modal-close-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
 .product-details-grid {
@@ -687,6 +699,14 @@ h1, h2, h3, h4, h5, h6 {
     grid-template-columns: 1fr 1.2fr;
     gap: 30px;
     padding: 30px;
+    box-sizing: border-box;
+}
+
+.product-gallery-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
 }
 
 .detail-img-box {
@@ -697,25 +717,93 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
 }
 
 .detail-img-box img {
     max-width: 95%;
     max-height: 95%;
     object-fit: contain;
+    transition: opacity 0.15s ease;
+}
+
+.product-thumbnails-scroll-container {
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.product-thumbnails-wrapper {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.product-thumbnail-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border-color);
+    background-color: var(--bg-sec);
+    padding: 2px;
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.product-thumbnail-btn img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.product-thumbnail-btn:hover {
+    border-color: var(--primary-light);
+}
+
+.product-thumbnail-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.product-thumbnail-btn.active {
+    border-color: var(--primary);
+    transform: scale(1.05);
+}
+
+.product-modal-badge {
+    display: inline-block;
+    background-color: var(--primary-light);
+    color: var(--primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+
+.product-modal-desc {
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 20px;
+    font-size: 0.92rem;
 }
 
 .detail-info-box h3 {
     font-size: 1.5rem;
     font-weight: 800;
+    margin-top: 0;
     margin-bottom: 12px;
     color: var(--secondary);
-}
-
-.detail-info-box p {
-    color: var(--text-muted);
-    line-height: 1.6;
-    margin-bottom: 20px;
+    line-height: 1.3;
 }
 
 .spec-table {
@@ -727,12 +815,20 @@ h1, h2, h3, h4, h5, h6 {
 .spec-table td {
     padding: 8px 12px;
     border-bottom: 1px solid var(--border-color);
+    font-size: 0.9rem;
 }
 
 .spec-table td:first-child {
     font-weight: 700;
     color: var(--text-muted);
     width: 40%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .modal-overlay, .modal-window, .modal-close-btn, .detail-img-box img, .product-thumbnail-btn {
+        transition: none !important;
+        transform: none !important;
+    }
 }
 
 /* SUBPAGE: Behance-style Portfolio */
@@ -2095,6 +2191,10 @@ body.no-scroll {
         width: auto !important;
         height: auto !important;
         display: block !important;
+    }
+
+    .product-thumbnails-wrapper {
+        flex-wrap: nowrap !important;
     }
     
     .detail-info-box {
