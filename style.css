@@ -2451,7 +2451,6 @@ body.no-scroll {
         align-items: center !important;
         box-sizing: border-box !important;
     }
-    
     .modal-close-btn {
         top: 10px !important;
         right: 10px !important;
@@ -2459,4 +2458,106 @@ body.no-scroll {
         height: 36px !important;
         z-index: 100 !important;
     }
+}
+
+/* Premium About Us upgrade styling */
+.homepage-about-image-wrapper img {
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.homepage-about-image-wrapper:hover img {
+    transform: scale(1.05);
+}
+.vision-mission-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.vision-mission-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md) !important;
+}
+.info-panel-card {
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.info-panel-card:hover {
+    border-color: var(--primary) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+@media (max-width: 768px) {
+    .about-summary-bullets {
+        grid-template-columns: 1fr !important;
+    }
+    .vision-mission-card {
+        padding: 24px !important;
+    }
+    .info-panel-card {
+        padding: 24px !important;
+    }
+}
+
+/* About Hero Banner Specifics */
+.subpage-hero-banner.about-hero {
+    background-image: none !important;
+    overflow: hidden;
+}
+
+.subpage-hero-banner.about-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--hero-bg) no-repeat var(--hero-position, center 35%)/cover !important;
+    filter: brightness(1.15);
+    z-index: 0;
+    pointer-events: none;
+    transition: filter 0.3s ease, background-position 0.3s ease;
+}
+/* About Hero Typography Refinement */
+.subpage-hero-banner.about-hero .about-hero-title {
+    margin: 0 0 10px;
+    color: #ffffff;
+    font-family: 'Inter', 'Kanit', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1.6;
+    letter-spacing: normal;
+    text-align: center;
+}
+
+.subpage-hero-banner.about-hero .about-hero-subtitle {
+    max-width: 960px;
+    margin: 0 auto;
+    color: #ffffff;
+    font-family: 'Kanit', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 400;
+    line-height: 1.6;
+    letter-spacing: normal;
+    text-align: center;
+    opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+    .subpage-hero-banner.about-hero .about-hero-title {
+        font-size: 1.6rem;
+        margin-bottom: 10px;
+    }
+
+    .subpage-hero-banner.about-hero .about-hero-subtitle {
+        max-width: 90%;
+        font-size: 0.95rem;
+        font-weight: 400;
+        line-height: 1.6;
+    }
+}
+
+/* Centralized Body Typography Rules (Phase 1) */
+.body-text,
+.section-description,
+.card-description,
+.info-text,
+.article-body,
+.detail-description {
+    font-family: 'Kanit', sans-serif;
 }

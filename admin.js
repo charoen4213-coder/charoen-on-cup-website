@@ -1374,6 +1374,10 @@ class CharoenAdmin {
         const aboutDescTh = await this.db.get('settings', 'about_desc_th');
         const aboutDescEn = await this.db.get('settings', 'about_desc_en');
 
+        const aboutImage = await this.db.get('settings', 'about_image');
+        const aboutBulletsTh = await this.db.get('settings', 'about_bullets_th');
+        const aboutBulletsEn = await this.db.get('settings', 'about_bullets_en');
+
         const showPrices = await this.db.get('settings', 'show_prices');
         const showHomeVideo = await this.db.get('settings', 'show_home_video');
 
@@ -1434,6 +1438,27 @@ class CharoenAdmin {
                                     <input type="file" id="set-logo-file-input" accept="image/*" style="display:none;">
                                     <input type="hidden" id="set-logo-img-src" value="${logoImg?.value || ''}">
                                 </div>
+
+                                <div class="form-group" style="margin-top:16px; border-bottom:1px solid var(--border-color); padding-bottom:16px;">
+                                    <label style="font-weight:600; font-size:0.85rem;">รูปภาพแนะนำบริษัท (About Image) <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">(สำหรับแสดงในหน้าแรกและหน้าเกี่ยวกับเรา)</span></label>
+                                    <div style="display:flex; gap:16px; align-items:center; margin-top:8px;">
+                                        <div id="set-about-drop-zone" style="width:120px; height:80px; border-radius:var(--radius-sm); border:2px dashed var(--border-color); background:var(--bg-sec); display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer; position:relative; transition:all 0.3s ease;">
+                                            ${aboutImage?.value ? `<img src="${aboutImage.value}" id="set-about-preview" style="width:100%; height:100%; object-fit:cover;">` : `<i class="fas fa-image" style="color:var(--text-muted); font-size:1.5rem;"></i>`}
+                                            <div id="set-about-drag-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255,107,0,0.15); display:none; align-items:center; justify-content:center; color:var(--primary); font-size:0.75rem; font-weight:700;"><i class="fas fa-cloud-upload-alt"></i></div>
+                                        </div>
+                                        <div style="display:flex; flex-direction:column; gap:6px;">
+                                            <div style="display:flex; gap:6px;">
+                                                <button type="button" class="btn btn-outline" id="set-about-uploader-btn" style="padding:4px 10px; font-size:0.72rem;"><i class="fas fa-upload"></i> อัปโหลดรูป</button>
+                                                <button type="button" class="btn btn-outline" id="set-about-library-btn" style="padding:4px 10px; font-size:0.72rem; border-color:var(--secondary); color:var(--secondary);"><i class="fas fa-folder-open"></i> เลือกจากคลัง</button>
+                                                ${aboutImage?.value ? `<button type="button" class="btn btn-outline" id="set-about-clear-btn" style="padding:4px 10px; font-size:0.72rem; border-color:var(--danger); color:var(--danger);"><i class="fas fa-times"></i> ล้างค่า</button>` : ''}
+                                            </div>
+                                            <span style="font-size:0.68rem; color:var(--text-muted);">ลากรูปมาวางในกรอบ หรือกดปุ่มด้านบน (เซฟเฉพาะลิงก์ภาพ ห้ามเซฟ Base64)</span>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="set-about-file-input" accept="image/*" style="display:none;">
+                                    <input type="hidden" id="set-about-img-src" value="${aboutImage?.value || ''}">
+                                </div>
+
                                 <div class="form-group">
                                     <label style="font-weight:600; font-size:0.85rem;">ชื่อบริษัทภาษาไทย (Company Name TH)</label>
                                     <input type="text" id="set-company-name-th" class="form-control" value="${compNameTh?.value || ''}">
@@ -1457,6 +1482,14 @@ class CharoenAdmin {
                                 <div class="form-group">
                                     <label style="font-weight:600; font-size:0.85rem;">รายละเอียดหน้าเกี่ยวกับเราภาษาอังกฤษ (About Desc EN)</label>
                                     <textarea id="set-about-desc-en" class="form-control" style="min-height:70px;">${aboutDescEn?.value || ''}</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-weight:600; font-size:0.85rem;">จุดเด่นบริษัทย่อภาษาไทย (1 บรรทัดต่อข้อ) (About Bullets TH)</label>
+                                    <textarea id="set-about-bullets-th" class="form-control" style="min-height:70px;" placeholder="ผลิตตามสั่ง&#10;รองรับร้านกาแฟ&#10;ส่งฟรีพื้นที่บริการ&#10;มีทีมออกแบบ">${aboutBulletsTh?.value || ''}</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-weight:600; font-size:0.85rem;">จุดเด่นบริษัทย่อภาษาอังกฤษ (1 บรรทัดต่อข้อ) (About Bullets EN)</label>
+                                    <textarea id="set-about-bullets-en" class="form-control" style="min-height:70px;" placeholder="Custom production&#10;Supporting cafe businesses&#10;Free shipping in service area&#10;In-house design team">${aboutBulletsEn?.value || ''}</textarea>
                                 </div>
                                 <div class="form-group">
                                     <label style="font-weight:600; font-size:0.85rem;">SEO Title (หัวข้อเว็บแสดงบนเบราว์เซอร์)</label>
@@ -1781,6 +1814,119 @@ class CharoenAdmin {
             };
         }
 
+        // --- About Image Drag and Drop / Library picker bindings ---
+        const aboutDropZone = document.getElementById('set-about-drop-zone');
+        const aboutFileInput = document.getElementById('set-about-file-input');
+        const aboutImgSrcInput = document.getElementById('set-about-img-src');
+        const aboutDragOverlay = document.getElementById('set-about-drag-overlay');
+
+        if (aboutDropZone) {
+            aboutDropZone.onclick = (e) => {
+                if (e.target.tagName !== 'BUTTON' && e.target.parentElement.tagName !== 'BUTTON') {
+                    aboutFileInput.click();
+                }
+            };
+
+            aboutDropZone.ondragover = (e) => {
+                e.preventDefault();
+                if (aboutDragOverlay) aboutDragOverlay.style.display = 'flex';
+            };
+
+            aboutDropZone.ondragleave = (e) => {
+                e.preventDefault();
+                if (aboutDragOverlay) aboutDragOverlay.style.display = 'none';
+            };
+
+            aboutDropZone.ondrop = async (e) => {
+                e.preventDefault();
+                if (aboutDragOverlay) aboutDragOverlay.style.display = 'none';
+
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    const file = e.dataTransfer.files[0];
+                    if (file.type.startsWith('image/')) {
+                        const base64 = await this.convertImageToWebP(file);
+                        const filename = 'about_' + Date.now() + '_' + file.name.substring(0, file.name.lastIndexOf('.')) + '.webp';
+                        const newMedia = {
+                            id: 'med_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                            name: filename,
+                            category: 'med-about',
+                            image_src: base64,
+                            created_at: new Date().toISOString()
+                        };
+                        await this.db.put('media', newMedia);
+
+                        aboutImgSrcInput.value = filename;
+                        const preview = document.getElementById('set-about-preview');
+                        if (preview) {
+                            preview.src = base64;
+                        } else {
+                            aboutDropZone.innerHTML = `<img src="${base64}" id="set-about-preview" style="width:100%; height:100%; object-fit:cover;">`;
+                        }
+                        alert('อัปโหลดและอัปเดตรูปหน้าเกี่ยวกับเราสำเร็จ! (กดปุ่มบันทึกเพื่อบันทึกข้อมูล)');
+                    }
+                }
+            };
+        }
+
+        if (aboutFileInput) {
+            aboutFileInput.onchange = async (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0];
+                    const base64 = await this.convertImageToWebP(file);
+                    const filename = 'about_' + Date.now() + '_' + file.name.substring(0, file.name.lastIndexOf('.')) + '.webp';
+                    const newMedia = {
+                        id: 'med_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                        name: filename,
+                        category: 'med-about',
+                        image_src: base64,
+                        created_at: new Date().toISOString()
+                    };
+                    await this.db.put('media', newMedia);
+
+                    aboutImgSrcInput.value = filename;
+                    const preview = document.getElementById('set-about-preview');
+                    if (preview) {
+                        preview.src = base64;
+                    } else {
+                        aboutDropZone.innerHTML = `<img src="${base64}" id="set-about-preview" style="width:100%; height:100%; object-fit:cover;">`;
+                    }
+                    alert('อัปโหลดและอัปเดตรูปหน้าเกี่ยวกับเราสำเร็จ! (กดปุ่มบันทึกเพื่อบันทึกข้อมูล)');
+                }
+            };
+        }
+
+        const setAboutUploaderBtn = document.getElementById('set-about-uploader-btn');
+        if (setAboutUploaderBtn) {
+            setAboutUploaderBtn.onclick = () => aboutFileInput.click();
+        }
+
+        const setAboutLibraryBtn = document.getElementById('set-about-library-btn');
+        if (setAboutLibraryBtn) {
+            setAboutLibraryBtn.onclick = () => {
+                this.openMediaSelectorDialog((src, name) => {
+                    aboutImgSrcInput.value = name || src;
+                    const preview = document.getElementById('set-about-preview');
+                    if (preview) {
+                        preview.src = src;
+                    } else {
+                        aboutDropZone.innerHTML = `<img src="${src}" id="set-about-preview" style="width:100%; height:100%; object-fit:cover;">`;
+                    }
+                    alert('เลือกรูปภาพหน้าเกี่ยวกับเราสำเร็จ! (กดปุ่มบันทึกเพื่อบันทึกข้อมูล)');
+                });
+            };
+        }
+
+        const setAboutClearBtn = document.getElementById('set-about-clear-btn');
+        if (setAboutClearBtn) {
+            setAboutClearBtn.onclick = () => {
+                if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรูปภาพหน้าเกี่ยวกับเราออก?')) {
+                    aboutImgSrcInput.value = '';
+                    aboutDropZone.innerHTML = `<i class="fas fa-image" style="color:var(--text-muted); font-size:1.5rem;"></i>`;
+                    alert('ล้างรูปภาพเรียบร้อย (กดปุ่มบันทึกเพื่อบันทึกข้อมูล)');
+                }
+            };
+        }
+
         // --- LINE QR image uploader & library selector bindings ---
         const lineQrZone = document.getElementById('set-line-qr-zone');
         const lineQrFileInput = document.getElementById('set-line-qr-file-input');
@@ -1863,6 +2009,9 @@ class CharoenAdmin {
                 about_title_en: document.getElementById('set-about-title-en').value,
                 about_desc_th: document.getElementById('set-about-desc-th').value,
                 about_desc_en: document.getElementById('set-about-desc-en').value,
+                about_image: document.getElementById('set-about-img-src').value,
+                about_bullets_th: document.getElementById('set-about-bullets-th').value,
+                about_bullets_en: document.getElementById('set-about-bullets-en').value,
                 phone: document.getElementById('set-phone').value,
                 line: document.getElementById('set-line-url').value, // compatibility sync
                 facebook: document.getElementById('set-facebook-url').value, // compatibility sync
@@ -3448,7 +3597,7 @@ class CharoenAdmin {
                             ${filteredMedia.map(m => {
                                 const isVideo = m.image_src.startsWith('data:video/') || m.name.endsWith('.mp4') || m.name.endsWith('.webm');
                                 return `
-                                    <div class="media-select-card" data-src="${m.image_src}" style="border:1px solid var(--border-color); border-radius:var(--radius-sm); overflow:hidden; background:var(--bg-main); cursor:pointer; position:relative; transition:var(--transition);">
+                                    <div class="media-select-card" data-src="${m.image_src}" data-name="${m.name}" style="border:1px solid var(--border-color); border-radius:var(--radius-sm); overflow:hidden; background:var(--bg-main); cursor:pointer; position:relative; transition:var(--transition);">
                                         <div style="aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#e2e8f0;">
                                             ${isVideo ? `
                                                 <div style="color:var(--secondary); text-align:center; font-size:1.5rem;">
@@ -3481,7 +3630,8 @@ class CharoenAdmin {
         overlay.querySelectorAll('.media-select-card').forEach(card => {
             card.onclick = () => {
                 const src = card.dataset.src;
-                callback(src);
+                const name = card.dataset.name || '';
+                callback(src, name);
                 overlay.remove();
             };
         });

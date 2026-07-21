@@ -985,7 +985,10 @@ class CharoenOnCupDB {
                 { key: 'show_home_video', value: 'true' },
                 { key: 'seo_title', value: 'เจริญ ออน คัพ | สกรีนแก้วหาดใหญ่' },
                 { key: 'seo_desc', value: 'ผู้ผลิตและรับสกรีนแก้วพลาสติก แก้วกระดาษ หาดใหญ่ คุณภาพสูง สีสวยคมชัด' },
-                { key: 'seo_keywords', value: 'สกรีนแก้วหาดใหญ่, สกรีนแก้ว, เจริญ ออน คัพ, พิมพ์แก้ว' }
+                { key: 'seo_keywords', value: 'สกรีนแก้วหาดใหญ่, สกรีนแก้ว, เจริญ ออน คัพ, พิมพ์แก้ว' },
+                { key: 'about_image', value: '' },
+                { key: 'about_bullets_th', value: '' },
+                { key: 'about_bullets_en', value: '' }
             ];
 
             for (const s of requiredSettings) {

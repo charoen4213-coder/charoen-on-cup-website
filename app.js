@@ -603,7 +603,7 @@ class CharoenApp {
                 modal.innerHTML = `
                     <div class="line-qr-modal-content">
                         <button class="line-qr-modal-close" onclick="window.closeLineQrModal()">&times;</button>
-                        <h4 style="font-family:'Kanit', sans-serif; margin-bottom:10px; color:var(--primary); font-weight:700;"><i class="fab fa-line" style="color:#10b981;"></i> LINE Official QR Code</h4>
+                        <h4 style="margin-bottom:10px; color:var(--primary); font-weight:700;"><i class="fab fa-line" style="color:#10b981;"></i> LINE Official QR Code</h4>
                         <img src="" class="line-qr-modal-img" id="line-qr-modal-image">
                         <p style="font-size:0.9rem; color:var(--text-sec); margin:0;">${this.lang === 'th' ? 'สแกน QR Code เพื่อสอบถามทาง LINE' : 'Scan QR Code to contact us on LINE'}</p>
                     </div>
@@ -741,6 +741,28 @@ class CharoenApp {
         const homeSections = await this.db.getAll('homepage');
         const sortedSections = [...homeSections].sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
 
+        // Load about settings dynamically
+        const aboutImgKey = await this.db.get('settings', 'about_image');
+        let aboutImgVal = aboutImgKey?.value || '';
+        if (aboutImgVal && !aboutImgVal.startsWith('data:') && !aboutImgVal.startsWith('http') && !aboutImgVal.includes('/')) {
+            try {
+                const mediaItem = await this.db.getAll('media').then(list => list.find(m => m.name === aboutImgVal || m.id === aboutImgVal));
+                if (mediaItem) {
+                    aboutImgVal = mediaItem.image_src;
+                }
+            } catch (e) {
+                console.warn("Failed to lookup media item:", e);
+            }
+        }
+        if (!aboutImgVal) {
+            aboutImgVal = 'about_banner.jpg'; // Presentation fallback only
+        }
+
+        const bulletsThKey = await this.db.get('settings', 'about_bullets_th');
+        const bulletsEnKey = await this.db.get('settings', 'about_bullets_en');
+        const bulletsText = this.lang === 'th' ? (bulletsThKey?.value || '') : (bulletsEnKey?.value || '');
+        const bulletItems = bulletsText.split('\n').map(b => b.trim()).filter(Boolean);
+
         let html = '';
 
         // Dynamic logo image HTML
@@ -799,18 +821,48 @@ class CharoenApp {
 
                 case 'about_company':
                     html += `
-                        <!-- Store Logo and Description Section (Right below slider) -->
-                        <section class="store-intro-brand-section" style="background-color: var(--bg-main); padding: 60px 0; border-bottom: 1px solid var(--border-color); text-align:center;">
-                            <div class="container" style="max-width: 800px;">
-                                <div style="width: 115px; height: 115px; border-radius: 50%; background-color: var(--bg-sec); display: inline-flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 24px; border: 3px solid var(--primary); box-shadow: var(--shadow-sm); padding: 8px;">
-                                    ${logoImgHtml}
+                        <!-- Upgraded Premium Two-Column About Us Section -->
+                        <section class="homepage-about-section section-padding" style="background-color: var(--bg-main); border-bottom: 1px solid var(--border-color); overflow: hidden;">
+                            <div class="container">
+                                <div class="grid-2" style="align-items: center; gap: 40px;">
+                                    <div class="homepage-about-image-column" style="width: 100%;">
+                                        <div class="homepage-about-image-wrapper" style="position: relative; border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-md); aspect-ratio: 16/11; background-color: var(--bg-sec); display: flex; align-items: center; justify-content: center;">
+                                            <img src="${aboutImgVal}" alt="Charoen On Cup About" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='about_banner.jpg';">
+                                            <div class="homepage-about-image-badge" style="position: absolute; bottom: 16px; left: 16px; background-color: var(--primary); color: white; padding: 8px 16px; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.8rem; box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 8px; z-index: 2;">
+                                                <i class="fas fa-certificate" style="color: var(--accent);"></i>
+                                                <span>${this.lang === 'th' ? 'แก้วพร้อมสกรีน ครบวงจร' : 'One-Stop Cup Printing'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="homepage-about-text-column" style="width: 100%; text-align: left;">
+                                        <span class="section-eyebrow" style="font-weight: 700; color: var(--accent); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">
+                                            ${this.lang === 'th' ? 'ข้อมูลแนะนำบริษัท' : 'About Company'}
+                                        </span>
+                                        <h2 style="font-size: 1.95rem; font-weight: 800; color: var(--secondary); margin-bottom: 16px; line-height: 1.35; font-family: 'Inter', 'Kanit', sans-serif;">
+                                            ${this.lang === 'th' ? sec.content.title_th : sec.content.title_en}
+                                        </h2>
+                                        <p class="section-description" style="font-size: 0.98rem; line-height: 1.75; color: var(--text-main); margin-bottom: 20px;">
+                                            ${this.lang === 'th' ? sec.content.desc_th : sec.content.desc_en}
+                                        </p>
+                                        
+                                        ${bulletItems.length > 0 ? `
+                                            <!-- Dynamic Bullet Highlights from CMS -->
+                                            <div class="about-summary-bullets" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px;">
+                                                ${bulletItems.map(item => `
+                                                    <div style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: var(--text-main); font-weight: 600;">
+                                                        <i class="fas fa-check-circle" style="color: var(--accent); flex-shrink: 0;"></i>
+                                                        <span class="body-text">${item}</span>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        ` : ''}
+                                        
+                                        <a href="#/about" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
+                                            <span>${this.lang === 'th' ? 'รู้จักเราเพิ่มเติม' : 'Learn More'}</span>
+                                            <i class="fas fa-arrow-right" style="font-size: 0.75rem;"></i>
+                                        </a>
+                                    </div>
                                 </div>
-                                <h2 style="font-size: 2.1rem; font-weight: 800; color: var(--primary); margin-bottom: 16px;">
-                                    ${this.lang === 'th' ? sec.content.title_th : sec.content.title_en}
-                                </h2>
-                                <p style="font-size: 1.08rem; line-height: 1.85; color: var(--text-main); font-family: 'Kanit', sans-serif;">
-                                    ${this.lang === 'th' ? sec.content.desc_th : sec.content.desc_en}
-                                </p>
                             </div>
                         </section>
                     `;
@@ -1560,14 +1612,14 @@ class CharoenApp {
         ` : '';
 
         const contentHtml = content ? `
-            <div style="font-size: 1.1rem; line-height: 1.95; color: var(--text-main); font-family: 'Prompt', sans-serif; white-space: pre-line; margin-bottom:40px;">
+            <div class="detail-description" style="font-size: 1.1rem; line-height: 1.95; color: var(--text-main); white-space: pre-line; margin-bottom:40px;">
                 ${content}
             </div>
         ` : '';
 
         const galleryHtml = (galleryList && galleryList.length > 0) ? `
             <div style="margin-top:40px; margin-bottom:40px;">
-                <h3 style="font-size:1.35rem; font-weight:800; color:var(--primary); margin-bottom:20px; font-family:'Kanit', sans-serif;"><i class="fas fa-images"></i> ${this.lang === 'th' ? 'รูปภาพประกอบกิจกรรม' : 'Gallery Images'}</h3>
+                <h3 style="font-size:1.35rem; font-weight:800; color:var(--primary); margin-bottom:20px;"><i class="fas fa-images"></i> ${this.lang === 'th' ? 'รูปภาพประกอบกิจกรรม' : 'Gallery Images'}</h3>
                 <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px;">
                     ${galleryList.map(img => `
                         <div style="width:100%; aspect-ratio:4/3; border-radius:var(--radius-sm); border:1px solid var(--border-color); overflow:hidden; background:var(--bg-sec);">
@@ -1714,7 +1766,7 @@ class CharoenApp {
                         </div>
                     ` : ''}
                     
-                    <div class="article-rich-content-body" style="font-size: 1.08rem; line-height: 1.95; color: var(--text-main); font-family: 'Prompt', sans-serif; white-space: pre-line;">
+                    <div class="article-rich-content-body article-body" style="font-size: 1.08rem; line-height: 1.95; color: var(--text-main); white-space: pre-line;">
                         ${this.lang === 'th' ? artItem.content_th : artItem.content_en}
                     </div>
                     
@@ -1934,7 +1986,7 @@ class CharoenApp {
                 </div>
             </div>
             <section class="section-padding">
-                <div class="container" style="max-width:800px; font-family:'Prompt', sans-serif;">
+                <div class="container detail-description" style="max-width:800px;">
                     <h1 style="font-size:2.2rem; font-weight:800; color:var(--primary); margin-bottom:25px; text-align:center;">${this.lang === 'th' ? 'นโยบายความเป็นส่วนตัว (Privacy Policy)' : 'Privacy Policy'}</h1>
                     <div style="line-height:1.9; color:var(--text-main); font-size:1.05rem;">
                         <p style="margin-bottom:20px;">เจริญ ออน คัพ ตระหนักถึงความสำคัญในการปกป้องข้อมูลส่วนบุคคลของลูกค้าและผู้ใช้บริการเว็บไซต์ทุกท่าน เราได้จัดทำนโยบายความเป็นส่วนตัวนี้ขึ้นเพื่อชี้แจงเกี่ยวกับมาตรการรักษาความปลอดภัยของข้อมูลการติดต่อและการตรวจสอบการส่งโลโก้ของท่าน</p>
@@ -1970,7 +2022,7 @@ class CharoenApp {
                 </div>
             </div>
             <section class="section-padding">
-                <div class="container" style="max-width:800px; font-family:'Prompt', sans-serif;">
+                <div class="container detail-description" style="max-width:800px;">
                     <h1 style="font-size:2.2rem; font-weight:800; color:var(--primary); margin-bottom:25px; text-align:center;">${this.lang === 'th' ? 'ข้อตกลงและเงื่อนไขการใช้บริการ (Terms & Conditions)' : 'Terms & Conditions'}</h1>
                     <div style="line-height:1.9; color:var(--text-main); font-size:1.05rem;">
                         <p style="margin-bottom:20px;">ยินดีต้อนรับสู่การใช้บริการสั่งผลิตพิมพ์สกรีนแก้วเครื่องดื่ม เจริญ ออน คัพ กรุณาอ่านและทำความเข้าใจข้อตกลงและเงื่อนไขการใช้บริการผลิตดังต่อไปนี้อย่างครบถ้วนก่อนการชำระเงินมัดจำ:</p>
@@ -2115,6 +2167,7 @@ class CharoenApp {
     async renderAboutView(container) {
         const address = await this.db.get('settings', this.lang === 'th' ? 'address_th' : 'address_en');
         const phone = await this.db.get('settings', 'phone');
+        const email = await this.db.get('settings', 'email');
         const hours = await this.db.get('settings', this.lang === 'th' ? 'business_hours_th' : 'business_hours_en');
 
         const companyName = await this.db.get('settings', this.lang === 'th' ? 'company_name_th' : 'company_name_en');
@@ -2125,45 +2178,223 @@ class CharoenApp {
         const aboutTitleVal = aboutTitle?.value || (this.lang === 'th' ? 'เจริญ ออน คัพ โรงงานรับสกรีนแก้วพลาสติกและแก้วกระดาษ' : 'Charoen On Cup Factory for Plastic & Paper Cup Screen Printing');
         const aboutDescVal = aboutDesc?.value || (this.lang === 'th' ? 'ยินดีให้บริการรับสกรีนแก้วพลาสติก แก้วกระดาษ และบรรจุภัณฑ์เครื่องดื่มทุกชนิด เพื่อเพิ่มมูลค่าให้กับแบรนด์ร้านกาแฟของคุณทั่วประเทศ' : 'is pleased to offer custom screen printing on plastic cups, paper cups, and all kinds of beverage packaging to add value to your cafe brand nationwide.');
 
+        // Load dynamic about image
+        const aboutImgKey = await this.db.get('settings', 'about_image');
+        let aboutImgVal = aboutImgKey?.value || '';
+        if (aboutImgVal && !aboutImgVal.startsWith('data:') && !aboutImgVal.startsWith('http') && !aboutImgVal.includes('/')) {
+            try {
+                const mediaItem = await this.db.getAll('media').then(list => list.find(m => m.name === aboutImgVal || m.id === aboutImgVal));
+                if (mediaItem) {
+                    aboutImgVal = mediaItem.image_src;
+                }
+            } catch (e) {
+                console.warn("Failed to lookup media item:", e);
+            }
+        }
+        if (!aboutImgVal) {
+            aboutImgVal = 'about_banner.jpg'; // Presentation fallback only
+        }
+
+        // Load social URLs
+        const fbKey = await this.db.get('settings', 'facebook_url') || await this.db.get('settings', 'facebook');
+        const lineKey = await this.db.get('settings', 'line_url') || await this.db.get('settings', 'line');
+        const mapsKey = await this.db.get('settings', 'google_maps_url');
+
+        const fbUrl = fbKey?.value || '';
+        const lineUrl = lineKey?.value || '';
+        const mapsUrl = mapsKey?.value || '';
+
+        // Conditionally load Vision & Mission if they exist
+        const visionTh = await this.db.get('settings', 'vision_th');
+        const visionEn = await this.db.get('settings', 'vision_en');
+        const missionTh = await this.db.get('settings', 'mission_th');
+        const missionEn = await this.db.get('settings', 'mission_en');
+
+        const visionVal = this.lang === 'th' ? visionTh?.value : visionEn?.value;
+        const missionVal = this.lang === 'th' ? missionTh?.value : missionEn?.value;
+
+        let visionMissionHtml = '';
+        if (visionVal || missionVal) {
+            visionMissionHtml = `
+                <section class="section-padding" style="background-color: var(--bg-sec); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
+                    <div class="container">
+                        <div class="grid-2" style="gap: 30px;">
+                            ${visionVal ? `
+                                <div class="vision-mission-card" style="background: white; padding: 32px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border-top: 4px solid var(--primary);">
+                                    <div style="font-size: 2rem; color: var(--primary); margin-bottom: 16px;"><i class="fas fa-eye"></i></div>
+                                    <h4 style="font-size: 1.3rem; font-weight: 800; color: var(--secondary); margin-bottom: 12px; font-family: 'Inter', 'Kanit', sans-serif;">${this.lang === 'th' ? 'วิสัยทัศน์' : 'Vision'}</h4>
+                                    <p class="card-description" style="color: var(--text-main); line-height: 1.75; font-size: 0.95rem;">${visionVal}</p>
+                                </div>
+                            ` : ''}
+                            ${missionVal ? `
+                                <div class="vision-mission-card" style="background: white; padding: 32px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border-top: 4px solid var(--accent);">
+                                    <div style="font-size: 2rem; color: var(--accent); margin-bottom: 16px;"><i class="fas fa-bullseye"></i></div>
+                                    <h4 style="font-size: 1.3rem; font-weight: 800; color: var(--secondary); margin-bottom: 12px; font-family: 'Inter', 'Kanit', sans-serif;">${this.lang === 'th' ? 'พันธกิจ' : 'Mission'}</h4>
+                                    <p class="card-description" style="color: var(--text-main); line-height: 1.75; font-size: 0.95rem;">${missionVal}</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </section>
+            `;
+        }
+
+        // Load about bullets summary
+        const bulletsThKey = await this.db.get('settings', 'about_bullets_th');
+        const bulletsEnKey = await this.db.get('settings', 'about_bullets_en');
+        const bulletsText = this.lang === 'th' ? (bulletsThKey?.value || '') : (bulletsEnKey?.value || '');
+        const bulletItems = bulletsText.split('\n').map(b => b.trim()).filter(Boolean);
+
+        let bulletsHtml = '';
+        if (bulletItems.length > 0) {
+            bulletsHtml = `
+                <section class="section-padding" style="background-color: var(--bg-main); border-bottom: 1px solid var(--border-color);">
+                    <div class="container text-center" style="max-width: 800px;">
+                        <span class="section-eyebrow" style="font-weight: 700; color: var(--accent); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 12px;">
+                            ${this.lang === 'th' ? 'ทำไมลูกค้าถึงเลือกเรา' : 'Why Customers Choose Us'}
+                        </span>
+                        <h3 class="section-title" style="margin-bottom: 36px; font-family: 'Inter', 'Kanit', sans-serif;">
+                            ${this.lang === 'th' ? 'สรุปจุดเด่นที่ทำให้เราได้รับความไว้วางใจ' : 'Summary of Key Strengths'}
+                        </h3>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; text-align: left; max-width: 600px; margin: 0 auto;">
+                            ${bulletItems.map(item => `
+                                <div style="display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background-color: var(--bg-sec); box-shadow: var(--shadow-sm);">
+                                    <i class="fas fa-check-circle" style="color: var(--accent); font-size: 1.2rem; flex-shrink: 0;"></i>
+                                    <span class="body-text" style="font-size: 0.95rem; font-weight: 700; color: var(--secondary);">${item}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </section>
+            `;
+        }
+
+        // Whitespace-safe resolver helper
+        const resolveText = (val, fallback) => {
+            const trimmed = typeof val === 'string' ? val.trim() : '';
+            return trimmed || fallback;
+        };
+
+        // Resolve dynamic heading and fallbacks
+        const headingVal = resolveText(this.t('nav_about'), this.lang === 'th' ? 'เกี่ยวกับเรา' : 'About Us');
+        const defaultHeroSubTh = 'ผู้เชี่ยวชาญด้านการผลิตและสกรีนแก้วพลาสติก พร้อมบริการครบวงจรสำหรับร้านกาแฟ ร้านเครื่องดื่ม และธุรกิจอาหาร';
+        const defaultHeroSubEn = 'Plastic cup production and logo printing specialists, providing complete solutions for cafés, beverage shops, and food businesses.';
+        const heroSubVal = this.lang === 'th' ? defaultHeroSubTh : defaultHeroSubEn;
+
         container.innerHTML = `
-            <div class="subpage-hero-banner" style="background-image: url('about_banner.jpg');">
-                <div class="container">
-                    <h2>${this.t('nav_about')}</h2>
-                    <p>${this.lang === 'th' ? 'ผู้ผลิตและจำหน่ายแก้วพร้อมสกรีนโลโก้ ครบวงจร' : 'One-Stop Custom Printed Beverage Packaging Supplier'}</p>
+            <!-- Premium About Hero Banner -->
+            <div class="subpage-hero-banner about-hero" style="--hero-bg: url('${aboutImgVal}'); --hero-position: center 35%; position: relative; padding: 60px 0; overflow: hidden; text-align: center;">
+                <div class="subpage-hero-overlay" style="position: absolute; inset: 0; background: linear-gradient(to right, rgba(4, 53, 106, 0.60), rgba(4, 53, 106, 0.40)); z-index: 1;"></div>
+                <div class="container" style="position: relative; z-index: 2;">
+                    <h2 class="about-hero-title">
+                        ${headingVal}
+                    </h2>
+                    <p class="about-hero-subtitle">
+                        ${heroSubVal}
+                    </p>
                 </div>
             </div>
             
-            <section class="section-padding">
+            <!-- Company Story -->
+            <section class="section-padding" style="background-color: var(--bg-main);">
                 <div class="container">
-                    <div class="grid-2" style="align-items:center;">
+                    <div class="grid-2" style="align-items: flex-start; gap: 40px;">
                         <div>
-                            <span style="font-weight:700; color:var(--primary); font-size:0.85rem; text-transform:uppercase;">${this.lang === 'th' ? 'มาตรฐานการผลิตและจุดแข็ง' : 'Production Standard & Strength'}</span>
-                            <h3 style="font-size:1.8rem; font-weight:800; color:var(--secondary); margin:12px 0 20px 0;">${aboutTitleVal}</h3>
-                            <p style="line-height:1.8; color:var(--text-main); margin-bottom:16px;">
+                            <span class="section-eyebrow" style="font-weight: 700; color: var(--accent); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">
+                                ${this.lang === 'th' ? 'ความเป็นมาและเป้าหมาย' : 'Our Background & Focus'}
+                            </span>
+                            <h3 style="font-size: 1.8rem; font-weight: 800; color: var(--secondary); margin-bottom: 20px; line-height: 1.35; font-family: 'Inter', 'Kanit', sans-serif;">
+                                ${aboutTitleVal}
+                            </h3>
+                            <p class="body-text" style="line-height: 1.8; color: var(--text-main); font-size: 0.98rem; margin-bottom: 16px;">
                                 <strong>${companyNameVal}</strong> ${aboutDescVal}
                             </p>
-                            <p style="line-height:1.8; color:var(--text-muted); margin-bottom:24px;">
-                                ${this.lang === 'th' ? 'เราจำหน่ายและรับสกรีนบรรจุภัณฑ์หลากหลายประเภท ทั้งแก้ว PET, แก้ว PP Capsule, แก้วกระดาษร้อน-เย็น, ฟิล์มม้วนซีลปากแก้ว และถุงหูหิ้ว ด้วยเทคโนโลยีการพิมพ์ที่ทันสมัย สีสดคมชัด ทนทาน ไม่ลอกง่าย เพื่อการนำเสนอแบรนด์ที่น่าเชื่อถือที่สุด' : 'We supply and print various types of packaging, including PET, PP Capsule, hot/cold paper cups, sealing rolls, and loop bags, using modern printing technology for vibrant, durable colors.'}
+                            <p class="body-text" style="line-height: 1.8; color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px;">
+                                ${this.lang === 'th' 
+                                    ? 'เรามุ่งเน้นให้บริการสกรีนแก้วคุณภาพด้วยสีระบบสกรีนที่ติดทนนาน ไม่หลุดลอกง่าย ช่วยสร้างเอกลักษณ์ให้ร้านกาแฟ ร้านชานมไข่มุก ร้านเบเกอรี่ และธุรกิจเครื่องดื่มทั่วประเทศ พร้อมให้คำแนะนำด้านการจัดวางโลโก้และแบบสกรีนฟรีโดยนักออกแบบมืออาชีพ' 
+                                    : 'We specialize in custom screen printing service with durable, long-lasting colors. Helping cafe, milk tea shop, bakery, and beverage brands establish their identity. We provide layout and graphic design consultations free of charge.'}
                             </p>
-                            <a href="#/products" class="btn btn-primary">${this.lang === 'th' ? 'ดูสินค้าและบริการของเรา' : 'View Our Products'}</a>
+                            <a href="#/products" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">
+                                ${this.lang === 'th' ? 'ดูสินค้าและบริการของเรา' : 'View Our Products'}
+                            </a>
                         </div>
-                        <div style="background-color:var(--bg-sec); border-radius:var(--radius-lg); padding:40px; border:1px solid var(--border-color);">
-                            <h4 style="font-size:1.2rem; font-weight:700; color:var(--secondary); margin-bottom:20px; border-bottom:2px solid var(--primary); padding-bottom:8px;"><i class="fas fa-building"></i> ${this.lang === 'th' ? 'ที่ตั้งและเวลาทำการ' : 'Location & Operating Hours'}</h4>
-                            <ul style="list-style:none; display:flex; flex-direction:column; gap:16px;">
-                                <li>
-                                    <strong style="display:block; color:var(--primary); font-size:0.85rem;"><i class="fas fa-map-marker-alt"></i> ${this.lang === 'th' ? 'ที่อยู่โรงงาน' : 'Factory Address'}</strong>
-                                    <span style="font-size:0.95rem;">${address?.value || ''}</span>
+                        
+                        <!-- Premium Company Information Card -->
+                        <div class="info-panel-card" style="background-color: var(--bg-sec); border-radius: var(--radius-md); padding: 32px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); width: 100%; box-sizing: border-box;">
+                            <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--secondary); margin-bottom: 20px; border-bottom: 2px solid var(--primary); padding-bottom: 8px; display: flex; align-items: center; gap: 8px; font-family: 'Inter', 'Kanit', sans-serif;">
+                                <i class="fas fa-building" style="color: var(--primary);"></i>
+                                <span>${this.lang === 'th' ? 'ข้อมูลบริษัทและช่องทางการติดต่อ' : 'Company & Contact Info'}</span>
+                            </h4>
+                            <ul style="list-style: none; display: flex; flex-direction: column; gap: 16px; padding: 0; margin: 0 0 20px 0;">
+                                <li style="display: flex; gap: 12px; align-items: flex-start;">
+                                    <i class="fas fa-map-marker-alt" style="color: var(--primary); margin-top: 4px; flex-shrink: 0;"></i>
+                                    <div>
+                                        <strong style="display: block; color: var(--secondary); font-size: 0.8rem; font-weight: 700; margin-bottom: 2px;">${this.lang === 'th' ? 'ที่อยู่โรงงาน' : 'Factory Address'}</strong>
+                                        <span class="info-text" style="font-size: 0.9rem; color: var(--text-main); line-height: 1.4;">${address?.value || ''}</span>
+                                    </div>
                                 </li>
-                                <li>
-                                    <strong style="display:block; color:var(--primary); font-size:0.85rem;"><i class="fas fa-phone-alt"></i> ${this.lang === 'th' ? 'เบอร์โทรศัพท์ติดต่อ' : 'Contact Phone'}</strong>
-                                    <span style="font-size:0.95rem;">${phone?.value || ''}</span>
+                                <li style="display: flex; gap: 12px; align-items: flex-start;">
+                                    <i class="fas fa-phone-alt" style="color: var(--primary); margin-top: 4px; flex-shrink: 0;"></i>
+                                    <div>
+                                        <strong style="display: block; color: var(--secondary); font-size: 0.8rem; font-weight: 700; margin-bottom: 2px;">${this.lang === 'th' ? 'เบอร์โทรศัพท์ติดต่อ' : 'Contact Phone'}</strong>
+                                        <span class="info-text" style="font-size: 0.9rem; color: var(--text-main);">${phone?.value || ''}</span>
+                                    </div>
                                 </li>
-                                <li>
-                                    <strong style="display:block; color:var(--primary); font-size:0.85rem;"><i class="fas fa-clock"></i> ${this.lang === 'th' ? 'เวลาเปิดให้บริการ' : 'Operating Hours'}</strong>
-                                    <span style="font-size:0.95rem;">${hours?.value || ''}</span>
+                                ${email?.value ? `
+                                    <li style="display: flex; gap: 12px; align-items: flex-start;">
+                                        <i class="fas fa-envelope" style="color: var(--primary); margin-top: 4px; flex-shrink: 0;"></i>
+                                        <div>
+                                            <strong style="display: block; color: var(--secondary); font-size: 0.8rem; font-weight: 700; margin-bottom: 2px;">${this.lang === 'th' ? 'อีเมลติดต่อ' : 'Email Address'}</strong>
+                                            <span class="info-text" style="font-size: 0.9rem; color: var(--text-main);">${email.value}</span>
+                                        </div>
+                                    </li>
+                                ` : ''}
+                                <li style="display: flex; gap: 12px; align-items: flex-start;">
+                                    <i class="fas fa-clock" style="color: var(--primary); margin-top: 4px; flex-shrink: 0;"></i>
+                                    <div>
+                                        <strong style="display: block; color: var(--secondary); font-size: 0.8rem; font-weight: 700; margin-bottom: 2px;">${this.lang === 'th' ? 'เวลาทำการ' : 'Business Hours'}</strong>
+                                        <span class="info-text" style="font-size: 0.9rem; color: var(--text-main); line-height: 1.4;">${hours?.value || ''}</span>
+                                    </div>
                                 </li>
                             </ul>
+                            
+                            <!-- Quick Social and Map Actions -->
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <div style="display: flex; gap: 8px;">
+                                    ${lineUrl ? `<a href="${lineUrl}" target="_blank" class="btn btn-outline" style="flex: 1; justify-content: center; font-size: 0.8rem; padding: 8px 12px; border-color: #06c755; color: #06c755;"><i class="fab fa-line" style="margin-right: 6px; font-size: 1rem;"></i> LINE</a>` : ''}
+                                    ${fbUrl ? `<a href="${fbUrl}" target="_blank" class="btn btn-outline" style="flex: 1; justify-content: center; font-size: 0.8rem; padding: 8px 12px; border-color: #1877f2; color: #1877f2;"><i class="fab fa-facebook-f" style="margin-right: 6px; font-size: 1rem;"></i> Facebook</a>` : ''}
+                                </div>
+                                ${mapsUrl ? `<a href="${mapsUrl}" target="_blank" class="btn btn-outline" style="width: 100%; justify-content: center; font-size: 0.8rem; padding: 8px 12px; border-color: var(--primary); color: var(--primary);"><i class="fas fa-map-marked-alt" style="margin-right: 6px;"></i> ${this.lang === 'th' ? 'ดูตำแหน่งบน Google Maps' : 'View on Google Maps'}</a>` : ''}
+                            </div>
                         </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Vision and Mission Section -->
+            ${visionMissionHtml}
+            
+            <!-- Summary Highlights Section -->
+            ${bulletsHtml}
+            
+            <!-- Closing CTA Bar -->
+            <section class="section-padding" style="background-color: var(--primary); color: white; text-align: center; position: relative;">
+                <div class="container" style="max-width: 700px; position: relative; z-index: 2;">
+                    <h3 style="font-size: 1.8rem; font-weight: 800; color: white; margin-bottom: 12px; font-family: 'Inter', 'Kanit', sans-serif;">
+                        ${this.lang === 'th' ? 'สนใจสกรีนแก้วกาแฟสำหรับแบรนด์ของคุณ?' : 'Ready to screen print cups for your brand?'}
+                    </h3>
+                    <p class="body-text" style="color: rgba(255, 255, 255, 0.85); font-size: 0.98rem; margin-bottom: 24px; line-height: 1.6; ">
+                        ${this.lang === 'th' 
+                            ? 'ติดต่อเพื่อปรึกษาการออกแบบโลโก้ ประเมินราคา หรือดูแคตตาล็อกสินค้าทั้งหมดได้ฟรีวันนี้' 
+                            : 'Contact us for free layout consultations, pricing quotes, or browse our entire product catalog today.'}
+                    </p>
+                    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                        <a href="#/contact" class="btn" style="background-color: var(--accent); color: white; padding: 10px 24px; font-weight: 700;">
+                            ${this.lang === 'th' ? 'ติดต่อสอบถามข้อมูล' : 'Contact Us'}
+                        </a>
+                        <a href="#/products" class="btn btn-outline" style="border-color: rgba(255, 255, 255, 0.35); color: white; padding: 10px 24px; font-weight: 700;">
+                            ${this.lang === 'th' ? 'เลือกดูสินค้าสกรีน' : 'Browse Products'}
+                        </a>
                     </div>
                 </div>
             </section>
