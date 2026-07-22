@@ -690,7 +690,7 @@ class CharoenApp {
         canonicalLink.setAttribute('href', pageUrl);
 
         // Dynamic Open Graph & Twitter Card Meta Updates
-        const defaultSocialImage = `${origin}/about_banner.jpg`;
+        const defaultSocialImage = `${origin}/about_banner.webp`;
 
         this.updateMetaTag('property', 'og:title', title);
         this.updateMetaTag('property', 'og:description', desc);
@@ -793,7 +793,7 @@ class CharoenApp {
             }
         }
         if (!aboutImgVal) {
-            aboutImgVal = 'about_banner.jpg'; // Presentation fallback only
+            aboutImgVal = 'about_banner.webp'; // Presentation fallback only
         }
 
         const bulletsThKey = await this.db.get('settings', 'about_bullets_th');
@@ -842,7 +842,7 @@ class CharoenApp {
                         <section class="slider-section" id="hero-slider-section" style="position:relative; overflow:hidden; background:#0a192f; width:100%; display:${sortedSlides.length > 0 ? 'block' : 'none'};">
                             <div class="slider-slides-container" style="display:flex; width:${(sortedSlides.length || 1) * 100}%; height:100%; transition: transform 0.65s cubic-bezier(0.25, 0.8, 0.25, 1);">
                                 ${sortedSlides.map(slide => `
-                                    <div class="slider-single-slide" style="width:${100 / (sortedSlides.length || 1)}%; height:100%; background-image:url('${slide.bg_src || 'coffee_bg.jpg'}'); position:relative;">
+                                    <div class="slider-single-slide" style="width:${100 / (sortedSlides.length || 1)}%; height:100%; background-image:url('${slide.bg_src || 'coffee_bg.webp'}'); position:relative;">
                                     </div>
                                 `).join('')}
                             </div>
@@ -865,7 +865,7 @@ class CharoenApp {
                                 <div class="grid-2" style="align-items: center; gap: 40px;">
                                     <div class="homepage-about-image-column" style="width: 100%;">
                                         <div class="homepage-about-image-wrapper" style="position: relative; border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-md); aspect-ratio: 16/11; background-color: var(--bg-sec); display: flex; align-items: center; justify-content: center;">
-                                            <img src="${aboutImgVal}" alt="Charoen On Cup About" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='about_banner.jpg';">
+                                            <img src="${aboutImgVal}" alt="Charoen On Cup About" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='about_banner.webp';">
                                             <div class="homepage-about-image-badge" style="position: absolute; bottom: 16px; left: 16px; background-color: var(--primary); color: white; padding: 8px 16px; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.8rem; box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 8px; z-index: 2;">
                                                 <i class="fas fa-certificate" style="color: var(--accent);"></i>
                                                 <span>${this.lang === 'th' ? 'แก้วพร้อมสกรีน ครบวงจร' : 'One-Stop Cup Printing'}</span>
@@ -1097,7 +1097,7 @@ class CharoenApp {
                                             return `
                                                 <div class="portfolio-card" onclick="window.charoenApp.openPortfolioDetails('${item.id}')" style="cursor:pointer;">
                                                     <div class="portfolio-img-box">
-                                                        <img src="${item.image_src || 'coffee_bg.jpg'}" alt="${item.title_th || 'Portfolio'}">
+                                                        <img src="${item.image_src || 'coffee_bg.webp'}" alt="${item.title_th || 'Portfolio'}">
                                                     </div>
                                                     <div class="portfolio-info">
                                                         <span style="font-size:0.75rem; font-weight:700; color:var(--secondary); text-transform:uppercase;">${catName}</span>
@@ -1131,7 +1131,7 @@ class CharoenApp {
                                     <div style="display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:40px; opacity:0.85;">
                                         ${visibleClients.map(c => `
                                             <a href="${c.link || '#'}" target="_blank" title="${c.name}" style="display:inline-block; height:60px; filter:grayscale(100%); transition:var(--transition); cursor:pointer;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(100%)'">
-                                                <img src="${c.logo_src || 'coffee_bg.jpg'}" alt="${c.name}" style="height:100%; object-fit:contain;">
+                                                <img src="${c.logo_src || 'coffee_bg.webp'}" alt="${c.name}" style="height:100%; object-fit:contain;">
                                             </a>
                                         `).join('')}
                                     </div>
@@ -1438,7 +1438,7 @@ class CharoenApp {
                             if (slidesContainer) {
                                 slidesContainer.style.width = `${filteredSlides.length * 100}%`;
                                 slidesContainer.innerHTML = filteredSlides.map(slide => `
-                                    <div class="slider-single-slide" style="width:${100 / filteredSlides.length}%; height:100%; background-size:cover; background-position:center; background-image:url('${slide.bg_src || 'coffee_bg.jpg'}'); position:relative;">
+                                    <div class="slider-single-slide" style="width:${100 / filteredSlides.length}%; height:100%; background-size:cover; background-position:center; background-image:url('${slide.bg_src || 'coffee_bg.webp'}'); position:relative;">
                                     </div>
                                 `).join('');
                             }
@@ -1739,7 +1739,7 @@ class CharoenApp {
                     ${visibleArticles.map(a => `
                         <div class="portfolio-card" onclick="window.location.hash='#/articles-detail?id=${a.id}'" style="cursor:pointer; display:flex; flex-direction:row; background:var(--bg-main); border:1px solid var(--border-color); align-items:stretch;">
                             <div class="portfolio-img-box" style="flex:1.1; height:100%; min-height:220px;">
-                                <img src="${a.thumbnail || 'coffee_bg.jpg'}" alt="${a.title_th}" style="height:100%; object-fit:cover;">
+                                <img src="${a.thumbnail || 'coffee_bg.webp'}" alt="${a.title_th}" style="height:100%; object-fit:cover;">
                             </div>
                             <div class="portfolio-info" style="flex:1.4; padding:25px; display:flex; flex-direction:column; justify-content:center;">
                                 <span style="font-size:0.78rem; color:var(--text-sec);"><i class="far fa-calendar-alt"></i> ${a.date}</span>
@@ -1903,7 +1903,7 @@ class CharoenApp {
                                 ${matchProducts.map(prod => `
                                     <div class="product-card" onclick="window.charoenApp.openProductDetails('${prod.id}')">
                                         <div class="product-img-box">
-                                            <img src="${prod.image_src || 'coffee_bg.jpg'}" alt="${prod.name_th}">
+                                            <img src="${prod.image_src || 'coffee_bg.webp'}" alt="${prod.name_th}">
                                         </div>
                                         <div class="product-info">
                                             <span style="font-size:0.75rem; font-weight:700; color:var(--secondary); text-transform:uppercase;">${prod.category || 'สกรีนแก้ว'}</span>
@@ -1929,7 +1929,7 @@ class CharoenApp {
                                 ${matchNews.map(n => `
                                     <div class="portfolio-card" onclick="window.location.hash='#/news-detail?id=${n.id}'" style="cursor:pointer; background:var(--bg-sec);">
                                         <div class="portfolio-img-box" style="height:170px;">
-                                            <img src="${n.thumbnail || 'coffee_bg.jpg'}" alt="${n.title_th}">
+                                            <img src="${n.thumbnail || 'coffee_bg.webp'}" alt="${n.title_th}">
                                         </div>
                                         <div class="portfolio-info" style="padding:20px;">
                                             <span style="font-size:0.75rem; color:var(--secondary); font-weight:700; text-transform:uppercase;">${this.lang === 'th' ? '[กิจกรรม]' : '[Activity]'}</span>
@@ -1942,7 +1942,7 @@ class CharoenApp {
                                 ${matchArticles.map(a => `
                                     <div class="portfolio-card" onclick="window.location.hash='#/articles-detail?id=${a.id}'" style="cursor:pointer; background:var(--bg-sec);">
                                         <div class="portfolio-img-box" style="height:170px;">
-                                            <img src="${a.thumbnail || 'coffee_bg.jpg'}" alt="${a.title_th}">
+                                            <img src="${a.thumbnail || 'coffee_bg.webp'}" alt="${a.title_th}">
                                         </div>
                                         <div class="portfolio-info" style="padding:20px;">
                                             <span style="font-size:0.75rem; color:var(--secondary); font-weight:700; text-transform:uppercase;">[บทความแนะนำ]</span>
@@ -2230,7 +2230,7 @@ class CharoenApp {
             }
         }
         if (!aboutImgVal) {
-            aboutImgVal = 'about_banner.jpg'; // Presentation fallback only
+            aboutImgVal = 'about_banner.webp'; // Presentation fallback only
         }
 
         // Load social URLs
@@ -2456,7 +2456,7 @@ class CharoenApp {
                 <div class="slider-container products-hero-slider" id="products-hero-slider">
                     <div class="slider-wrapper products-hero-track" style="width:${sortedSlides.length * 100}%;">
                         ${sortedSlides.map(slide => `
-                            <div class="slider-single-slide products-hero-slide" style="width:${100 / sortedSlides.length}%; background-image:url('${slide.bg_src || 'coffee_bg.jpg'}');">
+                            <div class="slider-single-slide products-hero-slide" style="width:${100 / sortedSlides.length}%; background-image:url('${slide.bg_src || 'coffee_bg.webp'}');">
                                 <div class="products-hero-overlay"></div>
                                 <div class="container products-hero-content">
                                     <h3 class="products-hero-title">${this.lang === 'th' ? slide.title_th : slide.title_en}</h3>
@@ -2581,7 +2581,7 @@ class CharoenApp {
             : visiblePortfolio.filter(item => item.category === activeCatId);
 
         let html = `
-            <div class="subpage-hero-banner" style="background-image: url('portfolio_banner.jpg')">
+            <div class="subpage-hero-banner" style="background-image: url('portfolio_banner.webp')">
                 <div class="container">
                     <h2>${this.t('nav_portfolio')}</h2>
                     <p>${this.lang === 'th' ? 'รวมภาพตัวอย่างผลงานสกรีนจริงจากแบรนด์เครื่องดื่มและร้านกาแฟชั้นนำทั่วประเทศ' : 'Real-world screen printing portfolio from leading beverage brands & cafes.'}</p>
@@ -2670,7 +2670,7 @@ class CharoenApp {
                 html += `
                     <div class="portfolio-card" onclick="window.charoenApp.openPortfolioDetails('${item.id}')" tabindex="0" role="button" aria-label="${this.lang === 'th' ? 'ดูรายละเอียดผลงาน ' + (item.title_th || '') : 'View details of ' + (item.title_en || '')}" onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.charoenApp.openPortfolioDetails('${item.id}'); }">
                         <div class="portfolio-card-image-wrapper">
-                            <img class="portfolio-card-image" src="${item.image_src || 'coffee_bg.jpg'}" alt="${this.lang === 'th' ? item.title_th : item.title_en}" loading="lazy" onerror="this.src='coffee_bg.jpg';">
+                            <img class="portfolio-card-image" src="${item.image_src || 'coffee_bg.webp'}" alt="${this.lang === 'th' ? item.title_th : item.title_en}" loading="lazy" onerror="this.src='coffee_bg.webp';">
                         </div>
                         
                         ${galleryCount > 1 ? `
@@ -3038,7 +3038,7 @@ class CharoenApp {
         const descHtml = contactDesc ? `<p style="line-height:1.75; color:var(--text-sec); margin-bottom:30px;">${contactDesc}</p>` : '';
 
         container.innerHTML = `
-            <div class="subpage-hero-banner" style="background-image: url('contact_banner.jpg')">
+            <div class="subpage-hero-banner" style="background-image: url('contact_banner.webp')">
                 <div class="container">
                     <h2>${this.t('nav_contact')}</h2>
                     <p>${this.lang === 'th' ? 'ยินดีให้คำปรึกษาและออกแบบแก้วฟรี พร้อมบริการส่งด่วนทั่วประเทศ' : 'Get free design consultations and packaging mockups with nationwide delivery.'}</p>
@@ -3152,7 +3152,7 @@ class CharoenApp {
         }
 
         container.innerHTML = `
-            <div class="subpage-hero-banner" style="background-image: url('faq_banner.jpg')">
+            <div class="subpage-hero-banner" style="background-image: url('faq_banner.webp')">
                 <div class="container">
                     <h2>${this.t('nav_faq')}</h2>
                     <p>${this.lang === 'th' ? 'คำถามที่พบบ่อยเกี่ยวกับการสกรีนแก้ว ขั้นต่ำ ระยะเวลาผลิต และการขนส่งสำหรับแบรนด์คาเฟ่' : 'Frequently Asked Questions about cup custom screen printing, MOQs, lead times, and logistics.'}</p>
@@ -3306,7 +3306,7 @@ class CharoenApp {
                 <div class="product-details-grid">
                     <div class="product-gallery-container">
                         <div class="detail-img-box">
-                            <img id="modal-main-image" src="${mainImage || 'coffee_bg.jpg'}" alt="${this.lang === 'th' ? prod.name_th : prod.name_en}" style="${mainImage ? '' : 'display:none;'}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <img id="modal-main-image" src="${mainImage || 'coffee_bg.webp'}" alt="${this.lang === 'th' ? prod.name_th : prod.name_en}" style="${mainImage ? '' : 'display:none;'}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                             <div class="fallback-img-box" style="display:${mainImage ? 'none' : 'flex'}; align-items:center; justify-content:center; width:100%; height:100%; min-height:250px;">
                                 <i class="fas fa-box" style="font-size:5rem; color:var(--text-muted);"></i>
                             </div>
@@ -3467,7 +3467,7 @@ class CharoenApp {
                 <div class="portfolio-details-grid">
                     <div class="product-gallery-container">
                         <div class="detail-img-box">
-                            <img id="modal-main-image" src="${mainImage || 'coffee_bg.jpg'}" alt="${this.lang === 'th' ? item.title_th : item.title_en}" style="${mainImage ? '' : 'display:none;'}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <img id="modal-main-image" src="${mainImage || 'coffee_bg.webp'}" alt="${this.lang === 'th' ? item.title_th : item.title_en}" style="${mainImage ? '' : 'display:none;'}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                             <div class="fallback-img-box" style="display:${mainImage ? 'none' : 'flex'}; align-items:center; justify-content:center; width:100%; height:100%; min-height:250px;">
                                 <i class="fas fa-image" style="font-size:5rem; color:var(--text-muted);"></i>
                             </div>

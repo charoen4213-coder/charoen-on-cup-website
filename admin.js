@@ -2380,7 +2380,7 @@ class CharoenAdmin {
             container.innerHTML = productGalleryImages.map((img, idx) => `
                 <div class="gallery-image-card" draggable="true" data-index="${idx}" style="display:flex; align-items:center; gap:12px; padding:8px; border:1px solid var(--border-color); border-radius:var(--radius-sm); background:var(--bg-main); box-sizing:border-box; width: 100%; transition: transform 0.2s ease, opacity 0.2s ease;">
                     <div style="width:50px; height:50px; border-radius:var(--radius-sm); overflow:hidden; background:var(--bg-sec); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                        <img src="${img}" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.src='coffee_bg.jpg';">
+                        <img src="${img}" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.src='coffee_bg.webp';">
                     </div>
                     <div style="flex-grow:1; min-width:0; font-size:0.8rem; color:var(--text-sec); display:flex; flex-direction:column; gap:2px;">
                         <span style="font-weight:700; color:var(--secondary);">ตำแหน่งที่ ${idx + 1}</span>
@@ -2968,7 +2968,7 @@ class CharoenAdmin {
             container.innerHTML = portfolioGalleryImages.map((img, idx) => `
                 <div class="gallery-image-card" draggable="true" data-index="${idx}" style="display:flex; align-items:center; gap:12px; padding:8px; border:1px solid var(--border-color); border-radius:var(--radius-sm); background:var(--bg-main); box-sizing:border-box; width: 100%; transition: transform 0.2s ease, opacity 0.2s ease;">
                     <div style="width:50px; height:50px; border-radius:var(--radius-sm); overflow:hidden; background:var(--bg-sec); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                        <img src="${img}" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.src='coffee_bg.jpg';">
+                        <img src="${img}" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.src='coffee_bg.webp';">
                     </div>
                     <div style="flex-grow:1; min-width:0; font-size:0.8rem; color:var(--text-sec); display:flex; flex-direction:column; gap:2px;">
                         <span style="font-weight:700; color:var(--secondary);">ตำแหน่งที่ ${idx + 1}</span>
