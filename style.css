@@ -537,7 +537,8 @@ h1, h2, h3, h4, h5, h6 {
     border-color: var(--primary);
 }
 
-.product-image-box {
+.product-image-box,
+.product-img-box {
     aspect-ratio: 1 / 1;
     background-color: var(--bg-sec);
     position: relative;
@@ -549,14 +550,16 @@ h1, h2, h3, h4, h5, h6 {
     border-top-right-radius: var(--radius-lg);
 }
 
-.product-image-box img {
+.product-image-box img,
+.product-img-box img {
     max-width: 85%;
     max-height: 85%;
     object-fit: contain;
     transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-.product-card:hover .product-image-box img {
+.product-card:hover .product-image-box img,
+.product-card:hover .product-img-box img {
     transform: scale(1.05);
 }
 
@@ -990,13 +993,17 @@ h1, h2, h3, h4, h5, h6 {
     transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-.portfolio-card-image-wrapper {
+.portfolio-card-image-wrapper,
+.portfolio-img-box {
     width: 100%;
     height: 100%;
+    aspect-ratio: 4 / 3;
+    background-color: var(--bg-sec);
     overflow: hidden;
 }
 
-.portfolio-card-image {
+.portfolio-card-image,
+.portfolio-img-box img {
     width: 100%;
     height: 100%;
     object-fit: cover;

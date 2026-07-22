@@ -1097,7 +1097,7 @@ class CharoenApp {
                                             return `
                                                 <div class="portfolio-card" onclick="window.charoenApp.openPortfolioDetails('${item.id}')" style="cursor:pointer;">
                                                     <div class="portfolio-img-box">
-                                                        <img src="${item.image_src || 'coffee_bg.webp'}" alt="${item.title_th || 'Portfolio'}">
+                                                        <img src="${item.image_src || 'coffee_bg.webp'}" alt="${item.title_th || 'Portfolio'}" loading="lazy">
                                                     </div>
                                                     <div class="portfolio-info">
                                                         <span style="font-size:0.75rem; font-weight:700; color:var(--secondary); text-transform:uppercase;">${catName}</span>
@@ -1131,7 +1131,7 @@ class CharoenApp {
                                     <div style="display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:40px; opacity:0.85;">
                                         ${visibleClients.map(c => `
                                             <a href="${c.link || '#'}" target="_blank" title="${c.name}" style="display:inline-block; height:60px; filter:grayscale(100%); transition:var(--transition); cursor:pointer;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(100%)'">
-                                                <img src="${c.logo_src || 'coffee_bg.webp'}" alt="${c.name}" style="height:100%; object-fit:contain;">
+                                                <img src="${c.logo_src || 'coffee_bg.webp'}" alt="${c.name}" width="120" height="60" loading="lazy" style="height:100%; object-fit:contain;">
                                             </a>
                                         `).join('')}
                                     </div>
@@ -1903,7 +1903,7 @@ class CharoenApp {
                                 ${matchProducts.map(prod => `
                                     <div class="product-card" onclick="window.charoenApp.openProductDetails('${prod.id}')">
                                         <div class="product-img-box">
-                                            <img src="${prod.image_src || 'coffee_bg.webp'}" alt="${prod.name_th}">
+                                            <img src="${prod.image_src || 'coffee_bg.webp'}" alt="${prod.name_th}" loading="lazy">
                                         </div>
                                         <div class="product-info">
                                             <span style="font-size:0.75rem; font-weight:700; color:var(--secondary); text-transform:uppercase;">${prod.category || 'สกรีนแก้ว'}</span>
@@ -3000,7 +3000,7 @@ class CharoenApp {
                 <div class="line-qr-card-box" style="background-color:var(--bg-sec); border-radius:var(--radius-lg); padding:24px; border:1px solid var(--border-color); text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-top:30px;">
                     <h5 style="font-size:1.05rem; font-weight:700; margin-top:0; margin-bottom:12px; color:var(--primary); font-family:'Kanit', sans-serif;"><i class="fas fa-qrcode"></i> LINE QR Code</h5>
                     <div style="width:140px; height:140px; background:white; border:1px solid var(--border-color); border-radius:var(--radius-md); padding:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:var(--shadow-sm);" onclick="window.openLineQrModal('${lineQrImage}')" title="${this.lang === 'th' ? 'คลิกขยายรูป QR Code' : 'Click to enlarge QR Code'}">
-                        <img src="${lineQrImage}" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="const card = this.closest('.line-qr-card-box'); if (card) card.style.display='none';">
+                        <img src="${lineQrImage}" alt="LINE QR Code" width="140" height="140" loading="lazy" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="const card = this.closest('.line-qr-card-box'); if (card) card.style.display='none';">
                     </div>
                     <span style="font-size:0.75rem; color:var(--text-sec); margin-top:8px; display:block;">${this.lang === 'th' ? 'คลิกที่ QR Code เพื่อสแกนแอดไลน์' : 'Click QR Code to Scan & Add LINE'}</span>
                 </div>
