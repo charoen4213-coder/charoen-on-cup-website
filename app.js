@@ -187,10 +187,8 @@ class CharoenApp {
         // Remove site preloader
         const preloader = document.getElementById('site-preloader');
         if (preloader) {
-            setTimeout(() => {
-                preloader.style.opacity = '0';
-                preloader.style.visibility = 'hidden';
-            }, 300);
+            preloader.style.opacity = '0';
+            preloader.style.visibility = 'hidden';
         }
     }
 
@@ -624,6 +622,17 @@ class CharoenApp {
         };
     }
 
+    updateMetaTag(attrName, attrVal, contentVal) {
+        if (!attrName || !attrVal || contentVal == null) return;
+        let el = document.querySelector(`meta[${attrName}="${attrVal}"]`);
+        if (!el) {
+            el = document.createElement('meta');
+            el.setAttribute(attrName, attrVal);
+            document.head.appendChild(el);
+        }
+        el.setAttribute('content', contentVal);
+    }
+
     async handleRouting() {
         if (this.sliderInterval) {
             clearInterval(this.sliderInterval);
@@ -665,8 +674,7 @@ class CharoenApp {
         }
         document.title = title;
 
-        const metaDesc = document.querySelector('meta[name="description"]');
-        if (metaDesc) metaDesc.setAttribute('content', desc);
+        this.updateMetaTag('name', 'description', desc);
 
         // Dynamic Canonical URL Update
         let canonicalLink = document.querySelector('link[rel="canonical"]');
@@ -678,7 +686,25 @@ class CharoenApp {
         const origin = window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file://')
             ? window.location.origin
             : 'https://charoen-website-website.web.app';
-        canonicalLink.setAttribute('href', `${origin}/${hash}`);
+        const pageUrl = `${origin}/${hash}`;
+        canonicalLink.setAttribute('href', pageUrl);
+
+        // Dynamic Open Graph & Twitter Card Meta Updates
+        const defaultSocialImage = `${origin}/about_banner.jpg`;
+
+        this.updateMetaTag('property', 'og:title', title);
+        this.updateMetaTag('property', 'og:description', desc);
+        this.updateMetaTag('property', 'og:url', pageUrl);
+        this.updateMetaTag('property', 'og:image', defaultSocialImage);
+        this.updateMetaTag('property', 'og:type', 'website');
+        this.updateMetaTag('property', 'og:site_name', 'เจริญ ออน คัพ');
+        this.updateMetaTag('property', 'og:locale', this.lang === 'th' ? 'th_TH' : 'en_US');
+
+        this.updateMetaTag('name', 'twitter:card', 'summary_large_image');
+        this.updateMetaTag('name', 'twitter:site', '@charoenoncup');
+        this.updateMetaTag('name', 'twitter:title', title);
+        this.updateMetaTag('name', 'twitter:description', desc);
+        this.updateMetaTag('name', 'twitter:image', defaultSocialImage);
 
         const container = document.getElementById('app-main-content');
         if (!container) return;
