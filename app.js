@@ -668,6 +668,18 @@ class CharoenApp {
         const metaDesc = document.querySelector('meta[name="description"]');
         if (metaDesc) metaDesc.setAttribute('content', desc);
 
+        // Dynamic Canonical URL Update
+        let canonicalLink = document.querySelector('link[rel="canonical"]');
+        if (!canonicalLink) {
+            canonicalLink = document.createElement('link');
+            canonicalLink.setAttribute('rel', 'canonical');
+            document.head.appendChild(canonicalLink);
+        }
+        const origin = window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file://')
+            ? window.location.origin
+            : 'https://charoen-website-website.web.app';
+        canonicalLink.setAttribute('href', `${origin}/${hash}`);
+
         const container = document.getElementById('app-main-content');
         if (!container) return;
 

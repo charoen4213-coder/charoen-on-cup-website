@@ -1,0 +1,14 @@
+# robots.txt for Charoen On Cup Corporate Website
+User-agent: *
+Allow: /
+
+# Allow indexing of assets required for rendering
+Allow: /*.css$
+Allow: /*.js$
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.webp$
+Allow: /*.svg$
+
+Sitemap: https://charoen-website-website.web.app/sitemap.xml
