@@ -62,17 +62,23 @@
         <!-- Row 1: Topbar -->
         <div class="header-topbar">
             <div class="topbar-container">
-                <div class="topbar-left" style="display:flex; align-items:center;">
-                    <a href="tel:095-430-5225" id="topbar-phone-link" style="color:rgba(255,255,255,0.9); font-weight:600; font-size:0.85rem; display:flex; align-items:center; gap:8px;"><i class="fas fa-phone-alt"></i> <span id="topbar-phone-val">095-430-5225</span></a>
+                <div class="topbar-left">
+                    <a href="tel:095-430-5225" id="topbar-phone-link" class="topbar-link">
+                        <i class="fas fa-phone-alt"></i> <span id="topbar-phone-val">095-430-5225</span>
+                    </a>
+                    <span class="topbar-divider">|</span>
+                    <span class="topbar-text topbar-hours">
+                        <i class="fas fa-clock"></i> <span>จ.-ส. 08:30 - 17:30 น.</span>
+                    </span>
                 </div>
-                <div class="topbar-right" style="display:flex; align-items:center; gap:18px;">
-                    <a href="#/products" id="topbar-search-trigger" style="color:rgba(255,255,255,0.9); font-size:1rem; display:flex; align-items:center;" title="ค้นหาสินค้า"><i class="fas fa-search"></i></a>
-                    <span style="color:rgba(255,255,255,0.25); font-size:0.85rem;">|</span>
-                    <a href="https://facebook.com" id="topbar-fb-link" target="_blank" style="color:white; font-size:0.88rem;"><i class="fab fa-facebook-f"></i></a>
-                    <a href="https://line.me" id="topbar-line-link" target="_blank" style="color:white; font-size:0.88rem;"><i class="fab fa-line"></i></a>
-                    <a href="#/quote" class="topbar-cart-link" style="color:white; font-size:0.88rem; display:flex; align-items:center; gap:6px; position:relative;">
+                <div class="topbar-right">
+                    <a href="https://line.me" id="topbar-line-link" target="_blank" class="topbar-link topbar-social-icon" title="LINE Official"><i class="fab fa-line"></i></a>
+                    <a href="https://facebook.com" id="topbar-fb-link" target="_blank" class="topbar-link topbar-social-icon" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <span class="topbar-divider">|</span>
+                    <a href="#/products" id="topbar-search-trigger" class="topbar-link topbar-search-btn" title="ค้นหาสินค้า"><i class="fas fa-search"></i></a>
+                    <a href="#/quote" class="topbar-cart-link topbar-link" title="รายการขอใบเสนอราคา">
                         <i class="fas fa-shopping-cart"></i>
-                        <span class="cart-badge" style="background:#ff6b00; color:white; font-size:0.65rem; font-weight:800; border-radius:50%; padding:2px 6px; display:inline-block; line-height:1.2; position:absolute; top:-8px; right:-14px;">0</span>
+                        <span class="cart-badge">0</span>
                     </a>
                 </div>
             </div>
@@ -81,9 +87,9 @@
         <!-- Row 2: Main Menu -->
         <div class="header-main-menu">
             <div class="main-menu-container">
-                <a href="#/home" class="logo-container" style="display:flex; align-items:center; gap:10px;">
-                    <div class="logo-icon" style="color:var(--bg-sec); font-size:1.3rem;"><i class="fas fa-print"></i></div>
-                    <div class="logo-text" id="site-logo-text" style="color:white; font-weight:800; font-size:1.25rem;">เจริญ ออน คัพ<span style="color:var(--bg-sec);">.</span></div>
+                <a href="#/home" class="logo-container">
+                    <div class="logo-icon"><i class="fas fa-print"></i></div>
+                    <div class="logo-text" id="site-logo-text">เจริญ ออน คัพ<span>.</span></div>
                 </a>
                 
                 <nav class="main-nav" id="navbar-menu-container">
@@ -94,7 +100,7 @@
                     <!-- Loaded dynamically -->
                 </div>
                 
-                <button class="mobile-menu-trigger" id="mobile-menu-trigger" aria-label="Toggle Menu" style="color:white;">
+                <button class="mobile-menu-trigger" id="mobile-menu-trigger" aria-label="Toggle Menu">
                     <i class="fas fa-bars"></i>
                 </button>
             </div>
@@ -102,7 +108,7 @@
     </header>
 
     <!-- Main Content Area -->
-    <main id="app-main-content" style="min-height: calc(100vh - 96px - 380px);">
+    <main id="app-main-content" style="min-height: calc(100vh - 104px - 380px);">
         <!-- Skeleton loader -->
         <div class="hero-section hero-placeholder" style="background-color: var(--bg-sec); display: flex; align-items: center; justify-content: center; width: 100%; height: 60vh;">
             <div class="container text-center" style="opacity: 0.2;">

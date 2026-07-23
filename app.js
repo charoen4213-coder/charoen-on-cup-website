@@ -592,6 +592,20 @@ class CharoenApp {
             });
         }
 
+        // Header scroll dynamics: toggle elevated shadow and glassmorphism styling
+        const header = document.querySelector('.site-header-double');
+        if (header) {
+            const handleScroll = () => {
+                if (window.scrollY > 20) {
+                    header.classList.add('header-scrolled');
+                } else {
+                    header.classList.remove('header-scrolled');
+                }
+            };
+            window.addEventListener('scroll', handleScroll, { passive: true });
+            handleScroll();
+        }
+
         window.openLineQrModal = (imgSrc) => {
             let modal = document.getElementById('line-qr-modal-overlay');
             if (!modal) {
