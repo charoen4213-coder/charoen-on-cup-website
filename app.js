@@ -777,7 +777,77 @@ class CharoenApp {
         }
     }
 
-        async renderHomeView(container) {
+    renderSingleHeroSlideHTML(slide, totalCount) {
+        const slideTitle = this.lang === 'th' ? (slide.title_th || 'รับสกรีนแก้วพลาสติก แก้วกระดาษ หาดใหญ่') : (slide.title_en || 'Premium Custom Cup Printing in Hatyai');
+        const slideSubtitle = this.lang === 'th' ? (slide.subtitle_th || 'ผู้ผลิตและรับสกรีนแก้วกาแฟ บรรจุภัณฑ์อาหารและเครื่องดื่มครบวงจร สีคมชัด ขั้นต่ำเริ่มต้นเพียง 1,000 ใบ ส่งตรงถึงหน้าร้านทั่วประเทศ') : (slide.subtitle_en || 'Leading manufacturer and custom printer for coffee cups, plastic & paper packaging with crisp colors and nationwide fast delivery.');
+        const primaryBtnText = this.lang === 'th' ? (slide.btn_text_th || 'ขอใบเสนอราคา') : (slide.btn_text_en || 'Get Quote');
+        const primaryBtnLink = slide.btn_link || '#/quote';
+        const slideImg = slide.bg_src || 'cup_print_mockup.webp';
+
+        const widthPercent = 100 / (totalCount || 1);
+        return `
+            <div class="slider-single-slide hero-slide-item" style="flex:0 0 ${widthPercent}%; width:${widthPercent}%; max-width:${widthPercent}%; box-sizing:border-box;">
+                <div class="container hero-slide-container">
+                    <div class="hero-content-grid">
+                        <!-- Left Column: Corporate Copy & CTAs -->
+                        <div class="hero-text-col">
+                            <div class="hero-eyebrow-badge">
+                                <i class="fas fa-award" style="color:var(--secondary);"></i>
+                                <span>${this.lang === 'th' ? 'โรงงานสกรีนแก้วพลาสติกมาตรฐาน • หาดใหญ่ สงขลา' : 'ISO Standard Plastic Cup Factory • Hatyai'}</span>
+                            </div>
+                            <h1 class="hero-main-title">
+                                ${slideTitle}
+                            </h1>
+                            <p class="hero-description">
+                                ${slideSubtitle}
+                            </p>
+                            <div class="hero-cta-group">
+                                <a href="${primaryBtnLink}" class="btn btn-hero-primary">
+                                    <i class="fas fa-file-invoice-dollar"></i> ${primaryBtnText}
+                                </a>
+                                <a href="#/portfolio" class="btn btn-hero-secondary">
+                                    <i class="fas fa-images"></i> ${this.lang === 'th' ? 'ดูผลงานสกรีนจริง' : 'View Portfolio'}
+                                </a>
+                            </div>
+                        </div>
+                        <!-- Right Column: Premium Showcase Composition & Floating Chips -->
+                        <div class="hero-visual-col">
+                            <div class="hero-showcase-frame">
+                                <div class="hero-showcase-glow"></div>
+                                <img src="${slideImg}" alt="${slideTitle}" class="hero-showcase-img" onerror="this.onerror=null; this.src='cup_print_mockup.webp';">
+                                
+                                <!-- Floating Card 1: Top Right -->
+                                <div class="hero-float-card float-card-top">
+                                    <div class="float-icon-box"><i class="fas fa-check"></i></div>
+                                    <div class="float-card-text">
+                                        <strong>${this.lang === 'th' ? 'ฟรีออกแบบ 100%' : 'Free Design 100%'}</strong>
+                                        <span>${this.lang === 'th' ? 'โดยทีมกราฟิกมืออาชีพ' : 'By Professional Team'}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Floating Card 2: Bottom Left -->
+                                <div class="hero-float-card float-card-bottom">
+                                    <div class="float-icon-box" style="background:rgba(255, 107, 0, 0.15); color:var(--secondary);"><i class="fas fa-shield-alt"></i></div>
+                                    <div class="float-card-text">
+                                        <strong>${this.lang === 'th' ? 'สีคมชัด ติดแน่น' : 'Crisp & Durable Print'}</strong>
+                                        <span>${this.lang === 'th' ? 'หมึกฟู้ดเกรด ปลอดภัย' : 'Food Grade Certified'}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Floating Chip: Bottom Badge -->
+                                <div class="hero-float-chip float-chip-badge">
+                                    <i class="fas fa-bolt" style="color:var(--secondary);"></i>
+                                    <span>${this.lang === 'th' ? 'ผลิตด่วน 3-5 วันทำการ' : 'Fast 3-5 Days Lead Time'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    async renderHomeView(container) {
         // Load initial slides from IndexedDB cache first
         let localSlides = [];
         try {
@@ -852,21 +922,20 @@ class CharoenApp {
             switch (sec.type) {
                 case 'hero_banner':
                     html += `
-                        <!-- Image Only Hero Banner Slider -->
-                        <section class="slider-section" id="hero-slider-section" style="position:relative; overflow:hidden; background:#0a192f; width:100%; display:${sortedSlides.length > 0 ? 'block' : 'none'};">
-                            <div class="slider-slides-container" style="display:flex; width:${(sortedSlides.length || 1) * 100}%; height:100%; transition: transform 0.65s cubic-bezier(0.25, 0.8, 0.25, 1);">
-                                ${sortedSlides.map(slide => `
-                                    <div class="slider-single-slide" style="width:${100 / (sortedSlides.length || 1)}%; height:100%; background-image:url('${slide.bg_src || 'coffee_bg.webp'}'); position:relative;">
-                                    </div>
-                                `).join('')}
+                        <!-- Upgraded Premium Two-Column Corporate Hero Experience -->
+                        <section class="hero-premium-section slider-section" id="hero-slider-section" style="display:${sortedSlides.length > 0 ? 'block' : 'none'};">
+                            <div class="slider-slides-container" style="display:flex; width:${(sortedSlides.length || 1) * 100}%; height:100%; transition: transform 1.1s cubic-bezier(0.25, 0.8, 0.25, 1);">
+                                ${sortedSlides.map(slide => this.renderSingleHeroSlideHTML(slide, sortedSlides.length)).join('')}
                             </div>
-                            <button class="slider-arrow prev-arrow" onclick="window.charoenApp.changeSlide(-1)" style="position:absolute; top:50%; left:20px; transform:translateY(-50%); width:48px; height:48px; border-radius:50%; border:none; background:rgba(255,255,255,0.18); color:white; font-size:1.15rem; cursor:pointer; z-index:10; backdrop-filter:blur(4px); display:flex; justify-content:center; align-items:center;"><i class="fas fa-chevron-left"></i></button>
-                            <button class="slider-arrow next-arrow" onclick="window.charoenApp.changeSlide(1)" style="position:absolute; top:50%; right:20px; transform:translateY(-50%); width:48px; height:48px; border-radius:50%; border:none; background:rgba(255,255,255,0.18); color:white; font-size:1.15rem; cursor:pointer; z-index:10; backdrop-filter:blur(4px); display:flex; justify-content:center; align-items:center;"><i class="fas fa-chevron-right"></i></button>
-                            <div class="slider-dots" style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); display:flex; gap:10px; z-index:10;">
-                                ${sortedSlides.map((_, idx) => `
-                                    <span class="slider-dot" onclick="window.charoenApp.goToSlide(${idx})" style="width:12px; height:12px; border-radius:50%; background:rgba(255,255,255,0.45); cursor:pointer; transition:var(--transition);"></span>
-                                `).join('')}
-                            </div>
+                            ${sortedSlides.length > 1 ? `
+                                <button class="slider-arrow prev-arrow" onclick="window.charoenApp.changeSlide(-1)" aria-label="Previous Slide"><i class="fas fa-chevron-left"></i></button>
+                                <button class="slider-arrow next-arrow" onclick="window.charoenApp.changeSlide(1)" aria-label="Next Slide"><i class="fas fa-chevron-right"></i></button>
+                                <div class="slider-dots">
+                                    ${sortedSlides.map((_, idx) => `
+                                        <span class="slider-dot ${idx === 0 ? 'active' : ''}" onclick="window.charoenApp.goToSlide(${idx})" aria-label="Slide ${idx + 1}"></span>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
                         </section>
                     `;
                     break;
@@ -941,13 +1010,13 @@ class CharoenApp {
 
                     html += `
                         <!-- Company Strengths Section -->
-                        <section class="section-padding" style="background-color: var(--bg-main); border-bottom: 1px solid var(--border-color);">
+                        <section class="section-padding" style="background-color: var(--bg-sec); border-bottom: 1px solid var(--border-color);">
                             <div class="container text-center">
                                 <h2 class="section-title">${this.lang === 'th' ? strengthsTitleTh : strengthsTitleEn}</h2>
                                 <div class="grid-3" style="margin-top:45px;">
                                     ${strengthItems.map(item => `
                                         <div class="service-card" style="text-align:center; padding: 40px 24px;">
-                                            <div class="service-icon-box" style="margin: 0 auto 20px auto; background-color:var(--bg-sec); color:var(--secondary);"><i class="fas ${item.icon || 'fa-award'}"></i></div>
+                                            <div class="service-icon-box" style="margin: 0 auto 20px auto; background-color:var(--bg-main); color:var(--secondary);"><i class="fas ${item.icon || 'fa-award'}"></i></div>
                                             <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 15px; color: var(--primary);">${this.lang === 'th' ? (item.title_th || '') : (item.title_en || '')}</h3>
                                             <p style="font-size: 0.95rem; color: var(--text-sec); line-height: 1.6;">${this.lang === 'th' ? (item.desc_th || '') : (item.desc_en || '')}</p>
                                         </div>
@@ -961,7 +1030,7 @@ class CharoenApp {
                 case 'services':
                     html += `
                         <!-- Categories Grid Section (6 Cards matching WorldWide Coffee style) -->
-                        <section class="home-category-section section-padding" style="background-color: var(--bg-sec); border-bottom: 1px solid var(--border-color);">
+                        <section class="home-category-section section-padding" style="background-color: var(--bg-main); border-bottom: 1px solid var(--border-color);">
                             <div class="container text-center">
                                 <h2 class="section-title">${this.lang === 'th' ? sec.content.title_th : sec.content.title_en}</h2>
                                 <p class="section-subtitle">${this.lang === 'th' ? sec.content.subtitle_th : sec.content.subtitle_en}</p>
@@ -1029,14 +1098,14 @@ class CharoenApp {
 
                     html += `
                         <!-- Why Choose Us Section -->
-                        <section class="section-padding" style="background-color: var(--bg-main); border-bottom: 1px solid var(--border-color);">
+                        <section class="section-padding" style="background-color: var(--bg-sec); border-bottom: 1px solid var(--border-color);">
                             <div class="container">
-                                <div class="text-center" style="margin-bottom: 50px;">
+                                <div class="text-center">
                                     <h2 class="section-title">${this.lang === 'th' ? whyTitleTh : whyTitleEn}</h2>
                                 </div>
-                                <div class="grid-3">
+                                <div class="grid-3" style="margin-top:40px;">
                                     ${whyItems.map((item, idx) => `
-                                        <div style="background:var(--bg-sec); padding: 35px 30px; border-radius:var(--radius-md); border:1px solid var(--border-color); position:relative; overflow:hidden;">
+                                        <div style="background:var(--bg-main); padding: 35px 30px; border-radius:var(--radius-md); border:1px solid var(--border-color); position:relative; overflow:hidden;">
                                             <span style="position:absolute; right:15px; bottom:-10px; font-size:6.5rem; font-weight:900; color:rgba(0,0,0,0.03); line-height:1; user-select:none;">0${idx+1}</span>
                                             <h4 style="font-size:1.25rem; font-weight:700; color:var(--primary); margin-bottom:15px; position:relative; z-index:2;"><i class="fas fa-check-circle" style="color:var(--secondary); margin-right:8px;"></i> ${this.lang === 'th' ? (item.title_th || '') : (item.title_en || '')}</h4>
                                             <p style="font-size:0.95rem; color:var(--text-sec); line-height:1.65; position:relative; z-index:2;">${this.lang === 'th' ? (item.desc_th || '') : (item.desc_en || '')}</p>
@@ -1069,12 +1138,12 @@ class CharoenApp {
 
                     html += `
                         <!-- Ordering Steps Section -->
-                        <section class="section-padding" style="background-color: var(--bg-sec); border-bottom: 1px solid var(--border-color);">
+                        <section class="section-padding" style="background-color: var(--bg-main); border-bottom: 1px solid var(--border-color);">
                             <div class="container text-center">
                                 <h2 class="section-title">${this.lang === 'th' ? stepsTitleTh : stepsTitleEn}</h2>
                                 <p class="section-subtitle">${this.lang === 'th' ? 'ดูแลการสั่งสกรีนแก้วอย่างเป็นขั้นตอน สะดวกสบาย' : 'Easy step-by-step custom drinkware screen print process'}</p>
                                 
-                                <div class="grid-4" style="margin-top:40px;">
+                                <div class="grid-4">
                                     ${stepsList.map((step, idx) => `
                                         <div class="step-card">
                                             <div class="step-num">${idx + 1}</div>
@@ -1099,12 +1168,12 @@ class CharoenApp {
                     if (featuredItems.length > 0) {
                         html += `
                             <!-- Featured Portfolio Section -->
-                            <section class="section-padding" style="background-color: var(--bg-main); border-bottom: 1px solid var(--border-color);">
+                            <section class="section-padding" style="background-color: var(--bg-sec); border-bottom: 1px solid var(--border-color);">
                                 <div class="container text-center">
                                     <h2 class="section-title">${this.lang === 'th' ? sec.content.title_th : sec.content.title_en}</h2>
                                     <p class="section-subtitle">${this.lang === 'th' ? (sec.content.subtitle_th || 'ตัวอย่างลายสกรีนแก้วพลาสติกที่ผลิตจากเรา') : (sec.content.subtitle_en || 'Real printed cup gallery samples')}</p>
                                     
-                                    <div class="grid-3" style="margin-top:45px; text-align:left;">
+                                    <div class="grid-3" style="text-align:left;">
                                         ${featuredItems.map(item => {
                                             const catObj = categoriesForPort.find(c => c.id === item.category);
                                             const catName = catObj ? (this.lang === 'th' ? catObj.name_th : catObj.name_en) : (this.lang === 'th' ? 'สกรีนแก้ว' : 'Custom Cup');
@@ -1137,7 +1206,7 @@ class CharoenApp {
                     if (visibleClients.length > 0) {
                         html += `
                             <!-- Client Logos Section -->
-                            <section class="section-padding" style="background-color: var(--bg-sec); border-bottom: 1px solid var(--border-color); padding: 50px 0;">
+                            <section class="section-padding" style="background-color: var(--bg-main); border-bottom: 1px solid var(--border-color);">
                                 <div class="container text-center">
                                     <h4 style="font-size:1.05rem; font-weight:700; color:var(--text-sec); text-transform:uppercase; margin-bottom:30px; letter-spacing:1px;">
                                         ${this.lang === 'th' ? sec.content.title_th : sec.content.title_en}
@@ -1224,13 +1293,13 @@ class CharoenApp {
 
                     html += `
                         <!-- Activities & Support Section -->
-                        <section class="section-padding" style="background-color: var(--bg-sec); border-bottom: 1px solid var(--border-color);">
+                        <section class="section-padding" style="background-color: var(--bg-main); border-bottom: 1px solid var(--border-color);">
                             <div class="container text-center">
                                 <h2 class="section-title">${secTitle}</h2>
                                 ${descHtml}
                                 
                                 ${homepageNews.length > 0 ? `
-                                    <div class="grid-3" style="margin-top:45px; text-align:left;">
+                                    <div class="grid-3" style="text-align:left;">
                                         ${homepageNews.map(n => {
                                             const title = this.lang === 'th' ? (n.title_th || n.title_en || '') : (n.title_en || n.title_th || '');
                                             const summary = this.lang === 'th' ? (n.summary_th || n.summary_en || '') : (n.summary_en || n.summary_th || '');
@@ -1257,7 +1326,7 @@ class CharoenApp {
                                             const summaryHtml = summary ? `<p style="font-size:0.88rem; color:var(--text-sec); line-height:1.5; margin-bottom:15px;">${summary}</p>` : '';
 
                                             return `
-                                                <div class="portfolio-card" onclick="window.location.hash='#/news-detail?id=${n.id}'" style="cursor:pointer; background:var(--bg-main); border:1px solid var(--border-color); border-radius:var(--radius-md); overflow:hidden; display:flex; flex-direction:column;">
+                                                <div class="portfolio-card" onclick="window.location.hash='#/news-detail?id=${n.id}'" style="cursor:pointer; background:var(--bg-sec); border:1px solid var(--border-color); border-radius:var(--radius-md); overflow:hidden; display:flex; flex-direction:column;">
                                                     ${imgHtml}
                                                     <div class="portfolio-info" style="padding:20px; flex-grow:1; display:flex; flex-direction:column; justify-content:space-between;">
                                                         <div>
@@ -1451,17 +1520,27 @@ class CharoenApp {
                             const slidesContainer = sliderSection.querySelector('.slider-slides-container');
                             if (slidesContainer) {
                                 slidesContainer.style.width = `${filteredSlides.length * 100}%`;
-                                slidesContainer.innerHTML = filteredSlides.map(slide => `
-                                    <div class="slider-single-slide" style="width:${100 / filteredSlides.length}%; height:100%; background-size:cover; background-position:center; background-image:url('${slide.bg_src || 'coffee_bg.webp'}'); position:relative;">
-                                    </div>
-                                `).join('');
+                                slidesContainer.innerHTML = filteredSlides.map(slide => this.renderSingleHeroSlideHTML(slide, filteredSlides.length)).join('');
                             }
                             
+                            const prevArrow = sliderSection.querySelector('.prev-arrow');
+                            const nextArrow = sliderSection.querySelector('.next-arrow');
                             const dotsContainer = sliderSection.querySelector('.slider-dots');
-                            if (dotsContainer) {
-                                dotsContainer.innerHTML = filteredSlides.map((_, idx) => `
-                                    <span class="slider-dot" onclick="window.charoenApp.goToSlide(${idx})" style="width:12px; height:12px; border-radius:50%; background:rgba(255,255,255,0.45); cursor:pointer; transition:var(--transition);"></span>
-                                `).join('');
+
+                            if (filteredSlides.length > 1) {
+                                if (prevArrow) prevArrow.style.display = 'flex';
+                                if (nextArrow) nextArrow.style.display = 'flex';
+                                if (dotsContainer) {
+                                    dotsContainer.style.display = 'flex';
+                                    const activeIdx = (typeof this.currentSlideIndex === 'number' && this.currentSlideIndex < filteredSlides.length) ? this.currentSlideIndex : 0;
+                                    dotsContainer.innerHTML = filteredSlides.map((_, idx) => `
+                                        <span class="slider-dot ${idx === activeIdx ? 'active' : ''}" onclick="window.charoenApp.goToSlide(${idx})" aria-label="Slide ${idx + 1}" ${idx === activeIdx ? 'aria-current="true"' : ''}></span>
+                                    `).join('');
+                                }
+                            } else {
+                                if (prevArrow) prevArrow.style.display = 'none';
+                                if (nextArrow) nextArrow.style.display = 'none';
+                                if (dotsContainer) dotsContainer.style.display = 'none';
                             }
 
                             this.initSlider('#hero-slider-section', filteredSlides.length);
@@ -2109,7 +2188,31 @@ class CharoenApp {
         this.sliderInterval = setInterval(() => {
             this.currentSlideIndex = (this.currentSlideIndex + 1) % slideCount;
             this.updateSliderUI(containerSelector, slideCount);
-        }, 5500); // 5.5s delay
+        }, 9000); // 9.0s delay for smooth premium experience
+
+        // Touch swipe gesture support for mobile/tablet
+        const sliderElement = document.querySelector(containerSelector);
+        if (sliderElement && !sliderElement.dataset.swipeBound) {
+            sliderElement.dataset.swipeBound = 'true';
+            let touchStartX = 0;
+            let touchEndX = 0;
+            
+            sliderElement.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+
+            sliderElement.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                const diff = touchStartX - touchEndX;
+                if (Math.abs(diff) > 45) {
+                    if (diff > 0) {
+                        this.changeSlide(1);
+                    } else {
+                        this.changeSlide(-1);
+                    }
+                }
+            }, { passive: true });
+        }
     }
 
     changeSlide(direction) {
@@ -2117,10 +2220,11 @@ class CharoenApp {
         if (!sliderSec) return;
         
         const slides = sliderSec.querySelectorAll('.slider-single-slide');
-        if (slides.length === 0) return;
+        if (slides.length <= 1) return;
         
         this.currentSlideIndex = (this.currentSlideIndex + direction + slides.length) % slides.length;
         this.updateSliderUI('#' + sliderSec.id, slides.length);
+        this.resetSliderTimer('#' + sliderSec.id, slides.length);
     }
 
     goToSlide(index) {
@@ -2128,27 +2232,57 @@ class CharoenApp {
         if (!sliderSec) return;
         
         const slides = sliderSec.querySelectorAll('.slider-single-slide');
-        if (slides.length === 0) return;
+        if (slides.length <= 1) return;
         
         this.currentSlideIndex = index;
         this.updateSliderUI('#' + sliderSec.id, slides.length);
+        this.resetSliderTimer('#' + sliderSec.id, slides.length);
+    }
+
+    resetSliderTimer(containerSelector, slideCount) {
+        if (this.sliderInterval) {
+            clearInterval(this.sliderInterval);
+        }
+        if (slideCount > 1) {
+            this.sliderInterval = setInterval(() => {
+                this.currentSlideIndex = (this.currentSlideIndex + 1) % slideCount;
+                this.updateSliderUI(containerSelector, slideCount);
+            }, 9000);
+        }
     }
 
     updateSliderUI(selector, slideCount) {
-        const container = document.querySelector(`${selector} .slider-slides-container`);
+        const sliderSec = document.querySelector(selector);
+        if (!sliderSec) return;
+
+        const container = sliderSec.querySelector('.slider-slides-container');
         if (!container) return;
+
+        // Bounds check currentSlideIndex
+        if (typeof this.currentSlideIndex !== 'number' || isNaN(this.currentSlideIndex) || this.currentSlideIndex < 0) {
+            this.currentSlideIndex = 0;
+        }
+        if (this.currentSlideIndex >= slideCount) {
+            this.currentSlideIndex = slideCount - 1;
+        }
+
         const offsetPercent = -this.currentSlideIndex * (100 / slideCount);
         container.style.transform = `translateX(${offsetPercent}%)`;
 
-        // Update dots active state
-        document.querySelectorAll(`${selector} .slider-dot`).forEach((dot, idx) => {
+        // Synchronize dot active class, aria-current attribute, and inline styles
+        const dots = sliderSec.querySelectorAll('.slider-dot');
+        dots.forEach((dot, idx) => {
             if (idx === this.currentSlideIndex) {
-                dot.style.background = 'var(--primary)';
+                dot.classList.add('active');
+                dot.setAttribute('aria-current', 'true');
+                dot.style.background = 'var(--secondary)';
                 dot.style.width = '24px';
-                dot.style.borderRadius = 'var(--radius-full)';
+                dot.style.borderRadius = '12px';
             } else {
-                dot.style.background = 'rgba(255,255,255,0.45)';
-                dot.style.width = '12px';
+                dot.classList.remove('active');
+                dot.removeAttribute('aria-current');
+                dot.style.background = 'rgba(4, 53, 106, 0.35)';
+                dot.style.width = '10px';
                 dot.style.borderRadius = '50%';
             }
         });
