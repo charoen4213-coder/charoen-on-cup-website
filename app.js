@@ -1050,10 +1050,10 @@ class CharoenApp {
                                             : (cat.description_en || `Custom printing & branding on ${cat.name_en} with sharp colors and fast delivery`);
                                             
                                         return `
-                                            <div class="home-category-card" onclick="window.location.hash='#/products?category=${cat.id}'" tabindex="0">
+                                            <div class="home-category-card" onclick="window.location.hash='#/products?category=${cat.id}'" tabindex="0" role="button" aria-label="${this.lang === 'th' ? cat.name_th : cat.name_en}">
                                                 <div class="home-category-image-wrapper">
                                                     ${catImage ? `
-                                                        <img class="home-category-image" src="${catImage}" alt="${this.lang === 'th' ? cat.name_th : cat.name_en}" loading="lazy">
+                                                        <img class="home-category-image" src="${catImage}" alt="${this.lang === 'th' ? cat.name_th : cat.name_en}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'home-category-image-fallback\\'><i class=\\'fas ${iconClass}\\'></i></div>';">
                                                     ` : `
                                                         <div class="home-category-image-fallback">
                                                             <i class="fas ${iconClass}"></i>

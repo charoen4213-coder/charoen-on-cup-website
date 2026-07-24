@@ -603,6 +603,7 @@ class CharoenAdmin {
                         <table class="admin-table">
                             <thead>
                                 <tr>
+                                    <th style="width:70px;">รูปภาพ</th>
                                     <th>รหัส ID</th>
                                     <th>ชื่อหมวดหมู่ (TH)</th>
                                     <th>ชื่อหมวดหมู่ (EN)</th>
@@ -611,18 +612,30 @@ class CharoenAdmin {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${sortedCats.map(c => `
-                                    <tr>
-                                        <td><code>${c.id}</code></td>
-                                        <td><strong>${c.name_th}</strong></td>
-                                        <td>${c.name_en}</td>
-                                        <td>ลำดับที่ ${c.order}</td>
-                                        <td style="text-align:right;">
-                                            <button class="btn btn-outline edit-cat-btn" data-id="${c.id}" style="padding:6px 12px; font-size:0.75rem; border-color:var(--secondary); color:var(--secondary); margin-right:8px;"><i class="fas fa-edit"></i> แก้ไข</button>
-                                            <button class="btn btn-outline del-cat-btn" data-id="${c.id}" style="padding:6px 12px; font-size:0.75rem; border-color:var(--danger); color:var(--danger);"><i class="fas fa-trash-alt"></i> ลบ</button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
+                                ${sortedCats.map(c => {
+                                    const imgUrl = c.bg_src || c.image_src || c.image || c.img;
+                                    return `
+                                        <tr>
+                                            <td>
+                                                <div style="width:50px; height:36px; border-radius:4px; overflow:hidden; background:#0f172a; display:flex; align-items:center; justify-content:center;">
+                                                    ${imgUrl ? `
+                                                        <img src="${imgUrl}" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\\'fas fa-image\\' style=\\'color:#64748b; font-size:0.85rem;\\'></i>';">
+                                                    ` : `
+                                                        <i class="fas fa-image" style="color:#64748b; font-size:0.85rem;"></i>
+                                                    `}
+                                                </div>
+                                            </td>
+                                            <td><code>${c.id}</code></td>
+                                            <td><strong>${c.name_th}</strong></td>
+                                            <td>${c.name_en || ''}</td>
+                                            <td>ลำดับที่ ${c.order || 1}</td>
+                                            <td style="text-align:right;">
+                                                <button class="btn btn-outline edit-cat-btn" data-id="${c.id}" style="padding:6px 12px; font-size:0.75rem; border-color:var(--secondary); color:var(--secondary); margin-right:8px;"><i class="fas fa-edit"></i> แก้ไข</button>
+                                                <button class="btn btn-outline del-cat-btn" data-id="${c.id}" style="padding:6px 12px; font-size:0.75rem; border-color:var(--danger); color:var(--danger);"><i class="fas fa-trash-alt"></i> ลบ</button>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -2548,6 +2561,9 @@ class CharoenAdmin {
             id: 'cat_' + Date.now(),
             name_th: '',
             name_en: '',
+            description_th: '',
+            description_en: '',
+            bg_src: '',
             order: 1
         };
 
@@ -2560,34 +2576,77 @@ class CharoenAdmin {
             }
         }
 
+        const catImg = cat.bg_src || cat.image_src || cat.image || cat.img || '';
+
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay active';
         overlay.id = 'admin-edit-modal';
 
         overlay.innerHTML = `
-            <div class="modal-window" style="max-width:450px; padding:30px;">
+            <div class="modal-window" style="max-width:560px; padding:30px;">
                 <button class="modal-close-btn" id="close-modal-btn"><i class="fas fa-times"></i></button>
                 <h3 style="font-size:1.25rem; font-weight:800; color:var(--secondary); margin-bottom:20px; border-bottom:1.5px solid var(--border-color); padding-bottom:8px;">
                     ${isEdit ? 'แก้ไขหมวดหมู่สินค้า' : 'เพิ่มหมวดหมู่สินค้าใหม่'}
                 </h3>
                 
                 <form id="edit-category-form">
-                    <div style="display:flex; flex-direction:column; gap:12px;">
+                    <div style="display:flex; flex-direction:column; gap:14px; max-height:65vh; overflow-y:auto; padding-right:6px;">
                         <div class="form-group">
                             <label style="font-weight:600; font-size:0.85rem;">รหัส ID หมวดหมู่ (เว้นวรรคไม่ได้) <span style="color:var(--danger)">*</span></label>
                             <input type="text" id="cat-form-id" class="form-control" value="${cat.id}" ${isEdit ? 'disabled style="background:#e2e8f0; color:#64748b;"' : ''} placeholder="เช่น cat-pet" required>
                         </div>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label style="font-weight:600; font-size:0.85rem;">ชื่อหมวดหมู่ภาษาไทย (TH) <span style="color:var(--danger)">*</span></label>
+                                <input type="text" id="cat-form-name-th" class="form-control" value="${cat.name_th || ''}" placeholder="เช่น แก้ว PET ทรงตรง" required>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-weight:600; font-size:0.85rem;">ชื่อหมวดหมู่ภาษาอังกฤษ (EN) <span style="color:var(--danger)">*</span></label>
+                                <input type="text" id="cat-form-name-en" class="form-control" value="${cat.name_en || ''}" placeholder="เช่น PET Cups" required>
+                            </div>
+                        </div>
+
                         <div class="form-group">
-                            <label style="font-weight:600; font-size:0.85rem;">ชื่อหมวดหมู่ภาษาไทย (TH Name) <span style="color:var(--danger)">*</span></label>
-                            <input type="text" id="cat-form-name-th" class="form-control" value="${cat.name_th}" placeholder="เช่น แก้ว PET ทรงตรง" required>
+                            <label style="font-weight:600; font-size:0.85rem;">คำอธิบายหมวดหมู่ภาษาไทย (Description TH)</label>
+                            <textarea id="cat-form-desc-th" class="form-control" style="min-height:54px;" placeholder="เช่น บริการสกรีนโลโก้และพิมพ์ลายบนแก้ว PET ลายเส้นสีคมชัด รวดเร็วทันใจ">${cat.description_th || ''}</textarea>
                         </div>
                         <div class="form-group">
-                            <label style="font-weight:600; font-size:0.85rem;">ชื่อหมวดหมู่ภาษาอังกฤษ (EN Name) <span style="color:var(--danger)">*</span></label>
-                            <input type="text" id="cat-form-name-en" class="form-control" value="${cat.name_en}" placeholder="เช่น PET Cups" required>
+                            <label style="font-weight:600; font-size:0.85rem;">คำอธิบายหมวดหมู่ภาษาอังกฤษ (Description EN)</label>
+                            <textarea id="cat-form-desc-en" class="form-control" style="min-height:54px;" placeholder="เช่น Custom printing & branding on PET cups with sharp colors and fast delivery">${cat.description_en || ''}</textarea>
                         </div>
+
                         <div class="form-group">
                             <label style="font-weight:600; font-size:0.85rem;">ลำดับการจัดเรียง (Order - ตัวเลข)</label>
-                            <input type="number" id="cat-form-order" class="form-control" value="${cat.order}" min="1" required>
+                            <input type="number" id="cat-form-order" class="form-control" value="${cat.order || 1}" min="1" required>
+                        </div>
+
+                        <!-- Category Image Input Section -->
+                        <div class="form-group" style="background:var(--bg-sec); padding:16px; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                            <label style="font-weight:700; font-size:0.88rem; color:var(--primary); margin-bottom:8px; display:block;">
+                                <i class="fas fa-image" style="color:var(--secondary);"></i> รูปภาพหน้าการ์ดหมวดหมู่สินค้า
+                            </label>
+                            <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+                                <input type="file" id="cat-form-file" class="form-control" accept="image/*" style="padding:6px; flex-grow:1;">
+                                <button type="button" class="btn btn-outline" id="select-cat-media-btn" style="padding:8px 12px; font-size:0.75rem;"><i class="fas fa-folder-open"></i> เลือกจากคลังภาพ</button>
+                                <button type="button" class="btn btn-outline" id="remove-cat-img-btn" style="padding:8px 12px; font-size:0.75rem; border-color:var(--danger); color:var(--danger); display:${catImg ? 'inline-flex' : 'none'};"><i class="fas fa-trash-alt"></i> ลบรูป</button>
+                            </div>
+                            
+                            <div style="margin-top:10px; text-align:center;">
+                                <img src="${catImg}" id="cat-form-img-preview" style="max-height:120px; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:${catImg ? 'inline-block' : 'none'}; object-fit:cover;">
+                                <div id="cat-form-img-empty" style="padding:16px; background:var(--bg-main); border:1px dashed var(--border-color); border-radius:var(--radius-sm); font-size:0.8rem; color:var(--text-sec); display:${catImg ? 'none' : 'block'};">
+                                    <i class="fas fa-info-circle" style="color:var(--secondary); margin-right:4px;"></i> ยังไม่ได้อัปโหลดรูปภาพ (ระบบจะแสดงไอคอน fallback อัตโนมัติ)
+                                </div>
+                            </div>
+
+                            <!-- Recommended Image Guidance Box -->
+                            <div style="background: rgba(4, 53, 106, 0.05); border-left: 3px solid var(--primary); padding: 10px 12px; border-radius: var(--radius-sm); font-size: 0.78rem; color: var(--text-sec); margin-top: 12px;">
+                                <strong><i class="fas fa-lightbulb" style="color:var(--secondary);"></i> คำแนะนำขนาดและรูปแบบภาพหมวดหมู่:</strong>
+                                <ul style="margin: 4px 0 0 16px; padding: 0; line-height: 1.5;">
+                                    <li>ลักษณะภาพ: ภาพแนวนอน (Landscape) อัตราส่วน 4:3</li>
+                                    <li>ความกว้างขั้นต่ำที่แนะนำ: 1200px (ฟอร์แมต WebP หรือ JPG)</li>
+                                    <li>หลีกเลี่ยงการวางข้อความสำคัญบริเวณด้านล่างของภาพ เนื่องจากการแสดงผลหน้าการ์ดมี gradient ดำซ้อนทับ</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                     
@@ -2604,13 +2663,64 @@ class CharoenAdmin {
         document.getElementById('close-modal-btn').onclick = closeDialog;
         document.getElementById('close-modal-cancel-btn').onclick = closeDialog;
 
+        let activeCatImg = catImg;
+
+        // Media Library selection for Category image
+        document.getElementById('select-cat-media-btn').onclick = () => {
+            this.openMediaSelectorDialog((selectedBase64) => {
+                activeCatImg = selectedBase64;
+                const preview = document.getElementById('cat-form-img-preview');
+                const emptyBox = document.getElementById('cat-form-img-empty');
+                const removeBtn = document.getElementById('remove-cat-img-btn');
+
+                if (preview) { preview.src = selectedBase64; preview.style.display = 'inline-block'; }
+                if (emptyBox) { emptyBox.style.display = 'none'; }
+                if (removeBtn) { removeBtn.style.display = 'inline-flex'; }
+            });
+        };
+
+        // File Uploader WebP convert for Category image
+        const fileInput = document.getElementById('cat-form-file');
+        if (fileInput) {
+            fileInput.onchange = async (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    const webpData = await this.convertImageToWebP(e.target.files[0]);
+                    activeCatImg = webpData;
+                    const preview = document.getElementById('cat-form-img-preview');
+                    const emptyBox = document.getElementById('cat-form-img-empty');
+                    const removeBtn = document.getElementById('remove-cat-img-btn');
+
+                    if (preview) { preview.src = webpData; preview.style.display = 'inline-block'; }
+                    if (emptyBox) { emptyBox.style.display = 'none'; }
+                    if (removeBtn) { removeBtn.style.display = 'inline-flex'; }
+                }
+            };
+        }
+
+        // Remove image button
+        document.getElementById('remove-cat-img-btn').onclick = () => {
+            activeCatImg = '';
+            const preview = document.getElementById('cat-form-img-preview');
+            const emptyBox = document.getElementById('cat-form-img-empty');
+            const removeBtn = document.getElementById('remove-cat-img-btn');
+
+            if (preview) { preview.src = ''; preview.style.display = 'none'; }
+            if (emptyBox) { emptyBox.style.display = 'block'; }
+            if (removeBtn) { removeBtn.style.display = 'none'; }
+        };
+
         document.getElementById('edit-category-form').onsubmit = async (e) => {
             e.preventDefault();
             const updated = {
+                ...cat,
                 id: document.getElementById('cat-form-id').value.trim().toLowerCase().replace(/\s+/g, '-'),
                 name_th: document.getElementById('cat-form-name-th').value.trim(),
                 name_en: document.getElementById('cat-form-name-en').value.trim(),
-                order: parseInt(document.getElementById('cat-form-order').value)
+                description_th: document.getElementById('cat-form-desc-th').value.trim(),
+                description_en: document.getElementById('cat-form-desc-en').value.trim(),
+                bg_src: activeCatImg,
+                image_src: activeCatImg,
+                order: parseInt(document.getElementById('cat-form-order').value) || 1
             };
 
             await this.db.put('categories', updated);
