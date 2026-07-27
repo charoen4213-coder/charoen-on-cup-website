@@ -1008,19 +1008,181 @@ class CharoenApp {
 
                     if (strengthItems.length === 0) break;
 
+                    // Extract Background Appearance Settings (Milestone 4.5 Section Background Manager)
+                    const bgStyle = sec.content?.backgroundStyle || sec.backgroundStyle || 'line_art';
+                    const bgImg = sec.content?.backgroundImage || sec.backgroundImage || '';
+                    const rawOverlay = sec.content?.backgroundOverlay ?? sec.backgroundOverlay;
+                    const bgOverlay = (function(raw) {
+                        if (raw === undefined || raw === null || raw === '') return 55;
+                        let val = Number(raw);
+                        if (!Number.isFinite(val)) return 55;
+                        if (val > 0 && val <= 1) val = val * 100;
+                        return Math.min(80, Math.max(0, Math.round(val)));
+                    })(rawOverlay);
+                    const bgPos = sec.content?.backgroundPosition || sec.backgroundPosition || 'center center';
+                    const bgBrightness = sec.content?.backgroundBrightness !== undefined ? sec.content.backgroundBrightness : 100;
+                    const bgTextTheme = sec.content?.backgroundTextTheme || sec.backgroundTextTheme || 'auto';
+
+                    const hasImageBg = (bgStyle === 'image' || bgStyle === 'image_line_art') && Boolean(bgImg);
+                    const hasLineArt = bgStyle === 'line_art' || bgStyle === 'image_line_art' || (!hasImageBg && bgStyle === 'image'); // Fallback to line_art if image empty or loading fails
+
+                    const isLightText = (hasImageBg && (bgTextTheme === 'auto' || bgTextTheme === 'light')) || bgTextTheme === 'light';
+                    const titleTextColorStyle = isLightText ? 'color: #ffffff !important;' : '';
+
+                    const coffeeBgPatternLeft = `
+                        <svg class="pattern-left-art" viewBox="0 0 360 480" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Branded Plastic Cup (PET Cup) -->
+                            <g transform="translate(10, 20)">
+                                <path d="M 40 125 L 140 125 L 136 112 C 136 108 130 104 120 104 L 60 104 C 50 104 44 108 44 112 Z" />
+                                <rect x="35" y="125" width="110" height="10" rx="2" />
+                                <path d="M 42 135 L 54 275 C 55 282 62 288 70 288 L 110 288 C 118 288 125 282 126 275 L 138 135" />
+                                <path d="M 46 175 L 134 175 L 130 230 L 50 230 Z" />
+                                <!-- Branded Rabbit Logo on Sleeve -->
+                                <g transform="translate(90, 200)">
+                                    <path d="M -4 -8 C -7 -20 -1 -22 -1 -12 M -1 -12 C -1 -8 -3 -7 -4 -8" />
+                                    <path d="M 4 -8 C 7 -20 1 -22 1 -12 M 1 -12 C 1 -8 3 -7 4 -8" />
+                                    <path d="M -9 -3 C -11 3 -9 9 0 10 C 9 9 11 3 9 -3 C 7 -8 -7 -8 -9 -3" />
+                                    <path d="M -1.5 3 Q 0 1.5 1.5 3" />
+                                    <path d="M 0 3 L 0 5 Q -2.5 7 -4 5 M 0 5 Q 2.5 7 4 5" />
+                                    <circle cx="-3.5" cy="0" r="0.8" fill="currentColor" />
+                                    <circle cx="3.5" cy="0" r="0.8" fill="currentColor" />
+                                </g>
+                            </g>
+                            <!-- Small Ceramic Espresso Cup & Saucer -->
+                            <g transform="translate(10, 310)">
+                                <ellipse cx="85" cy="115" rx="55" ry="12" />
+                                <path d="M 45 65 C 45 110 125 110 125 65 Z" />
+                                <path d="M 43 65 L 127 65" />
+                                <path d="M 125 72 C 140 72 140 95 120 100" />
+                                <path d="M 70 52 C 67 40 75 32 70 20" />
+                                <path d="M 85 48 C 82 36 90 28 85 16" />
+                                <path d="M 100 52 C 97 40 105 32 100 20" />
+                            </g>
+                            <!-- 4 Scattered Coffee Beans -->
+                            <g>
+                                <g transform="translate(220, 110) rotate(25)">
+                                    <ellipse cx="0" cy="0" rx="13" ry="18" />
+                                    <path d="M 0 -16 C -5 -4 -5 4 0 14" />
+                                </g>
+                                <g transform="translate(260, 220) rotate(-35)">
+                                    <ellipse cx="0" cy="0" rx="11" ry="16" />
+                                    <path d="M 0 -13 C 4 -3 4 3 0 13" />
+                                </g>
+                                <g transform="translate(195, 330) rotate(15)">
+                                    <ellipse cx="0" cy="0" rx="10" ry="14" />
+                                    <path d="M 0 -11 C -4 -3 -4 3 0 11" />
+                                </g>
+                                <g transform="translate(245, 410) rotate(-15)">
+                                    <ellipse cx="0" cy="0" rx="12" ry="16" />
+                                    <path d="M 0 -13 C -4 -3 -4 3 0 13" />
+                                </g>
+                            </g>
+                            <!-- Subtle Organic Wave Accent -->
+                            <path d="M 30 50 Q 150 140 230 300 Q 280 400 330 450" stroke-dasharray="5 5" opacity="0.4" />
+                        </svg>
+                    `;
+
+                    const coffeeBgPatternRight = `
+                        <svg class="pattern-right-art" viewBox="0 0 320 480" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Branded Cold Cup with Domed Lid & Straw -->
+                            <g transform="translate(130, 180)">
+                                <path d="M 45 -35 L 70 -90 L 80 -86 L 53 -32" />
+                                <path d="M 5 0 C 5 -35 85 -35 85 0 Z" />
+                                <line x1="0" y1="0" x2="90" y2="0" />
+                                <path d="M 7 0 L 18 120 C 19 126 25 132 32 132 L 58 132 C 65 132 71 126 72 120 L 83 0" />
+                                <!-- Rabbit Logo -->
+                                <g transform="translate(45, 60)">
+                                    <path d="M -4 -8 C -7 -20 -1 -22 -1 -12 M -1 -12 C -1 -8 -3 -7 -4 -8" />
+                                    <path d="M 4 -8 C 7 -20 1 -22 1 -12 M 1 -12 C 1 -8 3 -7 4 -8" />
+                                    <path d="M -9 -3 C -11 3 -9 9 0 10 C 9 9 11 3 9 -3 C 7 -8 -7 -8 -9 -3" />
+                                    <path d="M -1.5 3 Q 0 1.5 1.5 3" />
+                                    <path d="M 0 3 L 0 5 Q -2.5 7 -4 5 M 0 5 Q 2.5 7 4 5" />
+                                    <circle cx="-3.5" cy="0" r="0.8" fill="currentColor" />
+                                    <circle cx="3.5" cy="0" r="0.8" fill="currentColor" />
+                                </g>
+                            </g>
+                            <!-- Coffee Leaf Branch (3 leaves) -->
+                            <g transform="translate(40, 60)">
+                                <path d="M 120 20 Q 80 120 140 220" />
+                                <path d="M 110 50 C 65 40 45 70 45 70 C 45 70 75 90 110 50 Z" />
+                                <path d="M 110 50 Q 80 60 45 70" />
+                                <path d="M 95 120 C 50 110 30 140 30 140 C 30 140 60 160 95 120 Z" />
+                                <path d="M 95 120 Q 65 130 30 140" />
+                                <path d="M 115 190 C 70 180 50 210 50 210 C 50 210 80 230 115 190 Z" />
+                                <path d="M 115 190 Q 85 200 50 210" />
+                            </g>
+                            <!-- 3 Scattered Coffee Beans -->
+                            <g>
+                                <g transform="translate(60, 280) rotate(-20)">
+                                    <ellipse cx="0" cy="0" rx="12" ry="17" />
+                                    <path d="M 0 -13 C 4 -3 4 3 0 13" />
+                                </g>
+                                <g transform="translate(90, 370) rotate(35)">
+                                    <ellipse cx="0" cy="0" rx="11" ry="15" />
+                                    <path d="M 0 -12 C -4 -3 -4 3 0 12" />
+                                </g>
+                                <g transform="translate(40, 420) rotate(-10)">
+                                    <ellipse cx="0" cy="0" rx="10" ry="14" />
+                                    <path d="M 0 -11 C 3 -3 3 3 0 11" />
+                                </g>
+                            </g>
+                        </svg>
+                    `;
+
                     html += `
-                        <!-- Company Strengths Section -->
-                        <section class="section-padding" style="background-color: var(--bg-sec); border-bottom: 1px solid var(--border-color);">
-                            <div class="container text-center">
-                                <h2 class="section-title">${this.lang === 'th' ? strengthsTitleTh : strengthsTitleEn}</h2>
-                                <div class="grid-3" style="margin-top:45px;">
-                                    ${strengthItems.map(item => `
-                                        <div class="service-card" style="text-align:center; padding: 40px 24px;">
-                                            <div class="service-icon-box" style="margin: 0 auto 20px auto; background-color:var(--bg-main); color:var(--secondary);"><i class="fas ${item.icon || 'fa-award'}"></i></div>
-                                            <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 15px; color: var(--primary);">${this.lang === 'th' ? (item.title_th || '') : (item.title_en || '')}</h3>
-                                            <p style="font-size: 0.95rem; color: var(--text-sec); line-height: 1.6;">${this.lang === 'th' ? (item.desc_th || '') : (item.desc_en || '')}</p>
-                                        </div>
-                                    `).join('')}
+                        <!-- Company Strengths Section (Milestone 4.5 Section Background Manager) -->
+                        <section class="section-padding section-bg-manager ${hasImageBg ? 'has-bg-image' : ''}" style="position: relative; overflow: hidden; background-color: var(--bg-sec); border-bottom: 1px solid var(--border-color);" data-overlay="${bgOverlay}">
+                            ${hasImageBg ? `
+                                <!-- CSS Background Image Layer -->
+                                <div class="sec-bg-img-layer" style="
+                                    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                                    background-image: url('${bgImg}');
+                                    background-size: cover;
+                                    background-position: ${bgPos};
+                                    background-repeat: no-repeat;
+                                    filter: brightness(${bgBrightness}%);
+                                    z-index: 0;
+                                    pointer-events: none;
+                                "></div>
+                                <!-- Dark Overlay Layer -->
+                                <div class="sec-bg-overlay-layer" style="
+                                    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                                    background-color: rgba(0, 0, 0, ${bgOverlay / 100});
+                                    z-index: 0;
+                                    pointer-events: none;
+                                "></div>
+                            ` : ''}
+
+                            ${hasLineArt ? `
+                                <div class="section-pattern-wrapper ${hasImageBg ? 'pattern-white-tint' : ''}" style="z-index: 1;">
+                                    ${coffeeBgPatternLeft}
+                                    ${coffeeBgPatternRight}
+                                </div>
+                            ` : ''}
+
+                            <div class="container text-center" style="position: relative; z-index: 2;">
+                                <h2 class="section-title" style="${titleTextColorStyle}">${this.lang === 'th' ? strengthsTitleTh : strengthsTitleEn}</h2>
+                                <div class="strength-grid">
+                                    ${strengthItems.map(item => {
+                                        const itemImg = item.img_src || item.img || item.image || '';
+                                        const title = this.lang === 'th' ? (item.title_th || '') : (item.title_en || '');
+                                        const desc = this.lang === 'th' ? (item.desc_th || '') : (item.desc_en || '');
+                                        const iconClass = item.icon || 'fa-award';
+
+                                        return `
+                                            <div class="strength-card">
+                                                <div class="strength-circle-box">
+                                                    ${itemImg ? `
+                                                        <img src="${itemImg}" alt="${title}" class="strength-img" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\\'fas ${iconClass}\\'></i>';">
+                                                    ` : `
+                                                        <i class="fas ${iconClass}"></i>
+                                                    `}
+                                                </div>
+                                                <h3 class="strength-card-title">${title}</h3>
+                                                <p class="strength-card-desc">${desc}</p>
+                                            </div>
+                                        `;
+                                    }).join('')}
                                 </div>
                             </div>
                         </section>

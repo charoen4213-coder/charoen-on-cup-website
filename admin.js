@@ -3905,6 +3905,24 @@ class CharoenAdmin {
             const items = sec.content.items || [];
             window.currentStrengthsItems = JSON.parse(JSON.stringify(items));
 
+            // Helper for robust overlay normalization (0 to 80 integer percentage)
+            window.normalizeSectionOverlay = (raw) => {
+                if (raw === undefined || raw === null || raw === '') return 55;
+                let val = Number(raw);
+                if (!Number.isFinite(val)) return 55;
+                if (val > 0 && val <= 1) val = val * 100;
+                return Math.min(80, Math.max(0, Math.round(val)));
+            };
+
+            const bgStyle = sec.content?.backgroundStyle || sec.backgroundStyle || 'line_art';
+            const bgImg = sec.content?.backgroundImage || sec.backgroundImage || '';
+            const bgOverlay = window.normalizeSectionOverlay(sec.content?.backgroundOverlay ?? sec.backgroundOverlay);
+            const bgPos = sec.content?.backgroundPosition || sec.backgroundPosition || 'center center';
+            const bgBrightness = sec.content?.backgroundBrightness !== undefined ? sec.content.backgroundBrightness : 100;
+            const bgTextTheme = sec.content?.backgroundTextTheme || sec.backgroundTextTheme || 'auto';
+
+            window.currentActiveSecBgImg = bgImg;
+
             innerContentHtml = `
                 <div class="form-group">
                     <label>หัวข้อหลักภาษาไทย (Title TH)</label>
@@ -3914,6 +3932,99 @@ class CharoenAdmin {
                     <label>หัวข้อหลักภาษาอังกฤษ (Title EN)</label>
                     <input type="text" id="sec-title-en" class="form-control" value="${sec.content.title_en || ''}">
                 </div>
+
+                <!-- Collapsible Background Appearance Panel (Milestone 4.5) -->
+                <details class="bg-appearance-panel" style="margin:20px 0; background:var(--bg-main); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:12px 16px;">
+                    <summary style="font-weight:700; color:var(--primary); cursor:pointer; font-size:0.9rem; display:flex; align-items:center; justify-content:space-between;">
+                        <span><i class="fas fa-paint-roller" style="color:var(--secondary); margin-right:8px;"></i> การตั้งค่าพื้นหลังเซกชัน (Background Appearance)</span>
+                        <i class="fas fa-chevron-down" style="font-size:0.8rem; color:var(--text-sec);"></i>
+                    </summary>
+                    
+                    <div style="margin-top:16px; padding-top:12px; border-top:1px dashed var(--border-color);">
+                        <!-- 1. Background Style -->
+                        <div class="form-group" style="margin-bottom:14px;">
+                            <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; margin-bottom:8px;">
+                                1. รูปแบบพื้นหลัง (Background Style)
+                            </label>
+                            <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px;">
+                                <label style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--bg-sec); border:1px solid var(--border-color); border-radius:var(--radius-sm); cursor:pointer; font-size:0.82rem;">
+                                    <input type="radio" name="bg-style-radio" value="solid_color" ${bgStyle === 'solid_color' ? 'checked' : ''} onchange="window.toggleBgStyleControls(this.value)"> Solid Color (สีเรียบ)
+                                </label>
+                                <label style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--bg-sec); border:1px solid var(--border-color); border-radius:var(--radius-sm); cursor:pointer; font-size:0.82rem;">
+                                    <input type="radio" name="bg-style-radio" value="line_art" ${bgStyle === 'line_art' ? 'checked' : ''} onchange="window.toggleBgStyleControls(this.value)"> Decorative Line Art (ลายเส้น)
+                                </label>
+                                <label style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--bg-sec); border:1px solid var(--border-color); border-radius:var(--radius-sm); cursor:pointer; font-size:0.82rem;">
+                                    <input type="radio" name="bg-style-radio" value="image" ${bgStyle === 'image' ? 'checked' : ''} onchange="window.toggleBgStyleControls(this.value)"> Background Image (รูปภาพ)
+                                </label>
+                                <label style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--bg-sec); border:1px solid var(--border-color); border-radius:var(--radius-sm); cursor:pointer; font-size:0.82rem;">
+                                    <input type="radio" name="bg-style-radio" value="image_line_art" ${bgStyle === 'image_line_art' ? 'checked' : ''} onchange="window.toggleBgStyleControls(this.value)"> Background Image + Line Art
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Image Controls Box -->
+                        <div id="bg-img-controls-box" style="display:${(bgStyle === 'image' || bgStyle === 'image_line_art') ? 'block' : 'none'};">
+                            <!-- 2. Background Image Upload -->
+                            <div class="form-group" style="background:var(--bg-sec); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border-color); margin-bottom:14px;">
+                                <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; margin-bottom:6px;">
+                                    2. อัปโหลดรูปภาพพื้นหลัง (Supported: JPG, PNG, WEBP)
+                                </label>
+                                <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+                                    <input type="file" id="sec-bg-file" class="form-control" accept="image/*" style="padding:4px; font-size:0.75rem; flex-grow:1;" onchange="window.uploadSecBgFile(this)">
+                                    <button type="button" class="btn btn-outline" onclick="window.selectSecBgMedia()" style="padding:6px 10px; font-size:0.72rem;"><i class="fas fa-folder-open"></i> คลังภาพ</button>
+                                    <button type="button" class="btn btn-outline" id="remove-sec-bg-btn" onclick="window.removeSecBgImg()" style="padding:6px 10px; font-size:0.72rem; color:var(--danger); border-color:var(--danger); display:${bgImg ? 'inline-flex' : 'none'};"><i class="fas fa-trash"></i> ลบรูป</button>
+                                </div>
+                                <div style="text-align:center;">
+                                    <img id="sec-bg-img-preview" src="${bgImg}" style="max-height:100px; max-width:100%; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:${bgImg ? 'inline-block' : 'none'}; object-fit:cover;">
+                                    <div id="sec-bg-img-empty" style="padding:10px; background:var(--bg-main); border:1px dashed var(--border-color); border-radius:var(--radius-sm); font-size:0.75rem; color:var(--text-sec); display:${bgImg ? 'none' : 'block'};">
+                                        <i class="fas fa-info-circle" style="color:var(--secondary);"></i> ยังไม่ได้เลือกรูปภาพพื้นหลัง
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 3. Overlay Slider (0-80%, default 55%) -->
+                            <div class="form-group" style="margin-bottom:14px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                    <label style="font-weight:700; font-size:0.82rem; color:var(--primary);">3. ความเข้มเลเยอร์ทับดำ (Overlay):</label>
+                                    <span id="bg-overlay-val" style="font-weight:700; color:var(--secondary); font-size:0.85rem;">${bgOverlay}%</span>
+                                </div>
+                                <input type="range" id="sec-bg-overlay" min="0" max="80" value="${bgOverlay}" step="1" class="form-control" style="padding:0;" oninput="document.getElementById('bg-overlay-val').innerText = this.value + '%'">
+                            </div>
+
+                            <!-- 4. Background Position -->
+                            <div class="form-group" style="margin-bottom:14px;">
+                                <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; margin-bottom:4px;">4. ตำแหน่งจัดวางภาพ (Background Position):</label>
+                                <select id="sec-bg-pos" class="form-control">
+                                    <option value="center center" ${bgPos === 'center center' ? 'selected' : ''}>Center (ตรงกลาง)</option>
+                                    <option value="top center" ${bgPos === 'top center' ? 'selected' : ''}>Top (ส่วนบน)</option>
+                                    <option value="bottom center" ${bgPos === 'bottom center' ? 'selected' : ''}>Bottom (ส่วนล่าง)</option>
+                                    <option value="left center" ${bgPos === 'left center' ? 'selected' : ''}>Left (ด้านซ้าย)</option>
+                                    <option value="right center" ${bgPos === 'right center' ? 'selected' : ''}>Right (ด้านขวา)</option>
+                                </select>
+                            </div>
+
+                            <!-- 5. Image Brightness (70-120%, default 100%) -->
+                            <div class="form-group" style="margin-bottom:14px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                    <label style="font-weight:700; font-size:0.82rem; color:var(--primary);">5. ความสว่างภาพ (Image Brightness):</label>
+                                    <span id="bg-brightness-val" style="font-weight:700; color:var(--secondary); font-size:0.85rem;">${bgBrightness}%</span>
+                                </div>
+                                <input type="range" id="sec-bg-brightness" min="70" max="120" value="${bgBrightness}" step="1" class="form-control" style="padding:0;" oninput="document.getElementById('bg-brightness-val').innerText = this.value + '%'">
+                            </div>
+
+                            <!-- 6. Text Theme -->
+                            <div class="form-group" style="margin-bottom:14px;">
+                                <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; margin-bottom:4px;">6. ธีมสีตัวหนังสือ (Text Theme):</label>
+                                <select id="sec-bg-text-theme" class="form-control">
+                                    <option value="auto" ${bgTextTheme === 'auto' ? 'selected' : ''}>Auto (ปรับอัตโนมัติตามพื้นหลัง)</option>
+                                    <option value="light" ${bgTextTheme === 'light' ? 'selected' : ''}>Light (ข้อความสีขาวสำหรับภาพเข้ม)</option>
+                                    <option value="dark" ${bgTextTheme === 'dark' ? 'selected' : ''}>Dark (ข้อความสีเข้มสำหรับภาพสว่าง)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
                 <hr style="margin:20px 0; border-top:1px dashed var(--border-color);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                     <h4 style="font-size:0.95rem; font-weight:700; color:var(--secondary);">รายการจุดเด่นย่อย:</h4>
@@ -3921,6 +4032,48 @@ class CharoenAdmin {
                 </div>
                 <div id="strengths-items-container"></div>
             `;
+
+            window.toggleBgStyleControls = (val) => {
+                const box = document.getElementById('bg-img-controls-box');
+                if (box) {
+                    box.style.display = (val === 'image' || val === 'image_line_art') ? 'block' : 'none';
+                }
+            };
+
+            window.selectSecBgMedia = () => {
+                this.openMediaSelectorDialog((selectedBase64) => {
+                    window.currentActiveSecBgImg = selectedBase64;
+                    const prev = document.getElementById('sec-bg-img-preview');
+                    const empty = document.getElementById('sec-bg-img-empty');
+                    const rmBtn = document.getElementById('remove-sec-bg-btn');
+                    if (prev) { prev.src = selectedBase64; prev.style.display = 'inline-block'; }
+                    if (empty) empty.style.display = 'none';
+                    if (rmBtn) rmBtn.style.display = 'inline-flex';
+                });
+            };
+
+            window.uploadSecBgFile = async (inputEl) => {
+                if (inputEl.files && inputEl.files[0]) {
+                    const webpData = await this.convertImageToWebP(inputEl.files[0]);
+                    window.currentActiveSecBgImg = webpData;
+                    const prev = document.getElementById('sec-bg-img-preview');
+                    const empty = document.getElementById('sec-bg-img-empty');
+                    const rmBtn = document.getElementById('remove-sec-bg-btn');
+                    if (prev) { prev.src = webpData; prev.style.display = 'inline-block'; }
+                    if (empty) empty.style.display = 'none';
+                    if (rmBtn) rmBtn.style.display = 'inline-flex';
+                }
+            };
+
+            window.removeSecBgImg = () => {
+                window.currentActiveSecBgImg = '';
+                const prev = document.getElementById('sec-bg-img-preview');
+                const empty = document.getElementById('sec-bg-img-empty');
+                const rmBtn = document.getElementById('remove-sec-bg-btn');
+                if (prev) { prev.src = ''; prev.style.display = 'none'; }
+                if (empty) empty.style.display = 'block';
+                if (rmBtn) rmBtn.style.display = 'none';
+            };
         } else if (sec.type === 'why_us') {
             const items = sec.content.items || [];
             innerContentHtml = `
@@ -4110,43 +4263,104 @@ class CharoenAdmin {
                 return;
             }
 
-            container.innerHTML = window.currentStrengthsItems.map((it, idx) => `
-                <div class="strength-edit-card" style="background:var(--bg-sec); padding:16px; border-radius:var(--radius-sm); border:1px solid var(--border-color); margin-bottom:16px; position:relative;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px dashed var(--border-color); padding-bottom:8px;">
-                        <h5 style="font-weight:700; color:var(--primary); margin:0;">จุดเด่นรายการที่ ${idx + 1}</h5>
-                        <div style="display:flex; gap:6px;">
-                            <button type="button" class="btn btn-outline" onclick="window.moveStrengthItem(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} style="padding:4px 8px; font-size:0.75rem;"><i class="fas fa-arrow-up"></i> เลื่อนขึ้น</button>
-                            <button type="button" class="btn btn-outline" onclick="window.moveStrengthItem(${idx}, 1)" ${idx === window.currentStrengthsItems.length - 1 ? 'disabled' : ''} style="padding:4px 8px; font-size:0.75rem;"><i class="fas fa-arrow-down"></i> เลื่อนลง</button>
-                            <button type="button" class="btn btn-outline" onclick="window.deleteStrengthItem(${idx})" style="padding:4px 8px; font-size:0.75rem; color:var(--danger); border-color:var(--danger);"><i class="fas fa-trash"></i> ลบ</button>
+            container.innerHTML = window.currentStrengthsItems.map((it, idx) => {
+                const itemImg = it.img_src || it.img || it.image || '';
+                return `
+                    <div class="strength-edit-card" style="background:var(--bg-sec); padding:16px; border-radius:var(--radius-sm); border:1px solid var(--border-color); margin-bottom:16px; position:relative;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px dashed var(--border-color); padding-bottom:8px;">
+                            <h5 style="font-weight:700; color:var(--primary); margin:0;">จุดเด่นรายการที่ ${idx + 1}</h5>
+                            <div style="display:flex; gap:6px;">
+                                <button type="button" class="btn btn-outline" onclick="window.moveStrengthItem(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} style="padding:4px 8px; font-size:0.75rem;"><i class="fas fa-arrow-up"></i> เลื่อนขึ้น</button>
+                                <button type="button" class="btn btn-outline" onclick="window.moveStrengthItem(${idx}, 1)" ${idx === window.currentStrengthsItems.length - 1 ? 'disabled' : ''} style="padding:4px 8px; font-size:0.75rem;"><i class="fas fa-arrow-down"></i> เลื่อนลง</button>
+                                <button type="button" class="btn btn-outline" onclick="window.deleteStrengthItem(${idx})" style="padding:4px 8px; font-size:0.75rem; color:var(--danger); border-color:var(--danger);"><i class="fas fa-trash"></i> ลบ</button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="grid-2" style="margin-bottom:10px;">
-                        <div class="form-group">
-                            <label style="font-size:0.75rem;">ชื่อจุดเด่น (TH)</label>
-                            <input type="text" class="form-control str-input-title-th" data-index="${idx}" value="${it.title_th || ''}" oninput="window.updateStrengthItemField(${idx}, 'title_th', this.value)">
+                        <div class="grid-2" style="margin-bottom:10px;">
+                            <div class="form-group">
+                                <label style="font-size:0.75rem;">ชื่อจุดเด่น (TH)</label>
+                                <input type="text" class="form-control str-input-title-th" data-index="${idx}" value="${it.title_th || ''}" oninput="window.updateStrengthItemField(${idx}, 'title_th', this.value)">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.75rem;">ชื่อจุดเด่น (EN)</label>
+                                <input type="text" class="form-control str-input-title-en" data-index="${idx}" value="${it.title_en || ''}" oninput="window.updateStrengthItemField(${idx}, 'title_en', this.value)">
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label style="font-size:0.75rem;">ชื่อจุดเด่น (EN)</label>
-                            <input type="text" class="form-control str-input-title-en" data-index="${idx}" value="${it.title_en || ''}" oninput="window.updateStrengthItemField(${idx}, 'title_en', this.value)">
-                        </div>
-                    </div>
-                    <div class="grid-2" style="margin-bottom:10px;">
-                        <div class="form-group">
-                            <label style="font-size:0.75rem;">ไอคอน FontAwesome (เช่น fa-award, fa-shield-alt)</label>
+                        <div class="form-group" style="margin-bottom:10px;">
+                            <label style="font-size:0.75rem;">ไอคอน FontAwesome สำรอง (กรณีไม่ใส่รูปภาพ เช่น fa-award, fa-shield-alt)</label>
                             <input type="text" class="form-control str-input-icon" data-index="${idx}" value="${it.icon || 'fa-award'}" oninput="window.updateStrengthItemField(${idx}, 'icon', this.value)">
                         </div>
-                        <div></div>
+
+                        <!-- Feature Image Input & Media Picker -->
+                        <div class="form-group" style="background:var(--bg-main); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border-color); margin-bottom:10px;">
+                            <label style="font-size:0.78rem; font-weight:700; color:var(--primary); display:block; margin-bottom:6px;">
+                                <i class="fas fa-image" style="color:var(--secondary);"></i> รูปภาพประกอบจุดเด่น (วงกลม)
+                            </label>
+                            <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+                                <input type="file" class="form-control" accept="image/*" style="padding:4px; font-size:0.75rem; flex-grow:1;" onchange="window.uploadStrengthFile(${idx}, this)">
+                                <button type="button" class="btn btn-outline" onclick="window.selectStrengthMedia(${idx})" style="padding:6px 10px; font-size:0.72rem;"><i class="fas fa-folder-open"></i> เลือกจากคลังภาพ</button>
+                                <button type="button" class="btn btn-outline" onclick="window.removeStrengthImg(${idx})" style="padding:6px 10px; font-size:0.72rem; color:var(--danger); border-color:var(--danger); display:${itemImg ? 'inline-flex' : 'none'};"><i class="fas fa-trash"></i> ลบรูป</button>
+                            </div>
+                            
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div style="width:50px; height:50px; border-radius:50%; overflow:hidden; background:rgba(255,107,0,0.08); display:flex; align-items:center; justify-content:center; flex-shrink:0; border:1px solid var(--border-color);">
+                                    ${itemImg ? `<img src="${itemImg}" style="width:100%; height:100%; object-fit:cover;">` : `<i class="fas ${it.icon || 'fa-award'}" style="color:var(--secondary); font-size:1.2rem;"></i>`}
+                                </div>
+                                <div style="font-size:0.75rem; color:var(--text-sec);">
+                                    ${itemImg ? `<span style="color:var(--success); font-weight:700;">มีรูปภาพประกอบ</span>` : `<span>ใช้ไอคอนสำรอง <code>${it.icon || 'fa-award'}</code></span>`}
+                                </div>
+                            </div>
+
+                            <!-- Recommended Image Guidance Box -->
+                            <div style="background: rgba(4, 53, 106, 0.04); border-left: 3px solid var(--primary); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 0.74rem; color: var(--text-sec); margin-top: 8px;">
+                                <strong><i class="fas fa-lightbulb" style="color:var(--secondary);"></i> คำแนะนำรูปภาพประกอบจุดเด่น:</strong>
+                                <ul style="margin: 2px 0 0 14px; padding: 0; line-height: 1.4;">
+                                    <li>แนะนำไฟล์ PNG หรือ WebP (พื้นหลังโปร่งใส Preferred)</li>
+                                    <li>ความกว้างขั้นต่ำ 600px | ขนาดแนะนำ 800x800px (ทรงจัตุรัสหรือวงกลม)</li>
+                                    <li>ใช้รูปสินค้า/ภาพประกอบตรงกลาง หลีกเลี่ยงภาพที่มีตัวหนังสือซ้อนทับ</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="font-size:0.75rem;">คำอธิบายจุดเด่น (TH)</label>
+                            <textarea class="form-control str-input-desc-th" style="min-height:50px;" data-index="${idx}" oninput="window.updateStrengthItemField(${idx}, 'desc_th', this.value)">${it.desc_th || ''}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label style="font-weight:600; font-size:0.75rem;">คำอธิบายจุดเด่น (EN)</label>
+                            <textarea class="form-control str-input-desc-en" style="min-height:50px;" data-index="${idx}" oninput="window.updateStrengthItemField(${idx}, 'desc_en', this.value)">${it.desc_en || ''}</textarea>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label style="font-size:0.75rem;">คำอธิบายจุดเด่น (TH)</label>
-                        <textarea class="form-control str-input-desc-th" style="min-height:50px;" data-index="${idx}" oninput="window.updateStrengthItemField(${idx}, 'desc_th', this.value)">${it.desc_th || ''}</textarea>
-                    </div>
-                    <div class="form-group">
-                        <label style="font-size:0.75rem;">คำอธิบายจุดเด่น (EN)</label>
-                        <textarea class="form-control str-input-desc-en" style="min-height:50px;" data-index="${idx}" oninput="window.updateStrengthItemField(${idx}, 'desc_en', this.value)">${it.desc_en || ''}</textarea>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
+        };
+
+        window.selectStrengthMedia = (idx) => {
+            this.openMediaSelectorDialog((selectedBase64) => {
+                if (window.currentStrengthsItems && window.currentStrengthsItems[idx]) {
+                    window.currentStrengthsItems[idx].img_src = selectedBase64;
+                    window.currentStrengthsItems[idx].img = selectedBase64;
+                    window.renderStrengthItemsList();
+                }
+            });
+        };
+
+        window.uploadStrengthFile = async (idx, inputEl) => {
+            if (inputEl.files && inputEl.files[0]) {
+                const webpData = await this.convertImageToWebP(inputEl.files[0]);
+                if (window.currentStrengthsItems && window.currentStrengthsItems[idx]) {
+                    window.currentStrengthsItems[idx].img_src = webpData;
+                    window.currentStrengthsItems[idx].img = webpData;
+                    window.renderStrengthItemsList();
+                }
+            }
+        };
+
+        window.removeStrengthImg = (idx) => {
+            if (window.currentStrengthsItems && window.currentStrengthsItems[idx]) {
+                window.currentStrengthsItems[idx].img_src = '';
+                window.currentStrengthsItems[idx].img = '';
+                window.renderStrengthItemsList();
+            }
         };
 
         window.updateStrengthItemField = (idx, field, value) => {
@@ -4162,7 +4376,8 @@ class CharoenAdmin {
                 title_en: '',
                 desc_th: '',
                 desc_en: '',
-                icon: 'fa-award'
+                icon: 'fa-award',
+                img_src: ''
             });
             window.renderStrengthItemsList();
         };
@@ -4186,6 +4401,32 @@ class CharoenAdmin {
 
         if (sec.type === 'strengths') {
             window.renderStrengthItemsList();
+
+            const overlaySlider = document.getElementById('sec-bg-overlay');
+            const overlayValueLabel = document.getElementById('bg-overlay-val');
+
+            if (overlaySlider) {
+                overlaySlider.addEventListener('input', () => {
+                    const val = window.normalizeSectionOverlay(overlaySlider.value);
+                    if (overlayValueLabel) {
+                        overlayValueLabel.textContent = `${val}%`;
+                    }
+
+                    // Target live preview overlay elements in DOM
+                    const previewOverlaySelectors = [
+                        '#production-standard-preview .section-background-overlay',
+                        '#production-standard-preview .sec-bg-overlay-layer',
+                        '.section-bg-manager[data-section="strengths"] .sec-bg-overlay-layer',
+                        'section.section-bg-manager .sec-bg-overlay-layer'
+                    ];
+
+                    previewOverlaySelectors.forEach(selector => {
+                        document.querySelectorAll(selector).forEach(el => {
+                            el.style.backgroundColor = `rgba(0, 0, 0, ${val / 100})`;
+                        });
+                    });
+                });
+            }
         }
 
         const closeDialog = () => { 
@@ -4196,6 +4437,14 @@ class CharoenAdmin {
             delete window.addStrengthItem;
             delete window.deleteStrengthItem;
             delete window.moveStrengthItem;
+            delete window.selectStrengthMedia;
+            delete window.uploadStrengthFile;
+            delete window.removeStrengthImg;
+            delete window.currentActiveSecBgImg;
+            delete window.toggleBgStyleControls;
+            delete window.selectSecBgMedia;
+            delete window.uploadSecBgFile;
+            delete window.removeSecBgImg;
         };
         document.getElementById('close-modal-btn').onclick = closeDialog;
         document.getElementById('close-modal-cancel-btn').onclick = closeDialog;
@@ -4214,10 +4463,24 @@ class CharoenAdmin {
             } else if (sec.type === 'strengths') {
                 sec.content.title_th = document.getElementById('sec-title-th').value;
                 sec.content.title_en = document.getElementById('sec-title-en').value;
+
+                // Save Background Appearance Settings (Milestone 4.5)
+                const selectedBgStyle = document.querySelector('input[name="bg-style-radio"]:checked')?.value || 'line_art';
+                sec.content.backgroundStyle = selectedBgStyle;
+                sec.content.backgroundImage = window.currentActiveSecBgImg || '';
+                
+                const rawOverlayInput = document.getElementById('sec-bg-overlay')?.value;
+                sec.content.backgroundOverlay = window.normalizeSectionOverlay(rawOverlayInput);
+
+                sec.content.backgroundPosition = document.getElementById('sec-bg-pos')?.value || 'center center';
+                sec.content.backgroundBrightness = parseInt(document.getElementById('sec-bg-brightness')?.value) || 100;
+                sec.content.backgroundTextTheme = document.getElementById('sec-bg-text-theme')?.value || 'auto';
+
                 sec.content.items = (window.currentStrengthsItems || []).map(it => ({
                     title_th: it.title_th || '',
                     title_en: it.title_en || '',
                     icon: it.icon || 'fa-award',
+                    img_src: it.img_src || it.img || it.image || '',
                     desc_th: it.desc_th || '',
                     desc_en: it.desc_en || ''
                 }));
