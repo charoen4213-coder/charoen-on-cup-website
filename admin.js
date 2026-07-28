@@ -3877,63 +3877,28 @@ class CharoenAdmin {
         overlay.className = 'modal-overlay active';
         overlay.id = 'admin-edit-modal';
 
-        let innerContentHtml = '';
+        // Helper for robust overlay normalization (0 to 80 integer percentage)
+        window.normalizeSectionOverlay = (raw) => {
+            if (raw === undefined || raw === null || raw === '') return 55;
+            let val = Number(raw);
+            if (!Number.isFinite(val)) return 55;
+            if (val > 0 && val <= 1) val = val * 100;
+            return Math.min(80, Math.max(0, Math.round(val)));
+        };
 
-        // Generate form fields based on section content type
-        if (sec.type === 'hero_banner') {
-            innerContentHtml = `<p style="color:var(--text-muted); font-size:0.9rem;">หัวข้อสไลด์แบนเนอร์หลักหน้าแรกถูกจัดการผ่านเมนู "จัดการภาพสไลด์หน้าแรก" ในแถบนำทางหลัก</p>`;
-        } else if (sec.type === 'services') {
-            innerContentHtml = `
-                <div class="form-group">
-                    <label>หัวข้อภาษาไทย (Title TH)</label>
-                    <input type="text" id="sec-title-th" class="form-control" value="${sec.content.title_th || ''}">
-                </div>
-                <div class="form-group">
-                    <label>หัวข้อภาษาอังกฤษ (Title EN)</label>
-                    <input type="text" id="sec-title-en" class="form-control" value="${sec.content.title_en || ''}">
-                </div>
-                <div class="form-group">
-                    <label>รายละเอียดภาษาไทย (Subtitle TH)</label>
-                    <input type="text" id="sec-sub-th" class="form-control" value="${sec.content.subtitle_th || ''}">
-                </div>
-                <div class="form-group">
-                    <label>รายละเอียดภาษาอังกฤษ (Subtitle EN)</label>
-                    <input type="text" id="sec-sub-en" class="form-control" value="${sec.content.subtitle_en || ''}">
-                </div>
-            `;
-        } else if (sec.type === 'strengths') {
-            const items = sec.content.items || [];
-            window.currentStrengthsItems = JSON.parse(JSON.stringify(items));
-
-            // Helper for robust overlay normalization (0 to 80 integer percentage)
-            window.normalizeSectionOverlay = (raw) => {
-                if (raw === undefined || raw === null || raw === '') return 55;
-                let val = Number(raw);
-                if (!Number.isFinite(val)) return 55;
-                if (val > 0 && val <= 1) val = val * 100;
-                return Math.min(80, Math.max(0, Math.round(val)));
-            };
-
-            const bgStyle = sec.content?.backgroundStyle || sec.backgroundStyle || 'line_art';
-            const bgImg = sec.content?.backgroundImage || sec.backgroundImage || '';
-            const bgOverlay = window.normalizeSectionOverlay(sec.content?.backgroundOverlay ?? sec.backgroundOverlay);
-            const bgPos = sec.content?.backgroundPosition || sec.backgroundPosition || 'center center';
-            const bgBrightness = sec.content?.backgroundBrightness !== undefined ? sec.content.backgroundBrightness : 100;
-            const bgTextTheme = sec.content?.backgroundTextTheme || sec.backgroundTextTheme || 'auto';
+        // Reusable helper function to generate Section Background Appearance Panel HTML
+        window.renderBgAppearancePanelHtml = (sectionObj) => {
+            const bgStyle = sectionObj.content?.backgroundStyle || sectionObj.backgroundStyle || 'line_art';
+            const bgImg = sectionObj.content?.backgroundImage || sectionObj.backgroundImage || '';
+            const bgOverlay = window.normalizeSectionOverlay(sectionObj.content?.backgroundOverlay ?? sectionObj.backgroundOverlay);
+            const bgPos = sectionObj.content?.backgroundPosition || sectionObj.backgroundPosition || 'center center';
+            const bgBrightness = sectionObj.content?.backgroundBrightness !== undefined ? sectionObj.content.backgroundBrightness : 100;
+            const bgTextTheme = sectionObj.content?.backgroundTextTheme || sectionObj.backgroundTextTheme || 'auto';
 
             window.currentActiveSecBgImg = bgImg;
 
-            innerContentHtml = `
-                <div class="form-group">
-                    <label>หัวข้อหลักภาษาไทย (Title TH)</label>
-                    <input type="text" id="sec-title-th" class="form-control" value="${sec.content.title_th || ''}">
-                </div>
-                <div class="form-group">
-                    <label>หัวข้อหลักภาษาอังกฤษ (Title EN)</label>
-                    <input type="text" id="sec-title-en" class="form-control" value="${sec.content.title_en || ''}">
-                </div>
-
-                <!-- Collapsible Background Appearance Panel (Milestone 4.5) -->
+            return `
+                <!-- Collapsible Background Appearance Panel (Milestone 4.5 & 4.5.1) -->
                 <details class="bg-appearance-panel" style="margin:20px 0; background:var(--bg-main); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:12px 16px;">
                     <summary style="font-weight:700; color:var(--primary); cursor:pointer; font-size:0.9rem; display:flex; align-items:center; justify-content:space-between;">
                         <span><i class="fas fa-paint-roller" style="color:var(--secondary); margin-right:8px;"></i> การตั้งค่าพื้นหลังเซกชัน (Background Appearance)</span>
@@ -4024,6 +3989,48 @@ class CharoenAdmin {
                         </div>
                     </div>
                 </details>
+            `;
+        };
+
+        let innerContentHtml = '';
+
+        // Generate form fields based on section content type
+        if (sec.type === 'hero_banner') {
+            innerContentHtml = `<p style="color:var(--text-muted); font-size:0.9rem;">หัวข้อสไลด์แบนเนอร์หลักหน้าแรกถูกจัดการผ่านเมนู "จัดการภาพสไลด์หน้าแรก" ในแถบนำทางหลัก</p>`;
+        } else if (sec.type === 'services') {
+            innerContentHtml = `
+                <div class="form-group">
+                    <label>หัวข้อภาษาไทย (Title TH)</label>
+                    <input type="text" id="sec-title-th" class="form-control" value="${sec.content.title_th || ''}">
+                </div>
+                <div class="form-group">
+                    <label>หัวข้อภาษาอังกฤษ (Title EN)</label>
+                    <input type="text" id="sec-title-en" class="form-control" value="${sec.content.title_en || ''}">
+                </div>
+                <div class="form-group">
+                    <label>รายละเอียดภาษาไทย (Subtitle TH)</label>
+                    <input type="text" id="sec-sub-th" class="form-control" value="${sec.content.subtitle_th || ''}">
+                </div>
+                <div class="form-group">
+                    <label>รายละเอียดภาษาอังกฤษ (Subtitle EN)</label>
+                    <input type="text" id="sec-sub-en" class="form-control" value="${sec.content.subtitle_en || ''}">
+                </div>
+            `;
+        } else if (sec.type === 'strengths') {
+            const items = sec.content.items || [];
+            window.currentStrengthsItems = JSON.parse(JSON.stringify(items));
+
+            innerContentHtml = `
+                <div class="form-group">
+                    <label>หัวข้อหลักภาษาไทย (Title TH)</label>
+                    <input type="text" id="sec-title-th" class="form-control" value="${sec.content.title_th || ''}">
+                </div>
+                <div class="form-group">
+                    <label>หัวข้อหลักภาษาอังกฤษ (Title EN)</label>
+                    <input type="text" id="sec-title-en" class="form-control" value="${sec.content.title_en || ''}">
+                </div>
+
+                ${window.renderBgAppearancePanelHtml(sec)}
 
                 <hr style="margin:20px 0; border-top:1px dashed var(--border-color);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
@@ -4076,6 +4083,54 @@ class CharoenAdmin {
             };
         } else if (sec.type === 'why_us') {
             const items = sec.content.items || [];
+            
+            if (!window.toggleBgStyleControls) {
+                window.toggleBgStyleControls = (val) => {
+                    const box = document.getElementById('bg-img-controls-box');
+                    if (box) {
+                        box.style.display = (val === 'image' || val === 'image_line_art') ? 'block' : 'none';
+                    }
+                };
+            }
+            if (!window.selectSecBgMedia) {
+                window.selectSecBgMedia = () => {
+                    this.openMediaSelectorDialog((selectedBase64) => {
+                        window.currentActiveSecBgImg = selectedBase64;
+                        const prev = document.getElementById('sec-bg-img-preview');
+                        const empty = document.getElementById('sec-bg-img-empty');
+                        const rmBtn = document.getElementById('remove-sec-bg-btn');
+                        if (prev) { prev.src = selectedBase64; prev.style.display = 'inline-block'; }
+                        if (empty) empty.style.display = 'none';
+                        if (rmBtn) rmBtn.style.display = 'inline-flex';
+                    });
+                };
+            }
+            if (!window.uploadSecBgFile) {
+                window.uploadSecBgFile = async (inputEl) => {
+                    if (inputEl.files && inputEl.files[0]) {
+                        const webpData = await this.convertImageToWebP(inputEl.files[0]);
+                        window.currentActiveSecBgImg = webpData;
+                        const prev = document.getElementById('sec-bg-img-preview');
+                        const empty = document.getElementById('sec-bg-img-empty');
+                        const rmBtn = document.getElementById('remove-sec-bg-btn');
+                        if (prev) { prev.src = webpData; prev.style.display = 'inline-block'; }
+                        if (empty) empty.style.display = 'none';
+                        if (rmBtn) rmBtn.style.display = 'inline-flex';
+                    }
+                };
+            }
+            if (!window.removeSecBgImg) {
+                window.removeSecBgImg = () => {
+                    window.currentActiveSecBgImg = '';
+                    const prev = document.getElementById('sec-bg-img-preview');
+                    const empty = document.getElementById('sec-bg-img-empty');
+                    const rmBtn = document.getElementById('remove-sec-bg-btn');
+                    if (prev) { prev.src = ''; prev.style.display = 'none'; }
+                    if (empty) empty.style.display = 'block';
+                    if (rmBtn) rmBtn.style.display = 'none';
+                };
+            }
+
             innerContentHtml = `
                 <div class="form-group">
                     <label>หัวข้อหลักภาษาไทย (Title TH)</label>
@@ -4085,6 +4140,9 @@ class CharoenAdmin {
                     <label>หัวข้อหลักภาษาอังกฤษ (Title EN)</label>
                     <input type="text" id="sec-title-en" class="form-control" value="${sec.content.title_en || ''}">
                 </div>
+
+                ${window.renderBgAppearancePanelHtml(sec)}
+
                 <hr style="margin:20px 0; border-top:1px dashed var(--border-color);">
                 <h4 style="font-size:0.95rem; font-weight:700; color:var(--secondary); margin-bottom:12px;">รายการเหตุผลย่อย 3 รายการ:</h4>
                 ${[0, 1, 2].map(idx => {
@@ -4399,8 +4457,10 @@ class CharoenAdmin {
             window.renderStrengthItemsList();
         };
 
-        if (sec.type === 'strengths') {
-            window.renderStrengthItemsList();
+        if (sec.type === 'strengths' || sec.type === 'why_us') {
+            if (sec.type === 'strengths') {
+                window.renderStrengthItemsList();
+            }
 
             const overlaySlider = document.getElementById('sec-bg-overlay');
             const overlayValueLabel = document.getElementById('bg-overlay-val');
@@ -4417,6 +4477,7 @@ class CharoenAdmin {
                         '#production-standard-preview .section-background-overlay',
                         '#production-standard-preview .sec-bg-overlay-layer',
                         '.section-bg-manager[data-section="strengths"] .sec-bg-overlay-layer',
+                        '.section-bg-manager[data-section="why_us"] .sec-bg-overlay-layer',
                         'section.section-bg-manager .sec-bg-overlay-layer'
                     ];
 
@@ -4487,6 +4548,19 @@ class CharoenAdmin {
             } else if (sec.type === 'why_us') {
                 sec.content.title_th = document.getElementById('sec-title-th').value;
                 sec.content.title_en = document.getElementById('sec-title-en').value;
+
+                // Save Background Appearance Settings (Milestone 4.5.1 Why Choose Us)
+                const selectedBgStyle = document.querySelector('input[name="bg-style-radio"]:checked')?.value || 'line_art';
+                sec.content.backgroundStyle = selectedBgStyle;
+                sec.content.backgroundImage = window.currentActiveSecBgImg || '';
+                
+                const rawOverlayInput = document.getElementById('sec-bg-overlay')?.value;
+                sec.content.backgroundOverlay = window.normalizeSectionOverlay(rawOverlayInput);
+
+                sec.content.backgroundPosition = document.getElementById('sec-bg-pos')?.value || 'center center';
+                sec.content.backgroundBrightness = parseInt(document.getElementById('sec-bg-brightness')?.value) || 100;
+                sec.content.backgroundTextTheme = document.getElementById('sec-bg-text-theme')?.value || 'auto';
+
                 sec.content.items = [0, 1, 2].map(idx => ({
                     title_th: document.getElementById(`why-title-th-${idx}`).value,
                     title_en: document.getElementById(`why-title-en-${idx}`).value,
