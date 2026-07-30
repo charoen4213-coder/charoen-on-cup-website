@@ -61,7 +61,7 @@ class CharoenOnCupDB {
 
             // Sync collection caches if cloud is enabled
             if (this.isCloudEnabled) {
-                const collectionsToSync = ['categories', 'media_categories', 'products', 'portfolio', 'slider', 'home_videos', 'homepage', 'settings', 'users', 'news', 'articles', 'clients', 'faq', 'reviews'];
+                const collectionsToSync = ['categories', 'media_categories', 'products', 'portfolio', 'slider', 'homepage', 'settings', 'users', 'news', 'articles', 'clients', 'faq', 'reviews'];
                 for (const col of collectionsToSync) {
                     this.syncCollectionFromCloud(col).catch(() => {});
                 }
@@ -553,16 +553,17 @@ class CharoenOnCupDB {
                 slideStore.put(s);
             }
 
-            // 5. Seed default home videos
+            // 5. Seed default home videos (Only insert default if record does not already exist)
             const videos = [
                 { id: 'video_1', title_th: 'ตัวอย่างงานพิมพ์สกรีนแก้ว Capsule 16 ออนซ์', title_en: '16oz Capsule Cup Screen Print Preview', desc_th: 'งานพิมพ์สกรีนสีส้มคมชัด เม็ดสีแน่น ไม่หลุดลอก แม้โดนความชื้นสะสม', desc_en: 'Vibrant orange screen printing, clean details, non-peelable and water-resistant.', poster_src: '', video_src: '', order: 1 },
                 { id: 'video_2', title_th: 'ตัวอย่างสกรีนลายฟิล์มม้วนซีลปากแก้วความร้อน', title_en: 'Sealing Roll Film Printing Demo', desc_th: 'รายละเอียดความคมกริบของงานสกรีนม้วนซีล พลาสติกเกรดอาหารปลอดภัย 100%', desc_en: 'Ultra-sharp printing resolution on sealing rolls, 100% food-grade safe.', poster_src: '', video_src: '', order: 2 }
             ];
 
-            const videoTx = this.db.transaction('home_videos', 'readwrite');
-            const videoStore = videoTx.objectStore('home_videos');
             for (const v of videos) {
-                videoStore.put(v);
+                const existing = await this.get('home_videos', v.id);
+                if (!existing) {
+                    await this.put('home_videos', v);
+                }
             }
 
             // 6. Seed default contact settings

@@ -4,6 +4,121 @@
  * WebP Image Auto-converter, and Blob Video upload engine (max 20MB).
  */
 
+// Helper for robust overlay normalization (0 to 80 integer percentage)
+window.normalizeSectionOverlay = (raw) => {
+    if (raw === undefined || raw === null || raw === '') return 55;
+    let val = Number(raw);
+    if (!Number.isFinite(val)) return 55;
+    if (val > 0 && val <= 1) val = val * 100;
+    return Math.min(80, Math.max(0, Math.round(val)));
+};
+
+// Reusable helper function to generate Section Background Appearance Panel HTML
+window.renderBgAppearancePanelHtml = (sectionObj) => {
+    const bgStyle = sectionObj.content?.backgroundStyle || sectionObj.backgroundStyle || 'line_art';
+    const bgImg = sectionObj.content?.backgroundImage || sectionObj.backgroundImage || '';
+    const bgOverlay = window.normalizeSectionOverlay(sectionObj.content?.backgroundOverlay ?? sectionObj.backgroundOverlay);
+    const bgPos = sectionObj.content?.backgroundPosition || sectionObj.backgroundPosition || 'center center';
+    const bgBrightness = sectionObj.content?.backgroundBrightness !== undefined ? sectionObj.content.backgroundBrightness : 100;
+    const bgTextTheme = sectionObj.content?.backgroundTextTheme || sectionObj.backgroundTextTheme || 'auto';
+
+    window.currentActiveSecBgImg = bgImg;
+
+    return `
+        <!-- Collapsible Background Appearance Panel (Milestone 4.5 & 4.5.1) -->
+        <details class="bg-appearance-panel" style="margin:20px 0; background:var(--bg-main); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:12px 16px; width:100%; max-width:100%; box-sizing:border-box; margin-left:0; margin-right:0;">
+            <summary style="font-weight:700; color:var(--primary); cursor:pointer; font-size:0.9rem; display:flex; align-items:center; justify-content:space-between;">
+                <span><i class="fas fa-paint-roller" style="color:var(--secondary); margin-right:8px;"></i> การตั้งค่าพื้นหลังเซกชัน (Background Appearance)</span>
+                <i class="fas fa-chevron-down" style="font-size:0.8rem; color:var(--text-sec);"></i>
+            </summary>
+            
+            <div style="margin-top:16px; padding-top:12px; border-top:1px dashed var(--border-color);">
+                <!-- 1. Background Style -->
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; margin-bottom:8px;">
+                        1. รูปแบบพื้นหลัง (Background Style)
+                    </label>
+                    <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px;">
+                        <label style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--bg-sec); border:1px solid var(--border-color); border-radius:var(--radius-sm); cursor:pointer; font-size:0.82rem;">
+                            <input type="radio" name="bg-style-radio" value="solid_color" ${bgStyle === 'solid_color' ? 'checked' : ''} onchange="window.toggleBgStyleControls(this.value)"> Solid Color (สีเรียบ)
+                        </label>
+                        <label style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--bg-sec); border:1px solid var(--border-color); border-radius:var(--radius-sm); cursor:pointer; font-size:0.82rem;">
+                            <input type="radio" name="bg-style-radio" value="line_art" ${bgStyle === 'line_art' ? 'checked' : ''} onchange="window.toggleBgStyleControls(this.value)"> Decorative Line Art (ลายเส้น)
+                        </label>
+                        <label style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--bg-sec); border:1px solid var(--border-color); border-radius:var(--radius-sm); cursor:pointer; font-size:0.82rem;">
+                            <input type="radio" name="bg-style-radio" value="image" ${bgStyle === 'image' ? 'checked' : ''} onchange="window.toggleBgStyleControls(this.value)"> Background Image (รูปภาพ)
+                        </label>
+                        <label style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--bg-sec); border:1px solid var(--border-color); border-radius:var(--radius-sm); cursor:pointer; font-size:0.82rem;">
+                            <input type="radio" name="bg-style-radio" value="image_line_art" ${bgStyle === 'image_line_art' ? 'checked' : ''} onchange="window.toggleBgStyleControls(this.value)"> Background Image + Line Art
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Image Controls Box -->
+                <div id="bg-img-controls-box" style="display:${(bgStyle === 'image' || bgStyle === 'image_line_art') ? 'block' : 'none'};">
+                    <!-- 2. Background Image Upload -->
+                    <div class="form-group" style="background:var(--bg-sec); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border-color); margin-bottom:14px;">
+                        <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; margin-bottom:6px;">
+                            2. อัปโหลดรูปภาพพื้นหลัง (Supported: JPG, PNG, WEBP)
+                        </label>
+                        <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+                            <input type="file" id="sec-bg-file" class="form-control" accept="image/*" style="padding:4px; font-size:0.75rem; flex-grow:1;" onchange="window.uploadSecBgFile(this)">
+                            <button type="button" class="btn btn-outline" onclick="window.selectSecBgMedia()" style="padding:6px 10px; font-size:0.72rem;"><i class="fas fa-folder-open"></i> คลังภาพ</button>
+                            <button type="button" class="btn btn-outline" id="remove-sec-bg-btn" onclick="window.removeSecBgImg()" style="padding:6px 10px; font-size:0.72rem; color:var(--danger); border-color:var(--danger); display:${bgImg ? 'inline-flex' : 'none'};"><i class="fas fa-trash"></i> ลบรูป</button>
+                        </div>
+                        <div style="text-align:center;">
+                            <img id="sec-bg-img-preview" src="${bgImg}" style="max-height:100px; max-width:100%; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:${bgImg ? 'inline-block' : 'none'}; object-fit:cover;">
+                            <div id="sec-bg-img-empty" style="padding:10px; background:var(--bg-main); border:1px dashed var(--border-color); border-radius:var(--radius-sm); font-size:0.75rem; color:var(--text-sec); display:${bgImg ? 'none' : 'block'};">
+                                <i class="fas fa-info-circle" style="color:var(--secondary);"></i> ยังไม่ได้เลือกรูปภาพพื้นหลัง
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Overlay Slider (0-80%, default 55%) -->
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <label style="font-weight:700; font-size:0.82rem; color:var(--primary);">3. ความเข้มเลเยอร์ทับดำ (Overlay):</label>
+                            <span id="bg-overlay-val" style="font-weight:700; color:var(--secondary); font-size:0.85rem;">${bgOverlay}%</span>
+                        </div>
+                        <input type="range" id="sec-bg-overlay" min="0" max="80" value="${bgOverlay}" step="1" class="form-control" style="padding:0;" oninput="document.getElementById('bg-overlay-val').innerText = this.value + '%'">
+                    </div>
+
+                    <!-- 4. Background Position -->
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; margin-bottom:4px;">4. ตำแหน่งจัดวางภาพ (Background Position):</label>
+                        <select id="sec-bg-pos" class="form-control">
+                            <option value="center center" ${bgPos === 'center center' ? 'selected' : ''}>Center (ตรงกลาง)</option>
+                            <option value="top center" ${bgPos === 'top center' ? 'selected' : ''}>Top (ส่วนบน)</option>
+                            <option value="bottom center" ${bgPos === 'bottom center' ? 'selected' : ''}>Bottom (ส่วนล่าง)</option>
+                            <option value="left center" ${bgPos === 'left center' ? 'selected' : ''}>Left (ด้านซ้าย)</option>
+                            <option value="right center" ${bgPos === 'right center' ? 'selected' : ''}>Right (ด้านขวา)</option>
+                        </select>
+                    </div>
+
+                    <!-- 5. Image Brightness (70-120%, default 100%) -->
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <label style="font-weight:700; font-size:0.82rem; color:var(--primary);">5. ความสว่างภาพ (Image Brightness):</label>
+                            <span id="bg-brightness-val" style="font-weight:700; color:var(--secondary); font-size:0.85rem;">${bgBrightness}%</span>
+                        </div>
+                        <input type="range" id="sec-bg-brightness" min="70" max="120" value="${bgBrightness}" step="1" class="form-control" style="padding:0;" oninput="document.getElementById('bg-brightness-val').innerText = this.value + '%'">
+                    </div>
+
+                    <!-- 6. Text Theme -->
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; margin-bottom:4px;">6. ธีมสีตัวหนังสือ (Text Theme):</label>
+                        <select id="sec-bg-text-theme" class="form-control">
+                            <option value="auto" ${bgTextTheme === 'auto' ? 'selected' : ''}>Auto (ปรับอัตโนมัติตามพื้นหลัง)</option>
+                            <option value="light" ${bgTextTheme === 'light' ? 'selected' : ''}>Light (ข้อความสีขาวสำหรับภาพเข้ม)</option>
+                            <option value="dark" ${bgTextTheme === 'dark' ? 'selected' : ''}>Dark (ข้อความสีเข้มสำหรับภาพสว่าง)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </details>
+    `;
+};
+
 class CharoenAdmin {
     constructor() {
         this.db = new window.CharoenOnCupDB();
@@ -690,7 +805,10 @@ class CharoenAdmin {
         container.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
                 <h3 style="font-size:1.15rem; font-weight:700; color:var(--secondary);">ภาพผลงานแกลเลอรีสกรีนแก้ว</h3>
-                <button class="btn btn-primary" id="add-portfolio-btn" style="padding:8px 16px; font-size:0.85rem;"><i class="fas fa-plus"></i> เพิ่มภาพผลงานใหม่</button>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-outline" id="edit-portfolio-hero-btn" style="padding:8px 14px; font-size:0.85rem; border-color:var(--primary); color:var(--primary);"><i class="fas fa-image"></i> ตั้งค่า Hero พื้นหลังหัวข้อ</button>
+                    <button class="btn btn-primary" id="add-portfolio-btn" style="padding:8px 16px; font-size:0.85rem;"><i class="fas fa-plus"></i> เพิ่มภาพผลงานใหม่</button>
+                </div>
             </div>
 
             <!-- Category Filter Tabs (synced with front-end categories) -->
@@ -749,7 +867,7 @@ class CharoenAdmin {
                                             <td style="text-align:center;"><strong>${item.order || 0}</strong></td>
                                             <td style="width:60px;">
                                                 <div style="width:44px; height:44px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-sec); display:flex; align-items:center; justify-content:center; overflow:hidden;">
-                                                    ${item.image_src ? `<img src="${item.image_src}" style="width:100%; height:100%; object-fit:cover;">` : `<i class="fas fa-image" style="color:var(--text-muted);"></i>`}
+                                                    ${this.getPortfolioCoverImage(item) !== 'coffee_bg.webp' ? `<img src="${this.getPortfolioCoverImage(item)}" style="width:100%; height:100%; object-fit:cover;">` : `<i class="fas fa-image" style="color:var(--text-muted);"></i>`}
                                                 </div>
                                             </td>
                                             <td><strong>${item.title_th}</strong></td>
@@ -790,6 +908,9 @@ class CharoenAdmin {
         // Manage Categories popup
         document.getElementById('port-manage-cats-btn').onclick = () => this.openCategoryManagerPopup();
 
+        const editHeroBtn = document.getElementById('edit-portfolio-hero-btn');
+        if (editHeroBtn) editHeroBtn.onclick = () => this.openPortfolioHeroModal();
+
         document.getElementById('add-portfolio-btn').onclick = () => this.openPortfolioEditDialog(null);
         document.querySelectorAll('.edit-port-btn').forEach(btn => {
             btn.onclick = () => this.openPortfolioEditDialog(btn.dataset.id);
@@ -802,6 +923,181 @@ class CharoenAdmin {
                 }
             };
         });
+    }
+
+    // Dedicated Portfolio Hero Background Manager Dialog
+    async openPortfolioHeroModal() {
+        const adminApp = this;
+
+        if (!window.toggleBgStyleControls) {
+            window.toggleBgStyleControls = (val) => {
+                const box = document.getElementById('bg-img-controls-box');
+                if (box) {
+                    box.style.display = (val === 'image' || val === 'image_line_art') ? 'block' : 'none';
+                }
+            };
+        }
+        if (!window.selectSecBgMedia) {
+            window.selectSecBgMedia = () => {
+                adminApp.openMediaSelectorDialog((selectedBase64) => {
+                    window.currentActiveSecBgImg = selectedBase64;
+                    const prev = document.getElementById('sec-bg-img-preview');
+                    const empty = document.getElementById('sec-bg-img-empty');
+                    const rmBtn = document.getElementById('remove-sec-bg-btn');
+                    if (prev) { prev.src = selectedBase64; prev.style.display = 'inline-block'; }
+                    if (empty) empty.style.display = 'none';
+                    if (rmBtn) rmBtn.style.display = 'inline-flex';
+                });
+            };
+        }
+        if (!window.uploadSecBgFile) {
+            window.uploadSecBgFile = async (inputEl) => {
+                if (inputEl.files && inputEl.files[0]) {
+                    const webpData = await adminApp.convertImageToWebP(inputEl.files[0]);
+                    window.currentActiveSecBgImg = webpData;
+                    const prev = document.getElementById('sec-bg-img-preview');
+                    const empty = document.getElementById('sec-bg-img-empty');
+                    const rmBtn = document.getElementById('remove-sec-bg-btn');
+                    if (prev) { prev.src = webpData; prev.style.display = 'inline-block'; }
+                    if (empty) empty.style.display = 'none';
+                    if (rmBtn) rmBtn.style.display = 'inline-flex';
+                }
+            };
+        }
+        if (!window.removeSecBgImg) {
+            window.removeSecBgImg = () => {
+                window.currentActiveSecBgImg = '';
+                const prev = document.getElementById('sec-bg-img-preview');
+                const empty = document.getElementById('sec-bg-img-empty');
+                const rmBtn = document.getElementById('remove-sec-bg-btn');
+                const fileInput = document.getElementById('sec-bg-file');
+                if (prev) { prev.src = ''; prev.style.display = 'none'; }
+                if (empty) empty.style.display = 'block';
+                if (rmBtn) rmBtn.style.display = 'none';
+                if (fileInput) fileInput.value = '';
+            };
+        }
+
+        const titleThObj = await adminApp.db.get('settings', 'portfolio_hero_title_th');
+        const titleEnObj = await adminApp.db.get('settings', 'portfolio_hero_title_en');
+        const descThObj = await adminApp.db.get('settings', 'portfolio_hero_desc_th');
+        const descEnObj = await adminApp.db.get('settings', 'portfolio_hero_desc_en');
+
+        const bgStyleObj = await adminApp.db.get('settings', 'portfolio_hero_background_style');
+        const bgImgObj = await adminApp.db.get('settings', 'portfolio_hero_background_image');
+        const bgOverlayObj = await adminApp.db.get('settings', 'portfolio_hero_background_overlay');
+        const bgPosObj = await adminApp.db.get('settings', 'portfolio_hero_background_position');
+        const bgBrightnessObj = await adminApp.db.get('settings', 'portfolio_hero_background_brightness');
+        const bgTextThemeObj = await adminApp.db.get('settings', 'portfolio_hero_background_text_theme');
+        const heightObj = await adminApp.db.get('settings', 'portfolio_hero_height');
+
+        const heroSecObj = {
+            content: {
+                backgroundStyle: bgStyleObj?.value || 'image',
+                backgroundImage: bgImgObj?.value || 'portfolio_banner.webp',
+                backgroundOverlay: bgOverlayObj?.value !== undefined ? bgOverlayObj.value : 55,
+                backgroundPosition: bgPosObj?.value || 'center center',
+                backgroundBrightness: bgBrightnessObj?.value !== undefined ? bgBrightnessObj.value : 100,
+                backgroundTextTheme: bgTextThemeObj?.value || 'auto'
+            }
+        };
+
+        const titleTh = titleThObj?.value || 'ผลงานสกรีนแก้ว';
+        const titleEn = titleEnObj?.value || 'Our Portfolio';
+        const descTh = descThObj?.value || 'รวมภาพตัวอย่างผลงานสกรีนจริงจากแบรนด์เครื่องดื่มและร้านกาแฟชั้นนำทั่วประเทศ';
+        const descEn = descEnObj?.value || 'Real-world screen printing portfolio from leading beverage brands & cafes.';
+        const heightVal = heightObj?.value || 'default';
+
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay active';
+        overlay.innerHTML = `
+            <div class="modal-window portfolio-hero-modal-window" style="max-width: 680px; width: 92%; max-height: 90vh; overflow-y: auto; overflow-x: hidden; padding: 24px; box-sizing: border-box;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:12px; border-bottom:1px solid var(--border-color); width:100%; box-sizing:border-box;">
+                    <h3 style="font-size:1.15rem; font-weight:700; color:var(--primary); margin:0; line-height:1.4;">
+                        <i class="fas fa-image" style="color:var(--secondary); margin-right:8px;"></i> ตั้งค่า Hero พื้นหลังหัวข้อผลงาน (Portfolio Hero)
+                    </h3>
+                    <button type="button" class="btn btn-outline close-modal-btn" style="padding:4px 8px; font-size:0.8rem; flex-shrink:0;"><i class="fas fa-times"></i></button>
+                </div>
+
+                <form id="portfolio-hero-form" style="width:100%; box-sizing:border-box;">
+                    <div class="portfolio-hero-grid" style="display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:14px; margin-bottom:14px; width:100%; box-sizing:border-box;">
+                        <div class="form-group" style="min-width:0; max-width:100%; box-sizing:border-box;">
+                            <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; width:100%; margin-left:0; padding-left:0; margin-bottom:6px; line-height:1.5; overflow:visible;">ชื่อหัวข้อ (ภาษาไทย)</label>
+                            <input type="text" id="port-hero-title-th" class="form-control" value="${titleTh}" style="width:100%; max-width:100%; box-sizing:border-box; margin-left:0; transform:none;">
+                        </div>
+                        <div class="form-group" style="min-width:0; max-width:100%; box-sizing:border-box;">
+                            <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; width:100%; margin-left:0; padding-left:0; margin-bottom:6px; line-height:1.5; overflow:visible;">Title (English)</label>
+                            <input type="text" id="port-hero-title-en" class="form-control" value="${titleEn}" style="width:100%; max-width:100%; box-sizing:border-box; margin-left:0; transform:none;">
+                        </div>
+                    </div>
+
+                    <div class="portfolio-hero-grid" style="display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:14px; margin-bottom:14px; width:100%; box-sizing:border-box;">
+                        <div class="form-group" style="min-width:0; max-width:100%; box-sizing:border-box;">
+                            <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; width:100%; margin-left:0; padding-left:0; margin-bottom:6px; line-height:1.5; overflow:visible;">คำอธิบาย (ภาษาไทย)</label>
+                            <textarea id="port-hero-desc-th" class="form-control" rows="2" style="width:100%; max-width:100%; box-sizing:border-box; margin-left:0; transform:none;">${descTh}</textarea>
+                        </div>
+                        <div class="form-group" style="min-width:0; max-width:100%; box-sizing:border-box;">
+                            <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; width:100%; margin-left:0; padding-left:0; margin-bottom:6px; line-height:1.5; overflow:visible;">Description (English)</label>
+                            <textarea id="port-hero-desc-en" class="form-control" rows="2" style="width:100%; max-width:100%; box-sizing:border-box; margin-left:0; transform:none;">${descEn}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:16px; min-width:0; max-width:100%; box-sizing:border-box;">
+                        <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; width:100%; margin-left:0; padding-left:0; margin-bottom:6px; line-height:1.5; overflow:visible;">ความสูงป้าย Hero (Section Height)</label>
+                        <select id="port-hero-height" class="form-control" style="width:100%; max-width:100%; box-sizing:border-box; margin-left:0; transform:none; padding:8px 12px;">
+                            <option value="compact" ${heightVal === 'compact' ? 'selected' : ''}>Compact (กะทัดรัด - 38px padding)</option>
+                            <option value="default" ${heightVal === 'default' ? 'selected' : ''}>Default (มาตรฐาน - 60px padding)</option>
+                            <option value="tall" ${heightVal === 'tall' ? 'selected' : ''}>Tall (ทรงสูง - 90px padding)</option>
+                        </select>
+                    </div>
+
+                    ${window.renderBgAppearancePanelHtml(heroSecObj)}
+
+                    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; padding-top:14px; border-top:1px solid var(--border-color); width:100%; box-sizing:border-box;">
+                        <button type="button" class="btn btn-outline close-modal-btn" style="padding:8px 18px;">ยกเลิก</button>
+                        <button type="submit" class="btn btn-primary" style="padding:8px 24px;"><i class="fas fa-save"></i> บันทึกการตั้งค่า Hero</button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const closeModal = () => {
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        };
+
+        overlay.querySelectorAll('.close-modal-btn').forEach(btn => btn.onclick = closeModal);
+
+        document.getElementById('portfolio-hero-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const bgStyle = document.querySelector('input[name="bg-style-radio"]:checked')?.value || 'image';
+            const bgImg = document.getElementById('sec-bg-img-val')?.value !== undefined
+                ? document.getElementById('sec-bg-img-val').value
+                : (window.currentActiveSecBgImg || '');
+            const rawOverlayInput = document.getElementById('sec-bg-overlay')?.value;
+            const bgOverlay = window.normalizeSectionOverlay ? window.normalizeSectionOverlay(rawOverlayInput) : (parseInt(rawOverlayInput, 10) || 55);
+            const bgPos = document.getElementById('sec-bg-pos')?.value || 'center center';
+            const bgBrightness = parseInt(document.getElementById('sec-bg-brightness')?.value, 10) || 100;
+            const bgTextTheme = document.querySelector('input[name="bg-text-theme-radio"]:checked')?.value || document.getElementById('sec-bg-text-theme')?.value || 'auto';
+
+            await adminApp.db.put('settings', { key: 'portfolio_hero_title_th', value: document.getElementById('port-hero-title-th').value });
+            await adminApp.db.put('settings', { key: 'portfolio_hero_title_en', value: document.getElementById('port-hero-title-en').value });
+            await adminApp.db.put('settings', { key: 'portfolio_hero_desc_th', value: document.getElementById('port-hero-desc-th').value });
+            await adminApp.db.put('settings', { key: 'portfolio_hero_desc_en', value: document.getElementById('port-hero-desc-en').value });
+            await adminApp.db.put('settings', { key: 'portfolio_hero_height', value: document.getElementById('port-hero-height').value });
+
+            await adminApp.db.put('settings', { key: 'portfolio_hero_background_style', value: bgStyle });
+            await adminApp.db.put('settings', { key: 'portfolio_hero_background_image', value: bgImg });
+            await adminApp.db.put('settings', { key: 'portfolio_hero_background_overlay', value: bgOverlay });
+            await adminApp.db.put('settings', { key: 'portfolio_hero_background_position', value: bgPos });
+            await adminApp.db.put('settings', { key: 'portfolio_hero_background_brightness', value: bgBrightness });
+            await adminApp.db.put('settings', { key: 'portfolio_hero_background_text_theme', value: bgTextTheme });
+
+            alert('บันทึกการตั้งค่า Portfolio Hero เรียบร้อยแล้ว');
+            closeModal();
+            adminApp.renderActiveView();
+        };
     }
 
     // Hero Slider View
@@ -1390,6 +1686,45 @@ class CharoenAdmin {
         const aboutImage = await this.db.get('settings', 'about_image');
         const aboutBulletsTh = await this.db.get('settings', 'about_bullets_th');
         const aboutBulletsEn = await this.db.get('settings', 'about_bullets_en');
+
+        const aboutEyebrowTh = await this.db.get('settings', 'about_eyebrow_th');
+        const aboutEyebrowEn = await this.db.get('settings', 'about_eyebrow_en');
+        const aboutCtaTextTh = await this.db.get('settings', 'about_cta_text_th');
+        const aboutCtaTextEn = await this.db.get('settings', 'about_cta_text_en');
+        const aboutCtaLink = await this.db.get('settings', 'about_cta_link');
+
+        // Highlight Cards 1 to 5
+        const hCards = [];
+        const defaultHighlightsTh = [
+            { icon: 'fas fa-industry', title: 'โรงงานผลิตมาตรฐาน', desc: 'ใช้เครื่องจักรสกรีนแก้วทันสมัย ได้มาตรฐานอุตสาหกรรม ควบคุมคุณภาพทุกขั้นตอน' },
+            { icon: 'fas fa-layer-group', title: 'ขั้นต่ำต่ำ เริ่มต้น 1,000 ใบ', desc: 'รองรับทั้งร้านกาแฟเปิดใหม่และธุรกิจขนาดใหญ่ สั่งผลิตได้ตามต้องการ' },
+            { icon: 'fas fa-shield-halved', title: 'สีสกรีนคมชัด ติดทนนาน', desc: 'ใช้หมึกพิมพ์ Food Grade ปลอดภัย สีสวยสดใส ไม่หลุดลอกง่าย' },
+            { icon: 'fas fa-compass-drafting', title: 'บริการจัดวางแบบฟรี', desc: 'ทีมงานมืออาชีพช่วยจัดวางตำแหน่งโลโก้และตรวจสอบไฟล์ฟรีก่อนสกรีนจริง' },
+            { icon: 'fas fa-truck-fast', title: 'จัดส่งรวดเร็วทั่วประเทศ', desc: 'แพ็คบรรจุอย่างแน่นหนา พร้อมจัดส่งตรงถึงหน้าร้านทั่วประเทศไทย' }
+        ];
+
+        const defaultHighlightsEn = [
+            { icon: 'fas fa-industry', title: 'Standard Manufacturing', desc: 'Equipped with modern screen printing machinery and strict quality control.' },
+            { icon: 'fas fa-layer-group', title: 'Low MOQ Starts 1,000 Pcs', desc: 'Suitable for both newly opened cafes and large beverage brands.' },
+            { icon: 'fas fa-shield-halved', title: 'Durable & Safe Printing', desc: 'Food-Grade inks with vibrant, long-lasting print durability.' },
+            { icon: 'fas fa-compass-drafting', title: 'Free Design Layout', desc: 'In-house graphic team assists with free logo positioning and proofing.' },
+            { icon: 'fas fa-truck-fast', title: 'Nationwide Delivery', desc: 'Secure packaging with reliable door-to-door nationwide delivery.' }
+        ];
+
+        for (let i = 1; i <= 5; i++) {
+            const iconK = await this.db.get('settings', `about_h${i}_icon`);
+            const titleThK = await this.db.get('settings', `about_h${i}_title_th`);
+            const titleEnK = await this.db.get('settings', `about_h${i}_title_en`);
+            const descThK = await this.db.get('settings', `about_h${i}_desc_th`);
+            const descEnK = await this.db.get('settings', `about_h${i}_desc_en`);
+            hCards.push({
+                icon: iconK?.value || defaultHighlightsTh[i-1].icon,
+                titleTh: titleThK?.value || defaultHighlightsTh[i-1].title,
+                titleEn: titleEnK?.value || defaultHighlightsEn[i-1].title,
+                descTh: descThK?.value || defaultHighlightsTh[i-1].desc,
+                descEn: descEnK?.value || defaultHighlightsEn[i-1].desc
+            });
+        }
 
         const showPrices = await this.db.get('settings', 'show_prices');
         const showHomeVideo = await this.db.get('settings', 'show_home_video');
@@ -2018,13 +2353,49 @@ class CharoenAdmin {
                 logo_img: document.getElementById('set-logo-img-src').value,
                 company_name_th: document.getElementById('set-company-name-th').value,
                 company_name_en: document.getElementById('set-company-name-en').value,
+                about_eyebrow_th: document.getElementById('set-about-eyebrow-th')?.value || '',
+                about_eyebrow_en: document.getElementById('set-about-eyebrow-en')?.value || '',
                 about_title_th: document.getElementById('set-about-title-th').value,
                 about_title_en: document.getElementById('set-about-title-en').value,
                 about_desc_th: document.getElementById('set-about-desc-th').value,
                 about_desc_en: document.getElementById('set-about-desc-en').value,
+                about_cta_text_th: document.getElementById('set-about-cta-text-th')?.value || '',
+                about_cta_text_en: document.getElementById('set-about-cta-text-en')?.value || '',
+                about_cta_link: document.getElementById('set-about-cta-link')?.value || '#contact',
                 about_image: document.getElementById('set-about-img-src').value,
                 about_bullets_th: document.getElementById('set-about-bullets-th').value,
                 about_bullets_en: document.getElementById('set-about-bullets-en').value,
+
+                // 5 Highlight Cards keys
+                about_h1_icon: document.getElementById('set-about-h1-icon')?.value || '',
+                about_h1_title_th: document.getElementById('set-about-h1-title-th')?.value || '',
+                about_h1_title_en: document.getElementById('set-about-h1-title-en')?.value || '',
+                about_h1_desc_th: document.getElementById('set-about-h1-desc-th')?.value || '',
+                about_h1_desc_en: document.getElementById('set-about-h1-desc-en')?.value || '',
+
+                about_h2_icon: document.getElementById('set-about-h2-icon')?.value || '',
+                about_h2_title_th: document.getElementById('set-about-h2-title-th')?.value || '',
+                about_h2_title_en: document.getElementById('set-about-h2-title-en')?.value || '',
+                about_h2_desc_th: document.getElementById('set-about-h2-desc-th')?.value || '',
+                about_h2_desc_en: document.getElementById('set-about-h2-desc-en')?.value || '',
+
+                about_h3_icon: document.getElementById('set-about-h3-icon')?.value || '',
+                about_h3_title_th: document.getElementById('set-about-h3-title-th')?.value || '',
+                about_h3_title_en: document.getElementById('set-about-h3-title-en')?.value || '',
+                about_h3_desc_th: document.getElementById('set-about-h3-desc-th')?.value || '',
+                about_h3_desc_en: document.getElementById('set-about-h3-desc-en')?.value || '',
+
+                about_h4_icon: document.getElementById('set-about-h4-icon')?.value || '',
+                about_h4_title_th: document.getElementById('set-about-h4-title-th')?.value || '',
+                about_h4_title_en: document.getElementById('set-about-h4-title-en')?.value || '',
+                about_h4_desc_th: document.getElementById('set-about-h4-desc-th')?.value || '',
+                about_h4_desc_en: document.getElementById('set-about-h4-desc-en')?.value || '',
+
+                about_h5_icon: document.getElementById('set-about-h5-icon')?.value || '',
+                about_h5_title_th: document.getElementById('set-about-h5-title-th')?.value || '',
+                about_h5_title_en: document.getElementById('set-about-h5-title-en')?.value || '',
+                about_h5_desc_th: document.getElementById('set-about-h5-desc-th')?.value || '',
+                about_h5_desc_en: document.getElementById('set-about-h5-desc-en')?.value || '',
                 phone: document.getElementById('set-phone').value,
                 line: document.getElementById('set-line-url').value, // compatibility sync
                 facebook: document.getElementById('set-facebook-url').value, // compatibility sync
@@ -2851,6 +3222,31 @@ class CharoenAdmin {
         });
     }
 
+    getPortfolioCoverImage(item) {
+        if (!item) return 'coffee_bg.webp';
+        let allImgs = [];
+        if (item.image_src) {
+            allImgs.push(item.image_src);
+        }
+        if (item.gallery_images) {
+            let parsed = [];
+            if (Array.isArray(item.gallery_images)) {
+                parsed = item.gallery_images;
+            } else if (typeof item.gallery_images === 'string') {
+                try { parsed = JSON.parse(item.gallery_images); } catch (e) {}
+            }
+            parsed.forEach(img => {
+                if (img && !allImgs.includes(img)) {
+                    allImgs.push(img);
+                }
+            });
+        }
+        if (item.coverImageUrl && allImgs.includes(item.coverImageUrl)) {
+            return item.coverImageUrl;
+        }
+        return allImgs[0] || 'coffee_bg.webp';
+    }
+
     async openPortfolioEditDialog(itemId) {
         const categories = await this.db.getAll('categories');
         const portfolio = await this.db.getAll('portfolio');
@@ -2875,6 +3271,7 @@ class CharoenAdmin {
             description_th: '',
             description_en: '',
             image_src: '',
+            coverImageUrl: '',
             gallery_images: [],
             visible: true,
             featured: false,
@@ -2905,6 +3302,7 @@ class CharoenAdmin {
                     desc_en: fetched.desc_en || fetched.description_en || '',
                     description_th: fetched.description_th || fetched.desc_th || '',
                     description_en: fetched.description_en || fetched.desc_en || '',
+                    coverImageUrl: fetched.coverImageUrl || '',
                     visible: fetched.visible !== false && fetched.visible !== 'false',
                     featured: fetched.featured === true || fetched.featured === 'true',
                     order: fetched.order !== undefined ? Number(fetched.order) : 1,
@@ -2920,6 +3318,8 @@ class CharoenAdmin {
         let portfolioGalleryImages = Array.isArray(item?.gallery_images)
             ? item.gallery_images.filter(Boolean).slice(0, 5)
             : [];
+
+        let selectedCoverUrl = item.coverImageUrl || '';
 
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay active';
@@ -3013,6 +3413,9 @@ class CharoenAdmin {
                                 <span id="gallery-full-msg" style="font-size:0.8rem; color:var(--success); font-weight:700; display:none;">เพิ่มรูปครบ 5 รูปแล้ว</span>
                             </div>
                         </div>
+
+                        <!-- Cover Image Selection section for portfolio card -->
+                        <div id="cover-image-selection-container" class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 16px;"></div>
                     </div>
                     
                     <div style="margin-top:24px; display:flex; gap:12px; justify-content:flex-end;">
@@ -3028,6 +3431,64 @@ class CharoenAdmin {
         document.getElementById('close-modal-btn').onclick = closeDialog;
         document.getElementById('close-modal-cancel-btn').onclick = closeDialog;
 
+        // Render cover image selection block
+        const renderCoverSelection = () => {
+            const container = document.getElementById('cover-image-selection-container');
+            if (!container) return;
+
+            const allImgs = [item.image_src, ...portfolioGalleryImages]
+                .filter(Boolean)
+                .filter((url, index, arr) => arr.indexOf(url) === index);
+
+            if (allImgs.length === 0) {
+                container.style.display = 'none';
+                container.innerHTML = '';
+                selectedCoverUrl = '';
+                return;
+            }
+
+            container.style.display = 'block';
+
+            if (!selectedCoverUrl || !allImgs.includes(selectedCoverUrl)) {
+                selectedCoverUrl = allImgs[0];
+            }
+
+            container.innerHTML = `
+                <label style="font-weight:700; font-size:0.9rem; color:var(--primary); display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                    <span><i class="fas fa-star" style="color:var(--secondary); margin-right:6px;"></i> เลือกรูปปกผลงาน (Cover Image)</span>
+                    <span style="font-size:0.78rem; font-weight:600; color:var(--secondary);">เลือก 1 รูปเป็นรูปปก</span>
+                </label>
+                <p style="font-size:0.78rem; color:var(--text-sec); margin-top:2px; margin-bottom:12px;">
+                    เลือกรูปภาพที่จะใช้เป็นรูปปกแสดงในหน้าการ์ดผลงาน (รูปทั้งหมดจะยังคงแสดงในแกลเลอรีรายละเอียดตามปกติ)
+                </p>
+
+                <div class="cover-thumbnails-list" style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:8px;">
+                    ${allImgs.map((imgUrl, idx) => {
+                        const isSelected = imgUrl === selectedCoverUrl;
+                        return `
+                            <div class="cover-thumb-card" data-index="${idx}" style="cursor:pointer; display:flex; flex-direction:column; align-items:center; width:104px; padding:8px; border:2px solid ${isSelected ? 'var(--secondary)' : 'var(--border-color)'}; border-radius:var(--radius-md); background:${isSelected ? 'rgba(255,107,0,0.06)' : 'var(--bg-main)'}; transition:all 0.15s ease; box-sizing:border-box; flex-shrink:0;">
+                                <div style="width:88px; height:88px; border-radius:var(--radius-sm); overflow:hidden; background:var(--bg-sec); display:flex; align-items:center; justify-content:center; margin-bottom:6px; border:1px solid ${isSelected ? 'var(--secondary)' : 'transparent'};">
+                                    <img src="${imgUrl}" style="max-width:100%; max-height:100%; object-fit:cover;" onerror="this.src='coffee_bg.webp';">
+                                </div>
+                                <label style="display:flex; align-items:center; justify-content:center; gap:6px; font-size:0.78rem; font-weight:700; color:${isSelected ? 'var(--secondary)' : 'var(--text-sec)'}; min-height:44px; width:100%; cursor:pointer; margin:0;">
+                                    <input type="radio" name="port-cover-selection" value="${idx}" ${isSelected ? 'checked' : ''} style="accent-color:var(--secondary); width:18px; height:18px; cursor:pointer;">
+                                    <span>รูปที่ ${idx + 1}</span>
+                                </label>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+
+            container.querySelectorAll('.cover-thumb-card').forEach(card => {
+                const idx = parseInt(card.dataset.index);
+                card.onclick = () => {
+                    selectedCoverUrl = allImgs[idx];
+                    renderCoverSelection();
+                };
+            });
+        };
+
         // Select from media library for main image
         document.getElementById('select-port-media-btn').onclick = () => {
             this.openMediaSelectorDialog((selectedBase64) => {
@@ -3035,6 +3496,7 @@ class CharoenAdmin {
                 preview.src = selectedBase64;
                 preview.style.display = 'inline-block';
                 item.image_src = selectedBase64;
+                renderCoverSelection();
             });
         };
 
@@ -3048,6 +3510,7 @@ class CharoenAdmin {
                     preview.src = webpData;
                     preview.style.display = 'inline-block';
                     item.image_src = webpData;
+                    renderCoverSelection();
                 }
             };
         }
@@ -3156,6 +3619,9 @@ class CharoenAdmin {
                     }
                 };
             });
+
+            // Render cover selection whenever gallery is updated
+            renderCoverSelection();
         };
 
         const addGalleryImage = (src) => {
@@ -3219,6 +3685,9 @@ class CharoenAdmin {
                 description_th: descThVal,
                 description_en: descEnVal,
                 image_src: item.image_src,
+
+                // Store chosen cover image URL
+                coverImageUrl: selectedCoverUrl,
 
                 // Normalize gallery images
                 gallery_images: portfolioGalleryImages
