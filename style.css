@@ -27,6 +27,7 @@
     
     --text-main: #1e293b;        /* Text Primary */
     --text-muted: #64748b;       /* Text Secondary */
+    --text-sec: var(--text-muted); /* Alias for Secondary Muted Text */
     --text-light: rgba(255, 255, 255, 0.88);
     
     --border-color: rgba(4, 53, 106, 0.12); /* Standard Border */
