@@ -292,6 +292,10 @@ class CharoenAdmin {
     }
 
     renderAdminLayout() {
+        if (this.db && typeof this.db.initProductSliderIfNeeded === 'function') {
+            this.db.initProductSliderIfNeeded().catch(err => console.warn(err));
+        }
+
         const container = document.getElementById('app-main-content');
         if (!container) return;
 
@@ -328,6 +332,9 @@ class CharoenAdmin {
                         </li>
                         <li class="admin-menu-item ${this.activeTab === 'slider' ? 'active' : ''}" data-tab="slider">
                             <a><i class="fas fa-sliders-h"></i> จัดการภาพสไลด์หน้าแรก</a>
+                        </li>
+                        <li class="admin-menu-item ${this.activeTab === 'product_slider' ? 'active' : ''}" data-tab="product_slider">
+                            <a><i class="fas fa-images"></i> จัดการสไลด์หน้าสินค้า</a>
                         </li>
                         <li class="admin-menu-item ${this.activeTab === 'home_videos' ? 'active' : ''}" data-tab="home_videos" style="display: none;">
                             <a><i class="fas fa-video"></i> จัดการวิดีโอหน้าแรก</a>
@@ -456,6 +463,10 @@ class CharoenAdmin {
             case 'slider':
                 titleEl.textContent = 'จัดการภาพสไลด์หน้าแรก (Hero Slider)';
                 await this.loadSliderView(area);
+                break;
+            case 'product_slider':
+                titleEl.textContent = 'จัดการภาพสไลด์หน้าสินค้า (Product Slider)';
+                await this.loadProductSliderView(area);
                 break;
             case 'home_videos':
                 titleEl.textContent = 'จัดการวิดีโอหน้าแรก (Home Videos)';
@@ -1163,6 +1174,75 @@ class CharoenAdmin {
             btn.onclick = async () => {
                 if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบสไลด์แบนเนอร์รายการนี้ออกถาวร?')) {
                     await this.db.delete('slider', btn.dataset.id);
+                    this.renderActiveView();
+                }
+            };
+        });
+    }
+
+    // Product Slider View
+    async loadProductSliderView(container) {
+        const slides = await this.db.getAll('product_slider');
+        const sortedSlides = [...slides].sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
+
+        container.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="font-size:1.15rem; font-weight:700; color:var(--secondary);">ภาพแบนเนอร์สไลด์หน้าสินค้า (Product Hero Slider)</h3>
+                <button class="btn btn-primary" id="add-product-slide-btn" style="padding:8px 16px; font-size:0.85rem;"><i class="fas fa-plus"></i> เพิ่มแบนเนอร์สไลด์หน้าสินค้าใหม่</button>
+            </div>
+            
+            <div class="admin-card">
+                ${sortedSlides.length === 0 ? `
+                    <p style="color:var(--text-muted); font-size:0.9rem; text-align:center; padding:45px 0;">ยังไม่มีสไลด์แบนเนอร์สินค้าในฐานข้อมูลของคุณ</p>
+                ` : `
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>รูปแบนเนอร์</th>
+                                    <th>หัวข้อโปรโมชั่น (TH)</th>
+                                    <th>ลิงก์ปุ่มกด</th>
+                                    <th>สถานะ</th>
+                                    <th>ลำดับการแสดง</th>
+                                    <th style="text-align:right;">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${sortedSlides.map(s => `
+                                    <tr>
+                                        <td style="width:100px;">
+                                            <div style="width:80px; height:45px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-sec); display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                                                ${s.bg_src ? `<img src="${s.bg_src}" style="width:100%; height:100%; object-fit:cover;">` : `<i class="fas fa-images" style="color:var(--text-muted);"></i>`}
+                                            </div>
+                                        </td>
+                                        <td><strong>${s.title_th}</strong><br><span style="font-size:0.78rem; color:var(--text-muted);">${s.subtitle_th || ''}</span></td>
+                                        <td><code>${s.btn_link || '#/products'}</code></td>
+                                        <td>
+                                            ${s.published !== false ? '<span class="badge badge-success" style="margin-right:4px;">เผยแพร่</span>' : '<span class="badge badge-danger" style="margin-right:4px;">แบบร่าง</span>'}
+                                            ${s.visible !== false ? '<span class="badge badge-success">แสดงผล</span>' : '<span class="badge badge-danger">ซ่อน</span>'}
+                                        </td>
+                                        <td>ลำดับที่ ${s.order}</td>
+                                        <td style="text-align:right;">
+                                            <button class="btn btn-outline edit-product-slide-btn" data-id="${s.id}" style="padding:6px 12px; font-size:0.75rem; border-color:var(--secondary); color:var(--secondary); margin-right:8px;"><i class="fas fa-edit"></i> แก้ไข</button>
+                                            <button class="btn btn-outline del-product-slide-btn" data-id="${s.id}" style="padding:6px 12px; font-size:0.75rem; border-color:var(--danger); color:var(--danger);"><i class="fas fa-trash-alt"></i> ลบ</button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `}
+            </div>
+        `;
+
+        document.getElementById('add-product-slide-btn').onclick = () => this.openProductSlideEditDialog(null);
+        document.querySelectorAll('.edit-product-slide-btn').forEach(btn => {
+            btn.onclick = () => this.openProductSlideEditDialog(btn.dataset.id);
+        });
+        document.querySelectorAll('.del-product-slide-btn').forEach(btn => {
+            btn.onclick = async () => {
+                if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบสไลด์แบนเนอร์สินค้ารายการนี้ออกถาวร?')) {
+                    await this.db.delete('product_slider', btn.dataset.id);
                     this.renderActiveView();
                 }
             };
@@ -2485,6 +2565,7 @@ class CharoenAdmin {
                     msg += `- สินค้าทั้งหมด: ${counts.products || 0} รายการ\n`;
                     msg += `- ผลงานสกรีนแก้ว: ${counts.portfolio || 0} รายการ\n`;
                     msg += `- ภาพสไลด์หน้าแรก: ${counts.slider || 0} รายการ\n`;
+                    msg += `- ภาพสไลด์หน้าสินค้า: ${counts.product_slider || 0} รายการ\n`;
                     msg += `- ข่าวสารและสาระ: ${counts.news || 0} รายการ\n`;
                     msg += `- บทความสาระ: ${counts.articles || 0} รายการ\n`;
                     msg += `- โลโก้พันธมิตร: ${counts.clients || 0} รายการ\n`;
@@ -3897,6 +3978,198 @@ class CharoenAdmin {
             };
 
             await this.db.put('slider', updated);
+            closeDialog();
+            this.renderActiveView();
+        };
+    }
+
+    async openProductSlideEditDialog(slideId) {
+        let slide = {
+            id: 'product_slide_' + Date.now(),
+            title_th: '',
+            title_en: '',
+            subtitle_th: '',
+            subtitle_en: '',
+            bg_src: '',
+            btn_link: '#/products',
+            order: 1,
+            published: true,
+            visible: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+
+        let isEdit = false;
+        if (slideId) {
+            const fetched = await this.db.get('product_slider', slideId);
+            if (fetched) {
+                slide = fetched;
+                isEdit = true;
+            }
+        } else {
+            const slides = await this.db.getAll('product_slider');
+            const maxOrder = slides.reduce((max, s) => s.order > max ? s.order : max, 0);
+            slide.order = maxOrder + 1;
+        }
+
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay active';
+        overlay.id = 'admin-edit-modal';
+
+        overlay.innerHTML = `
+            <div class="modal-window" style="max-width:600px; padding:30px;">
+                <button class="modal-close-btn" id="close-modal-btn"><i class="fas fa-times"></i></button>
+                <h3 style="font-size:1.25rem; font-weight:800; color:var(--secondary); margin-bottom:20px; border-bottom:1.5px solid var(--border-color); padding-bottom:8px;">
+                    ${isEdit ? 'แก้ไขภาพแบนเนอร์สไลด์หน้าสินค้า' : 'เพิ่มแบนเนอร์สไลด์หน้าสินค้าใหม่'}
+                </h3>
+                
+                <form id="edit-product-slide-form">
+                    <div style="display:flex; flex-direction:column; gap:12px; max-height:60vh; overflow-y:auto; padding-right:8px;">
+                        <div class="form-group">
+                            <label style="font-weight:600; font-size:0.85rem;">หัวข้อสไลด์ภาษาไทย (TH Title) <span style="color:var(--danger)">*</span></label>
+                            <input type="text" id="slide-form-title-th" class="form-control" value="${slide.title_th}" required>
+                        </div>
+                        <div class="form-group">
+                            <label style="font-weight:600; font-size:0.85rem;">หัวข้อสไลด์ภาษาอังกฤษ (EN Title)</label>
+                            <input type="text" id="slide-form-title-en" class="form-control" value="${slide.title_en || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-weight:600; font-size:0.85rem;">คำบรรยายใต้สไลด์ภาษาไทย (TH Subtitle)</label>
+                            <input type="text" id="slide-form-sub-th" class="form-control" value="${slide.subtitle_th || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-weight:600; font-size:0.85rem;">คำบรรยายใต้สไลด์ภาษาอังกฤษ (EN Subtitle)</label>
+                            <input type="text" id="slide-form-sub-en" class="form-control" value="${slide.subtitle_en || ''}">
+                        </div>
+                        
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label style="font-weight:600; font-size:0.85rem;">ลิงก์ปุ่มกดปลายทาง (Button Link)</label>
+                                <input type="text" id="slide-form-link" class="form-control" value="${slide.btn_link || '#/products'}">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-weight:600; font-size:0.85rem;">ลำดับการแสดงผล (Order)</label>
+                                <input type="number" id="slide-form-order" class="form-control" value="${slide.order}" min="1" required>
+                            </div>
+                        </div>
+
+                        <div class="grid-2" style="margin-top: 5px; margin-bottom: 5px;">
+                            <div class="form-group" style="display:flex; align-items:center; gap:8px;">
+                                <input type="checkbox" id="slide-form-published" style="width:18px; height:18px; cursor:pointer;" ${slide.published !== false ? 'checked' : ''}>
+                                <label for="slide-form-published" style="font-weight:600; font-size:0.85rem; cursor:pointer; margin-bottom:0; user-select:none;">เผยแพร่ (Published)</label>
+                            </div>
+                            <div class="form-group" style="display:flex; align-items:center; gap:8px;">
+                                <input type="checkbox" id="slide-form-visible" style="width:18px; height:18px; cursor:pointer;" ${slide.visible !== false ? 'checked' : ''}>
+                                <label for="slide-form-visible" style="font-weight:600; font-size:0.85rem; cursor:pointer; margin-bottom:0; user-select:none;">แสดงผล (Visible)</label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label style="font-weight:600; font-size:0.85rem;">ภาพพื้นหลังแบนเนอร์สไลด์ (Desktop Background)</label>
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <input type="file" id="slide-form-file" class="form-control" accept="image/*" style="padding: 6px; flex-grow:1;">
+                                <button type="button" class="btn btn-outline" id="select-slide-media-btn" style="padding:8px 12px; font-size:0.75rem;"><i class="fas fa-folder-open"></i> เลือกจากคลังภาพ</button>
+                            </div>
+                            
+                            <div style="margin-top:10px; text-align:center;">
+                                <img src="${slide.bg_src || ''}" id="slide-form-img-preview" style="max-height:120px; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:${slide.bg_src ? 'inline-block' : 'none'};">
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 12px;">
+                            <label style="font-weight:600; font-size:0.85rem;">ภาพพื้นหลังสไลด์สำหรับมือถือ (Optional Mobile Background)</label>
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <input type="file" id="slide-form-file-mobile" class="form-control" accept="image/*" style="padding: 6px; flex-grow:1;">
+                                <button type="button" class="btn btn-outline" id="select-slide-media-mobile-btn" style="padding:8px 12px; font-size:0.75rem;"><i class="fas fa-folder-open"></i> เลือกจากคลังภาพ</button>
+                            </div>
+                            
+                            <div style="margin-top:10px; text-align:center;">
+                                <img src="${slide.bg_src_mobile || ''}" id="slide-form-img-mobile-preview" style="max-height:120px; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:${slide.bg_src_mobile ? 'inline-block' : 'none'};">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top:24px; display:flex; gap:12px; justify-content:flex-end;">
+                        <button type="button" class="btn btn-outline" id="close-modal-cancel-btn" style="padding:10px 16px;">ยกเลิก</button>
+                        <button type="submit" class="btn btn-primary" style="padding:10px 20px;"><i class="fas fa-check"></i> บันทึกสไลด์</button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        const closeDialog = () => { overlay.remove(); };
+        document.getElementById('close-modal-btn').onclick = closeDialog;
+        document.getElementById('close-modal-cancel-btn').onclick = closeDialog;
+
+        // Select from media library
+        document.getElementById('select-slide-media-btn').onclick = () => {
+            this.openMediaSelectorDialog((selectedBase64) => {
+                const preview = document.getElementById('slide-form-img-preview');
+                preview.src = selectedBase64;
+                preview.style.display = 'inline-block';
+                slide.bg_src = selectedBase64;
+            });
+        };
+
+        // Select from media library (Mobile)
+        document.getElementById('select-slide-media-mobile-btn').onclick = () => {
+            this.openMediaSelectorDialog((selectedBase64) => {
+                const preview = document.getElementById('slide-form-img-mobile-preview');
+                preview.src = selectedBase64;
+                preview.style.display = 'inline-block';
+                slide.bg_src_mobile = selectedBase64;
+            });
+        };
+
+        // File Uploader
+        const fileInput = document.getElementById('slide-form-file');
+        if (fileInput) {
+            fileInput.onchange = async (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    const webpData = await this.convertImageToWebP(e.target.files[0]);
+                    const preview = document.getElementById('slide-form-img-preview');
+                    preview.src = webpData;
+                    preview.style.display = 'inline-block';
+                    slide.bg_src = webpData;
+                }
+            };
+        }
+
+        // File Uploader (Mobile)
+        const fileMobileInput = document.getElementById('slide-form-file-mobile');
+        if (fileMobileInput) {
+            fileMobileInput.onchange = async (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    const webpData = await this.convertImageToWebP(e.target.files[0]);
+                    const preview = document.getElementById('slide-form-img-mobile-preview');
+                    preview.src = webpData;
+                    preview.style.display = 'inline-block';
+                    slide.bg_src_mobile = webpData;
+                }
+            };
+        }
+
+        // Form Submit
+        document.getElementById('edit-product-slide-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const updated = {
+                id: slide.id,
+                title_th: document.getElementById('slide-form-title-th').value,
+                title_en: document.getElementById('slide-form-title-en').value,
+                subtitle_th: document.getElementById('slide-form-sub-th').value,
+                subtitle_en: document.getElementById('slide-form-sub-en').value,
+                btn_link: document.getElementById('slide-form-link').value,
+                order: parseInt(document.getElementById('slide-form-order').value),
+                bg_src: slide.bg_src,
+                bg_src_mobile: slide.bg_src_mobile || '',
+                published: document.getElementById('slide-form-published').checked,
+                visible: document.getElementById('slide-form-visible').checked,
+                created_at: slide.created_at || new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            await this.db.put('product_slider', updated);
             closeDialog();
             this.renderActiveView();
         };

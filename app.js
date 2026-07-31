@@ -31,6 +31,10 @@ class CharoenApp {
         this.sliderInterval = null;
         this.sliderUnsubscribe = null;
         this.currentSlideIndex = 0;
+        this.productSliderInterval = null;
+        this.currentProductSlideIndex = 0;
+        this.previousBodyOverflow = null;
+        this.modalCloseTimeout = null;
         
         // Localization dictionary
         this.dictionary = {
@@ -171,6 +175,7 @@ class CharoenApp {
         try {
             await this.db.init();
             await this.db.seed();
+            await this.db.initProductSliderIfNeeded();
         } catch (dbErr) {
             console.error("CharoenApp database setup error:", dbErr);
         }
@@ -651,6 +656,10 @@ class CharoenApp {
         if (this.sliderInterval) {
             clearInterval(this.sliderInterval);
             this.sliderInterval = null;
+        }
+        if (this.productSliderInterval) {
+            clearInterval(this.productSliderInterval);
+            this.productSliderInterval = null;
         }
         if (this.sliderUnsubscribe) {
             this.sliderUnsubscribe();
@@ -3230,6 +3239,24 @@ class CharoenApp {
             };
         });
 
+        // Initialize unique Product Slider navigation arrows
+        const prevBtn = sliderContainer.querySelector('.products-hero-prev');
+        const nextBtn = sliderContainer.querySelector('.products-hero-next');
+        if (prevBtn) {
+            prevBtn.onclick = () => {
+                currentIndex = (currentIndex - 1 + slideCount) % slideCount;
+                updateUI();
+                resetAutoplay();
+            };
+        }
+        if (nextBtn) {
+            nextBtn.onclick = () => {
+                currentIndex = (currentIndex + 1) % slideCount;
+                updateUI();
+                resetAutoplay();
+            };
+        }
+
         const resetAutoplay = () => {
             if (slideCount <= 1) return;
             if (this.localSliderIntervals[sliderId]) {
@@ -3508,8 +3535,14 @@ class CharoenApp {
     async renderProductsView(container, params) {
         const categories = await this.db.getAll('categories');
         const products = await this.db.getAll('products');
-        const slides = await this.db.getAll('slider');
-        const sortedSlides = [...slides].sort((a, b) => a.order - b.order);
+        const slides = await this.db.getAll('product_slider');
+        const visibleSlides = slides.filter(slide => 
+            slide.visible !== false && 
+            slide.visible !== 'false' && 
+            slide.published !== false && 
+            slide.published !== 'false'
+        );
+        const sortedSlides = [...visibleSlides].sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
         
         const activeCatId = params?.get('category') || 'all';
         const filteredProducts = activeCatId === 'all' 
@@ -3532,6 +3565,10 @@ class CharoenApp {
                             </div>
                         `).join('')}
                     </div>
+                    ${sortedSlides.length > 1 ? `
+                        <button class="products-hero-arrow products-hero-prev" aria-label="Previous Slide"><i class="fas fa-chevron-left"></i></button>
+                        <button class="products-hero-arrow products-hero-next" aria-label="Next Slide"><i class="fas fa-chevron-right"></i></button>
+                    ` : ''}
                     <div class="slider-dots products-hero-dots">
                         ${sortedSlides.map((_, i) => `<span class="slider-dot products-hero-dot ${i === 0 ? 'active' : ''}" data-idx="${i}"></span>`).join('')}
                     </div>
@@ -4541,18 +4578,42 @@ class CharoenApp {
     }
 
     async openProductDetails(id) {
-        const prod = await this.db.get('products', id);
+        if (!id) return;
+        
+        // 1. Clear any pending modal close timeout
+        if (this.modalCloseTimeout) {
+            clearTimeout(this.modalCloseTimeout);
+            this.modalCloseTimeout = null;
+        }
+
+        // 2. Synchronously remove all existing product modal overlays from DOM to guarantee DOM uniqueness
+        document.querySelectorAll('.modal-overlay[data-modal-type="product-details"]').forEach(m => m.remove());
+
+        // 3. Clean up listeners on existing modal
+        if (this.modalEscapeHandler) {
+            document.removeEventListener('keydown', this.modalEscapeHandler);
+            this.modalEscapeHandler = null;
+        }
+
+        const prod = await this.db.get('products', String(id));
+        if (!prod) {
+            console.warn("openProductDetails: Product not found for ID:", id);
+            return;
+        }
+
         const categories = await this.db.getAll('categories');
-        if (!prod) return;
+        const catObj = categories.find(c => String(c.id) === String(prod.category));
+        const catName = catObj ? (this.lang === 'th' ? (catObj.name_th || catObj.name_en) : (catObj.name_en || catObj.name_th)) : '';
 
-        const catObj = categories.find(c => c.id === prod.category);
-        const catName = catObj ? (this.lang === 'th' ? catObj.name_th : catObj.name_en) : '';
+        // Save active element for focus restoration if not already set
+        if (!this.modalTriggerElement) {
+            this.modalTriggerElement = document.activeElement;
+        }
 
-        // Save active element for focus restoration
-        this.modalTriggerElement = document.activeElement;
-
-        // Manage body scroll locking state
-        this.previousBodyOverflow = document.body.style.overflow;
+        // Manage body scroll locking state using explicit null sentinel
+        if (this.previousBodyOverflow === null || this.previousBodyOverflow === undefined) {
+            this.previousBodyOverflow = document.body.style.overflow || '';
+        }
         document.body.style.overflow = 'hidden';
 
         // Keyboard Escape key closure listener
@@ -4563,11 +4624,12 @@ class CharoenApp {
         };
         document.addEventListener('keydown', this.modalEscapeHandler);
 
-        // Parse gallery & single images safely
+        // Safely extract and deduplicate gallery & main images
         let productImages = [];
-        if (prod.image_src) {
-            productImages.push(prod.image_src);
+        if (prod.image_src && typeof prod.image_src === 'string' && prod.image_src.trim() !== '') {
+            productImages.push(prod.image_src.trim());
         }
+
         if (prod.gallery_images) {
             let parsedGallery = [];
             if (Array.isArray(prod.gallery_images)) {
@@ -4575,34 +4637,51 @@ class CharoenApp {
             } else if (typeof prod.gallery_images === 'string') {
                 try {
                     parsedGallery = JSON.parse(prod.gallery_images);
-                } catch(e) {}
-            }
-            parsedGallery.forEach(img => {
-                if (img && !productImages.includes(img)) {
-                    productImages.push(img);
+                } catch(e) {
+                    if (prod.gallery_images.trim() !== '') {
+                        parsedGallery = [prod.gallery_images.trim()];
+                    }
                 }
-            });
+            }
+            if (Array.isArray(parsedGallery)) {
+                parsedGallery.forEach(img => {
+                    if (img && typeof img === 'string' && img.trim() !== '') {
+                        const cleanImg = img.trim();
+                        if (!productImages.includes(cleanImg)) {
+                            productImages.push(cleanImg);
+                        }
+                    }
+                });
+            }
         }
         const mainImage = productImages[0] || '';
 
-        const overlay = document.createElement('div');
-        overlay.className = 'modal-overlay';
-        overlay.id = 'product-modal';
-        overlay.setAttribute('role', 'dialog');
-        overlay.setAttribute('aria-modal', 'true');
-        overlay.setAttribute('aria-labelledby', 'modal-product-title');
+        // Resolve Product Title & Subtitle safely
+        const nameTh = prod.name_th ? String(prod.name_th).trim() : '';
+        const nameEn = prod.name_en ? String(prod.name_en).trim() : '';
+        
+        let primaryTitle = '';
+        let secondaryTitle = '';
+        if (this.lang === 'th') {
+            primaryTitle = nameTh || nameEn || 'สินค้าสกรีนบรรจุภัณฑ์';
+            if (nameTh && nameEn) secondaryTitle = nameEn;
+        } else {
+            primaryTitle = nameEn || nameTh || 'Custom Printed Packaging Product';
+            if (nameTh && nameEn) secondaryTitle = nameTh;
+        }
 
-        // Check toggles for spec elements visibility
-        const showMat = prod.show_material !== false;
+        // Check spec elements visibility and content
+        const showMat = prod.show_material !== false && prod.spec_material && String(prod.spec_material).trim() !== '';
         const showVol = prod.show_volume !== false;
-        const showDia = prod.show_diameter !== false;
-        const showMin = prod.show_min_qty !== false;
-        const showPrice = prod.show_price !== false && prod.price;
+        const showDia = prod.show_diameter !== false && prod.spec_diameter && String(prod.spec_diameter).trim() !== '';
+        const showMin = prod.show_min_qty !== false && prod.spec_min_qty && String(prod.spec_min_qty).trim() !== '';
+        const showPrice = prod.show_price !== false && prod.price && String(prod.price).trim() !== '';
 
-        const specVolume = this.lang === 'th' ? (prod.spec_volume_th || prod.volume || '') : (prod.spec_volume_en || prod.volume || '');
+        const specVolumeVal = this.lang === 'th' ? (prod.spec_volume_th || prod.volume || '') : (prod.spec_volume_en || prod.volume || '');
+        const hasVolume = showVol && specVolumeVal && String(specVolumeVal).trim() !== '';
 
         let specRowsHtml = '';
-        if (showMat && prod.spec_material) {
+        if (showMat) {
             specRowsHtml += `
                 <tr>
                     <td>${this.t('detail_material')}</td>
@@ -4610,15 +4689,15 @@ class CharoenApp {
                 </tr>
             `;
         }
-        if (showVol && specVolume) {
+        if (hasVolume) {
             specRowsHtml += `
                 <tr>
                     <td>${this.t('detail_volume')}</td>
-                    <td>${specVolume}</td>
+                    <td>${specVolumeVal}</td>
                 </tr>
             `;
         }
-        if (showDia && prod.spec_diameter) {
+        if (showDia) {
             specRowsHtml += `
                 <tr>
                     <td>${this.t('detail_diameter')}</td>
@@ -4626,7 +4705,7 @@ class CharoenApp {
                 </tr>
             `;
         }
-        if (showMin && prod.spec_min_qty) {
+        if (showMin) {
             specRowsHtml += `
                 <tr>
                     <td>${this.t('detail_min_order')}</td>
@@ -4634,7 +4713,7 @@ class CharoenApp {
                 </tr>
             `;
         }
-        if (showPrice && prod.price) {
+        if (showPrice) {
             specRowsHtml += `
                 <tr>
                     <td>${this.lang === 'th' ? 'ราคาประเมินเบื้องต้น' : 'Estimated Price'}</td>
@@ -4643,8 +4722,29 @@ class CharoenApp {
             `;
         }
 
-        const hasDesc = (this.lang === 'th' ? prod.desc_th : prod.desc_en) || prod.desc_th || prod.desc_en;
-        const descText = this.lang === 'th' ? (prod.desc_th || prod.desc_en) : (prod.desc_en || prod.desc_th);
+        // Resolve Description safely
+        const descThVal = prod.desc_th ? String(prod.desc_th).trim() : '';
+        const descEnVal = prod.desc_en ? String(prod.desc_en).trim() : '';
+        const descText = this.lang === 'th' ? (descThVal || descEnVal) : (descEnVal || descThVal);
+
+        // Fetch LINE contact settings safely
+        const lineUrlVal = await this.getSetting('line_url');
+        const lineIdVal = await this.getSetting('line');
+        
+        let lineHref = '';
+        if (lineUrlVal && lineUrlVal.trim() !== '') {
+            lineHref = lineUrlVal.trim();
+        } else if (lineIdVal && lineIdVal.trim() !== '') {
+            lineHref = `https://line.me/R/ti/p/~${lineIdVal.replace('@', '').trim()}`;
+        }
+
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.id = 'product-modal';
+        overlay.setAttribute('data-modal-type', 'product-details');
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-labelledby', 'modal-product-title');
 
         overlay.innerHTML = `
             <div class="modal-window">
@@ -4652,7 +4752,7 @@ class CharoenApp {
                 <div class="product-details-grid">
                     <div class="product-gallery-container">
                         <div class="detail-img-box">
-                            <img id="modal-main-image" src="${mainImage || 'coffee_bg.webp'}" alt="${this.lang === 'th' ? prod.name_th : prod.name_en}" style="${mainImage ? '' : 'display:none;'}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <img id="modal-main-image" src="${mainImage || 'coffee_bg.webp'}" alt="${primaryTitle}" style="${mainImage ? '' : 'display:none;'}" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
                             <div class="fallback-img-box" style="display:${mainImage ? 'none' : 'flex'}; align-items:center; justify-content:center; width:100%; height:100%; min-height:250px;">
                                 <i class="fas fa-box" style="font-size:5rem; color:var(--text-muted);"></i>
                             </div>
@@ -4661,7 +4761,7 @@ class CharoenApp {
                             <div class="product-thumbnails-scroll-container">
                                 <div class="product-thumbnails-wrapper">
                                     ${productImages.map((img, idx) => `
-                                        <button class="product-thumbnail-btn ${idx === 0 ? 'active' : ''}" data-src="${img}" aria-label="${this.lang === 'th' ? 'ดูรูปภาพที่ ' : 'View image '}${idx + 1}">
+                                        <button class="product-thumbnail-btn ${idx === 0 ? 'active' : ''}" data-src="${img}" aria-label="${this.lang === 'th' ? 'ดูรูปภาพที่ ' : 'View image '}${idx + 1}" aria-pressed="${idx === 0 ? 'true' : 'false'}">
                                             <img src="${img}" alt="Thumbnail ${idx + 1}" onerror="this.closest('.product-thumbnail-btn').style.display='none';">
                                         </button>
                                     `).join('')}
@@ -4671,8 +4771,9 @@ class CharoenApp {
                     </div>
                     <div class="detail-info-box">
                         ${catName ? `<span class="product-modal-badge">${catName}</span>` : ''}
-                        <h3 id="modal-product-title">${this.lang === 'th' ? prod.name_th : prod.name_en}</h3>
-                        ${hasDesc ? `<p class="product-modal-desc">${descText}</p>` : ''}
+                        <h3 id="modal-product-title" style="margin-bottom:${secondaryTitle ? '4px' : '12px'};">${primaryTitle}</h3>
+                        ${secondaryTitle ? `<div style="font-size:0.9rem; color:var(--text-muted); font-weight:500; margin-bottom:12px;">${secondaryTitle}</div>` : ''}
+                        ${descText ? `<p class="product-modal-desc">${descText}</p>` : ''}
                         
                         ${specRowsHtml ? `
                             <h4 style="font-weight:700; margin-bottom:10px; color:var(--secondary);">${this.t('detail_title')}</h4>
@@ -4685,9 +4786,11 @@ class CharoenApp {
                             <a href="#/quote" class="btn btn-primary" onclick="window.charoenApp.closeActiveModal()">
                                 <i class="fas fa-file-invoice-dollar"></i> ${this.lang === 'th' ? 'สอบถามและขอราคา' : 'Get Quote'}
                             </a>
-                            <a href="https://line.me/R/ti/p/~${(await this.db.get('settings', 'line'))?.value?.replace('@', '') || 'charoenoncup'}" target="_blank" class="btn btn-outline" style="border-color:#10b981; color:#10b981;">
-                                <i class="fab fa-line"></i> ${this.t('cta_inquire')}
-                            </a>
+                            ${lineHref ? `
+                                <a href="${lineHref}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="border-color:#10b981; color:#10b981;">
+                                    <i class="fab fa-line"></i> ${this.t('cta_inquire')}
+                                </a>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
@@ -4741,12 +4844,16 @@ class CharoenApp {
                         mainImg.style.opacity = '1';
                     }, 150);
                 }
-                thumbs.forEach(t => t.classList.remove('active'));
+                thumbs.forEach(t => {
+                    t.classList.remove('active');
+                    t.setAttribute('aria-pressed', 'false');
+                });
                 thumb.classList.add('active');
+                thumb.setAttribute('aria-pressed', 'true');
             };
         });
 
-        // Set initial modal focus
+        // Set initial modal focus to close button
         setTimeout(() => {
             const closeBtn = overlay.querySelector('.modal-close-btn');
             if (closeBtn) closeBtn.focus();
@@ -4761,8 +4868,10 @@ class CharoenApp {
         // Save active element for focus restoration
         this.modalTriggerElement = document.activeElement;
 
-        // Manage body scroll locking state
-        this.previousBodyOverflow = document.body.style.overflow;
+        // Manage body scroll locking state using explicit null sentinel
+        if (this.previousBodyOverflow === null || this.previousBodyOverflow === undefined) {
+            this.previousBodyOverflow = document.body.style.overflow || '';
+        }
         document.body.style.overflow = 'hidden';
 
         // Keyboard Escape key closure listener
@@ -5105,9 +5214,9 @@ class CharoenApp {
             this.modalTriggerElement = document.activeElement;
         }
 
-        // Prevent body scrolling while modal is open
-        if (this.previousBodyOverflow === undefined) {
-            this.previousBodyOverflow = document.body.style.overflow;
+        // Prevent body scrolling while modal is open using explicit null sentinel
+        if (this.previousBodyOverflow === null || this.previousBodyOverflow === undefined) {
+            this.previousBodyOverflow = document.body.style.overflow || '';
         }
         document.body.style.overflow = 'hidden';
 
@@ -5371,7 +5480,12 @@ class CharoenApp {
     }
 
     closeActiveModal() {
-        const modal = document.querySelector('.modal-overlay.video-lightbox-overlay, .modal-overlay.active');
+        if (this.modalCloseTimeout) {
+            clearTimeout(this.modalCloseTimeout);
+            this.modalCloseTimeout = null;
+        }
+
+        const modal = document.querySelector('.modal-overlay.video-lightbox-overlay, .modal-overlay.active, .modal-overlay[data-modal-type="product-details"]');
         if (modal) {
             const vid = modal.querySelector('video');
             if (vid) {
@@ -5389,19 +5503,35 @@ class CharoenApp {
             }
             modal.classList.remove('active');
 
-            setTimeout(() => {
-                if (modal && modal.parentNode) {
-                    modal.remove();
+            const modalToClose = modal;
+            this.modalCloseTimeout = setTimeout(() => {
+                if (modalToClose && modalToClose.parentNode) {
+                    modalToClose.remove();
                 }
-            }, 220);
-        }
 
-        // Restore body scroll state
-        if (this.previousBodyOverflow !== undefined) {
-            document.body.style.overflow = this.previousBodyOverflow;
-            this.previousBodyOverflow = undefined;
+                const remainingActiveModals = document.querySelectorAll('.modal-overlay.active');
+                if (remainingActiveModals.length === 0) {
+                    if (this.previousBodyOverflow !== null && this.previousBodyOverflow !== undefined) {
+                        document.body.style.overflow = this.previousBodyOverflow;
+                    } else {
+                        document.body.style.overflow = '';
+                    }
+                    this.previousBodyOverflow = null;
+                }
+
+                this.modalCloseTimeout = null;
+            }, 220);
         } else {
-            document.body.style.overflow = '';
+            // No-modal failsafe: restore body scroll if no active modal exists in DOM
+            const remainingActiveModals = document.querySelectorAll('.modal-overlay.active');
+            if (remainingActiveModals.length === 0) {
+                if (this.previousBodyOverflow !== null && this.previousBodyOverflow !== undefined) {
+                    document.body.style.overflow = this.previousBodyOverflow;
+                } else {
+                    document.body.style.overflow = '';
+                }
+                this.previousBodyOverflow = null;
+            }
         }
 
         // Clean up temporary modal event listeners

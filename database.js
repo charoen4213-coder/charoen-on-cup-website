@@ -8,7 +8,7 @@
 class CharoenOnCupDB {
     constructor() {
         this.dbName = 'CharoenOnCupDB';
-        this.dbVersion = 5; // Bumped version to 5 to force new store creation for news/articles/clients/faq/reviews
+        this.dbVersion = 6; // Bumped version to 6 for product_slider store creation
         this.db = null;
         this.fs = null;
         this.isCloudEnabled = false;
@@ -18,6 +18,7 @@ class CharoenOnCupDB {
     getCollectionName(storeName) {
         const mapping = {
             'slider': 'hero_slides',
+            'product_slider': 'product_slides',
             'homepage': 'homepage_sections',
             'clients': 'logos',
             'settings': 'company_info',
@@ -61,7 +62,7 @@ class CharoenOnCupDB {
 
             // Sync collection caches if cloud is enabled
             if (this.isCloudEnabled) {
-                const collectionsToSync = ['categories', 'media_categories', 'products', 'portfolio', 'slider', 'homepage', 'settings', 'users', 'news', 'articles', 'clients', 'faq', 'reviews'];
+                const collectionsToSync = ['categories', 'media_categories', 'products', 'portfolio', 'slider', 'product_slider', 'homepage', 'settings', 'users', 'news', 'articles', 'clients', 'faq', 'reviews'];
                 for (const col of collectionsToSync) {
                     this.syncCollectionFromCloud(col).catch(() => {});
                 }
@@ -73,6 +74,11 @@ class CharoenOnCupDB {
             console.warn("CharoenOnCupDB: Firebase initialization failed, running in Local Mode:", err);
             this.isCloudEnabled = false;
         }
+
+        // Initialize product slider store with safe one-time initial copy if empty
+        await this.initProductSliderIfNeeded().catch(err => {
+            console.warn("CharoenOnCupDB: Product Slider initialization warning:", err);
+        });
 
         // Clean up empty default categories in the background
         this.cleanupEmptyCategories();
@@ -126,6 +132,7 @@ class CharoenOnCupDB {
                     { name: 'products', key: 'id' },
                     { name: 'portfolio', key: 'id' },
                     { name: 'slider', key: 'id' },
+                    { name: 'product_slider', key: 'id' },
                     { name: 'home_videos', key: 'id' },
                     { name: 'homepage', key: 'id' },
                     { name: 'quotes', key: 'id' },
@@ -171,7 +178,7 @@ class CharoenOnCupDB {
     // Generic Operations (Cloud-First cache pattern for online content stores with IndexedDB offline fallback)
     async getAll(storeName) {
         const cloudFirstStores = [
-            'homepage', 'slider', 'categories', 'products', 'portfolio',
+            'homepage', 'slider', 'product_slider', 'categories', 'products', 'portfolio',
             'settings', 'news', 'faq', 'reviews', 'clients', 'articles', 'quotes'
         ];
         const isCloudFirst = cloudFirstStores.includes(storeName);
@@ -225,7 +232,7 @@ class CharoenOnCupDB {
 
     async get(storeName, id) {
         const cloudFirstStores = [
-            'homepage', 'slider', 'categories', 'products', 'portfolio',
+            'homepage', 'slider', 'product_slider', 'categories', 'products', 'portfolio',
             'settings', 'news', 'faq', 'reviews', 'clients', 'articles', 'quotes'
         ];
         const isCloudFirst = cloudFirstStores.includes(storeName);
@@ -1166,13 +1173,58 @@ class CharoenOnCupDB {
         await this.put('settings', { key: 'homepage_reorganized_v1', value: true });
     }
 
+    async initProductSliderIfNeeded() {
+        try {
+            // Check if product_slider already has items locally or in cloud
+            const existing = await this.getAll('product_slider');
+            if (existing && existing.length > 0) {
+                return;
+            }
+
+            // Check if one-time initialization flag was previously set
+            const flag = await this.get('settings', 'product_slider_initialized');
+            if (flag && (flag.value === true || flag.value === 'true')) {
+                return;
+            }
+
+            // Perform one-time initial copy from existing Hero Slider slides
+            const heroSlides = await this.getAll('slider');
+            if (heroSlides && heroSlides.length > 0) {
+                let idx = 1;
+                for (const slide of heroSlides) {
+                    const productSlide = {
+                        id: `product_slide_${idx}`,
+                        title_th: slide.title_th || '',
+                        title_en: slide.title_en || '',
+                        subtitle_th: slide.subtitle_th || '',
+                        subtitle_en: slide.subtitle_en || '',
+                        bg_src: slide.bg_src || '',
+                        bg_src_mobile: slide.bg_src_mobile || '',
+                        btn_link: slide.btn_link || '#/products',
+                        order: slide.order !== undefined ? slide.order : idx,
+                        published: slide.published !== undefined ? slide.published : true,
+                        visible: slide.visible !== undefined ? slide.visible : true,
+                        created_at: slide.created_at || new Date().toISOString(),
+                        updated_at: slide.updated_at || new Date().toISOString()
+                    };
+                    await this.put('product_slider', productSlide);
+                    idx++;
+                }
+            }
+            await this.put('settings', { key: 'product_slider_initialized', value: true });
+            console.log("CharoenOnCupDB: Product Slider initialized safely from Hero Slider.");
+        } catch (err) {
+            console.warn("CharoenOnCupDB: Product Slider initialization warning:", err);
+        }
+    }
+
     // Sync all local IndexedDB data to Firebase Firestore (Migration Tool)
     async syncIndexedDBToFirestore() {
         if (!this.fs) {
             throw new Error("Firebase Firestore is not initialized.");
         }
         
-        const stores = ['categories', 'products', 'portfolio', 'homepage', 'settings', 'users', 'media_categories', 'slider', 'news', 'articles', 'clients', 'faq', 'reviews'];
+        const stores = ['categories', 'products', 'portfolio', 'homepage', 'settings', 'users', 'media_categories', 'slider', 'product_slider', 'news', 'articles', 'clients', 'faq', 'reviews'];
         
         for (const storeName of stores) {
             const localData = await new Promise((resolve, reject) => {
@@ -1207,7 +1259,7 @@ class CharoenOnCupDB {
 
     async getIndexedDBCounts() {
         const counts = {};
-        const stores = ['categories', 'products', 'portfolio', 'homepage', 'settings', 'users', 'quotes', 'media', 'media_categories', 'slider', 'home_videos', 'news', 'articles', 'clients', 'faq', 'reviews'];
+        const stores = ['categories', 'products', 'portfolio', 'homepage', 'settings', 'users', 'quotes', 'media', 'media_categories', 'slider', 'product_slider', 'home_videos', 'news', 'articles', 'clients', 'faq', 'reviews'];
         for (const storeName of stores) {
             counts[storeName] = await new Promise((resolve) => {
                 try {
@@ -1237,7 +1289,7 @@ class CharoenOnCupDB {
         let skippedCount = 0;
         let failureCount = 0;
 
-        const stores = ['categories', 'products', 'portfolio', 'homepage', 'settings', 'users', 'media_categories', 'slider', 'news', 'articles', 'clients', 'faq', 'reviews'];
+        const stores = ['categories', 'products', 'portfolio', 'homepage', 'settings', 'users', 'media_categories', 'slider', 'product_slider', 'news', 'articles', 'clients', 'faq', 'reviews'];
 
         for (const storeName of stores) {
             const localData = await new Promise((resolve, reject) => {
@@ -1295,7 +1347,7 @@ class CharoenOnCupDB {
     // Database JSON backup (Export / Import)
     async exportDatabaseToJSON() {
         const backup = {};
-        const stores = ['categories', 'products', 'portfolio', 'homepage', 'settings', 'users', 'quotes', 'media', 'media_categories', 'slider', 'home_videos', 'news', 'articles', 'clients', 'faq', 'reviews'];
+        const stores = ['categories', 'products', 'portfolio', 'homepage', 'settings', 'users', 'quotes', 'media', 'media_categories', 'slider', 'product_slider', 'home_videos', 'news', 'articles', 'clients', 'faq', 'reviews'];
         
         for (const storeName of stores) {
             backup[storeName] = await new Promise((resolve) => {
@@ -1319,7 +1371,7 @@ class CharoenOnCupDB {
 
     async importDatabaseFromJSON(jsonString) {
         const data = JSON.parse(jsonString);
-        const stores = ['categories', 'products', 'portfolio', 'homepage', 'settings', 'users', 'quotes', 'media', 'media_categories', 'slider', 'home_videos', 'news', 'articles', 'clients', 'faq', 'reviews'];
+        const stores = ['categories', 'products', 'portfolio', 'homepage', 'settings', 'users', 'quotes', 'media', 'media_categories', 'slider', 'product_slider', 'home_videos', 'news', 'articles', 'clients', 'faq', 'reviews'];
         
         for (const storeName of stores) {
             if (data[storeName] && Array.isArray(data[storeName])) {
