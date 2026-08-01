@@ -1793,7 +1793,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .product-info {
-    padding: 20px;
+    padding: 20px 20px 18px;
     display: flex;
     flex-direction: column;
     flex-grow: 1;
@@ -1820,7 +1820,7 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 0.85rem;
     color: var(--text-muted);
     margin-top: 0;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
     line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -6382,3 +6382,192 @@ body.no-scroll {
         padding: 32px 20px !important;
     }
 }
+
+/* ==========================================================================
+   DESIGN SYSTEM PHASE 5B.2 — REMAINING PUBLIC COMPONENT RHYTHM STANDARDIZATION
+   ========================================================================== */
+
+/* 1. Product Card Internal Spacing */
+.product-info {
+    padding: 20px 20px 18px;
+}
+
+.product-name {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+.product-spec-brief {
+    margin-top: 0;
+    margin-bottom: 14px;
+}
+
+.product-footer {
+    margin-top: auto;
+    padding-top: 8px;
+}
+
+/* 2. Portfolio Card Internal Spacing */
+.latest-card-content {
+    padding: 20px 20px 18px;
+}
+
+.latest-card-title {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+.latest-card-spec {
+    margin-top: 0;
+    margin-bottom: 14px;
+}
+
+.latest-card-meta {
+    padding-top: 12px;
+    margin-top: auto;
+}
+
+.portfolio-hero-card-overlay {
+    padding: 32px 36px;
+}
+
+.hero-overlay-bottom {
+    gap: 8px;
+}
+
+.hero-overlay-footer {
+    padding-top: 14px;
+    margin-top: 4px;
+}
+
+/* 3. News Card Internal Spacing */
+.news-card-content,
+.news-card-body {
+    padding: 20px 20px 18px;
+}
+
+.news-card-title {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+.news-card-excerpt {
+    margin-top: 0;
+    margin-bottom: 14px;
+}
+
+.news-card-meta {
+    padding-top: 12px;
+    margin-top: auto;
+}
+
+/* 4. Article Card Internal Spacing */
+.article-card-content,
+.article-info {
+    padding: 20px 20px 18px;
+}
+
+.article-card-title {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+.article-card-excerpt {
+    margin-top: 0;
+    margin-bottom: 14px;
+}
+
+.article-card-meta {
+    padding-top: 12px;
+    margin-top: auto;
+}
+
+/* 5. Activity Card Internal Spacing */
+.activity-card-content,
+.activity-info {
+    padding: 20px 20px 18px;
+}
+
+.activity-card-title {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+.activity-card-excerpt {
+    margin-top: 0;
+    margin-bottom: 14px;
+}
+
+/* 6. FAQ Spacing */
+.faq-accordion-item {
+    margin-bottom: 16px;
+}
+
+.faq-accordion-header {
+    padding: 20px 24px;
+}
+
+.faq-accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    padding: 0;
+}
+
+.faq-accordion-wrapper {
+    gap: 16px;
+    margin-top: 32px;
+}
+
+/* 7. Contact Information Card Spacing */
+.about-contact-card {
+    padding: 48px 40px;
+    margin: 0 auto;
+}
+
+.about-contact-grid {
+    gap: 24px;
+    margin-top: 24px;
+}
+
+.contact-info-card {
+    padding: 24px;
+    gap: 16px;
+}
+
+/* 8. Video Card Spacing */
+.home-video-card {
+    padding: 18px 20px;
+}
+
+.home-video-grid {
+    gap: 24px;
+    margin-top: 32px;
+}
+
+.video-card-content {
+    padding: 16px 20px;
+    gap: 8px;
+}
+
+/* 9. CTA Surrounding Spacing */
+.cta-section {
+    padding: 64px 0;
+    margin-top: 48px;
+}
+
+.cta-container {
+    padding: 40px 32px;
+}
+
+.cta-content {
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.cta-buttons,
+.hero-cta-group {
+    gap: 16px;
+    margin-top: 24px;
+}
+
