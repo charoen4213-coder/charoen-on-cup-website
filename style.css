@@ -997,20 +997,28 @@ h1, h2, h3, h4, h5, h6 {
     aspect-ratio: auto !important; /* Overrides legacy .portfolio-card 4:3 height constraint */
     display: flex;
     flex-direction: column;
-    background-color: var(--bg-main);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md, 12px);
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border-color);
+    border-radius: var(--card-radius);
     overflow: hidden;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--card-shadow);
     cursor: pointer;
     box-sizing: border-box;
-    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: transform var(--motion-normal), box-shadow var(--motion-normal);
 }
 
-.activity-card:hover,
-.news-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-md);
+@media (hover: hover) and (pointer: fine) {
+    .activity-card:hover,
+    .news-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--card-shadow-hover);
+    }
+}
+
+.activity-card:focus-visible,
+.news-card:focus-visible {
+    outline: 2px solid var(--brand-orange);
+    outline-offset: 2px;
 }
 
 .news-card-img-wrapper,
@@ -1704,12 +1712,12 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .product-card {
-    background-color: var(--bg-main);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border-color);
+    border-radius: var(--card-radius);
     overflow: hidden;
-    box-shadow: var(--shadow-sm);
-    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.3s ease;
+    box-shadow: var(--card-shadow);
+    transition: transform var(--motion-normal), box-shadow var(--motion-normal), border-color var(--motion-fast);
     cursor: pointer;
     display: flex;
     flex-direction: column;
@@ -1717,10 +1725,17 @@ h1, h2, h3, h4, h5, h6 {
     box-sizing: border-box;
 }
 
-.product-card:hover {
-    transform: translateY(-6px);
-    box-shadow: var(--shadow-md);
-    border-color: var(--primary);
+@media (hover: hover) and (pointer: fine) {
+    .product-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--card-shadow-hover);
+        border-color: var(--brand-primary);
+    }
+}
+
+.product-card:focus-visible {
+    outline: 2px solid var(--brand-orange);
+    outline-offset: 2px;
 }
 
 .product-image-box,
@@ -3649,14 +3664,14 @@ h1, h2, h3, h4, h5, h6 {
 .portfolio-card {
     position: relative;
     aspect-ratio: 4 / 3;
-    border-radius: var(--radius-lg);
+    border-radius: var(--card-radius);
     overflow: hidden;
-    background-color: var(--bg-sec);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-color);
+    background-color: var(--card-bg);
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--card-border-color);
     cursor: pointer;
     box-sizing: border-box;
-    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: transform var(--motion-normal), box-shadow var(--motion-normal);
 }
 
 .portfolio-card-image-wrapper,
@@ -3797,10 +3812,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Hover effects for Desktop devices */
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
     .portfolio-card:hover {
-        transform: translateY(-5px);
-        box-shadow: var(--shadow-lg);
+        transform: translateY(-2px);
+        box-shadow: var(--card-shadow-hover);
     }
     
     .portfolio-card:hover .portfolio-card-image {
