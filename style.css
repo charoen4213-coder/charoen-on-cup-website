@@ -5177,8 +5177,26 @@ body.no-scroll {
         padding: 6px 10px !important;
         border-radius: var(--radius-sm) !important;
         background: transparent !important;
+        position: relative !important;
         transition: color 0.2s ease, background-color 0.2s ease !important;
         text-decoration: none !important;
+    }
+    
+    /* Phase 2 Active Route Indicator Underline */
+    .site-header-double .nav-link::after {
+        content: '' !important;
+        position: absolute !important;
+        bottom: -4px !important;
+        left: 50% !important;
+        width: 80% !important;
+        height: 3px !important;
+        background-color: var(--secondary) !important;
+        border-radius: 2px !important;
+        opacity: 0 !important;
+        transform: translateX(-50%) scaleX(0) !important;
+        transition: transform 0.22s ease, opacity 0.22s ease !important;
+        transform-origin: center !important;
+        pointer-events: none !important;
     }
     
     .site-header-double .nav-link:hover {
@@ -5191,6 +5209,11 @@ body.no-scroll {
         font-weight: 700 !important;
         background-color: transparent !important;
         box-shadow: none !important;
+    }
+
+    .site-header-double .nav-link.active::after {
+        opacity: 1 !important;
+        transform: translateX(-50%) scaleX(1) !important;
     }
     
     /* Zone C — Action CTA Region (~24% flex allocation) */
@@ -5224,20 +5247,48 @@ body.no-scroll {
         font-weight: 700 !important;
         font-size: clamp(0.82rem, 0.85vw, 0.88rem) !important;
         border: none !important;
-        transition: background-color 0.2s ease !important;
+        transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
         gap: 6px !important;
         text-decoration: none !important;
         white-space: nowrap !important;
-        box-shadow: none !important;
+        box-shadow: 0 2px 6px rgba(230, 81, 0, 0.15) !important;
     }
-    
-    .site-header-double .btn-primary:hover {
-        background: #d94800 !important;
-        transform: none !important;
-        box-shadow: none !important;
+
+    /* Phase 2 Hover-Capable Enhancements */
+    @media (hover: hover) and (pointer: fine) {
+        .topbar-link:hover {
+            color: var(--secondary) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        .topbar-social-icon:hover {
+            background-color: rgba(230, 81, 0, 0.08) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        .topbar-social-icon:hover i {
+            color: var(--secondary) !important;
+        }
+
+        .header-topbar .btn-lang-toggle:hover {
+            color: var(--secondary) !important;
+            background-color: #e2e8f0 !important;
+            border-color: var(--secondary) !important;
+        }
+
+        .site-header-double .btn-primary:hover {
+            background: #d94800 !important;
+            transform: translateY(-1.5px) !important;
+            box-shadow: 0 4px 12px rgba(230, 81, 0, 0.25) !important;
+        }
+
+        .site-header-double .btn-primary:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 2px 6px rgba(230, 81, 0, 0.2) !important;
+        }
     }
     
     /* Focus visible accessibility rings for Desktop Header controls */
@@ -5249,6 +5300,25 @@ body.no-scroll {
     .site-header-double .btn-theme-toggle:focus-visible {
         outline: 2px solid var(--secondary) !important;
         outline-offset: 2px !important;
+        border-radius: var(--radius-sm) !important;
+    }
+
+    /* Reduced Motion Overrides for Desktop Header */
+    @media (prefers-reduced-motion: reduce) {
+        .site-header-double .nav-link,
+        .site-header-double .nav-link::after,
+        .site-header-double .btn-primary,
+        .topbar-link,
+        .topbar-social-icon,
+        .header-topbar .btn-lang-toggle {
+            transition-duration: 0.01ms !important;
+            transform: none !important;
+        }
+
+        .site-header-double .nav-link.active::after {
+            transform: translateX(-50%) scaleX(1) !important;
+            opacity: 1 !important;
+        }
     }
 
     body {
