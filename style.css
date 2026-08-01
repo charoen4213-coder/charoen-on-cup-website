@@ -6571,3 +6571,151 @@ body.no-scroll {
     margin-top: 24px;
 }
 
+/* Phase 5C – Mobile Product and Portfolio Density Optimization */
+
+@media (min-width: 360px) and (max-width: 640px) {
+    .product-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+    }
+
+    .portfolio-grid,
+    .portfolio-latest-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+    }
+
+    /* Product Card Density & Compact Mobile Layout */
+    .product-card {
+        padding: 0;
+    }
+
+    .product-info {
+        padding: 10px 8px 12px !important;
+    }
+
+    .product-name {
+        font-size: 0.88rem !important;
+        margin-bottom: 4px !important;
+        line-height: 1.3 !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+    }
+
+    .product-spec-brief {
+        font-size: 0.76rem !important;
+        margin-bottom: 8px !important;
+        line-height: 1.3 !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 1 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+    }
+
+    .product-footer {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 4px !important;
+    }
+
+    .product-price {
+        font-size: 0.92rem !important;
+    }
+
+    .product-cta {
+        font-size: 0.78rem !important;
+        min-height: 36px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+    }
+
+    /* Portfolio Card Density & Compact Mobile Layout */
+    .portfolio-latest-card {
+        height: 100% !important;
+    }
+
+    .latest-card-img-box {
+        height: 120px !important;
+        aspect-ratio: 4 / 3 !important;
+    }
+
+    .latest-card-content {
+        padding: 10px 8px 12px !important;
+    }
+
+    .latest-card-title {
+        font-size: 0.88rem !important;
+        margin-bottom: 4px !important;
+        line-height: 1.3 !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+    }
+
+    .latest-card-spec {
+        font-size: 0.76rem !important;
+        margin-bottom: 6px !important;
+        line-height: 1.3 !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 1 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+    }
+
+    .latest-card-meta {
+        font-size: 0.72rem !important;
+        padding-top: 6px !important;
+        gap: 4px !important;
+    }
+
+    .latest-card-category-badge {
+        font-size: 0.65rem !important;
+        padding: 2px 6px !important;
+        top: 6px !important;
+        left: 6px !important;
+    }
+
+    .portfolio-card-overlay {
+        padding: 10px 8px !important;
+        gap: 4px !important;
+    }
+
+    .portfolio-card-title {
+        font-size: 0.88rem !important;
+        line-height: 1.25 !important;
+    }
+
+    .portfolio-card-category {
+        font-size: 0.65rem !important;
+    }
+
+    .portfolio-card-badge-container {
+        top: 6px !important;
+        right: 6px !important;
+    }
+
+    .portfolio-card-count-badge {
+        font-size: 0.65rem !important;
+        padding: 2px 6px !important;
+    }
+}
+
+@media (max-width: 359px) {
+    .product-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+
+    .portfolio-grid,
+    .portfolio-latest-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+}
+
+
