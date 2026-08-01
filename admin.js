@@ -507,12 +507,63 @@ class CharoenAdmin {
         }
     }
 
+    getNormalizedQuoteStatus(status) {
+        return status === 'contacted' ? 'contacted' : 'pending';
+    }
+
+    resolveQuoteId(q) {
+        if (!q || typeof q !== 'object') return null;
+        if (q.id !== undefined && q.id !== null && String(q.id).trim() !== '') return q.id;
+        if (q.docId !== undefined && q.docId !== null && String(q.docId).trim() !== '') return q.docId;
+        if (q._id !== undefined && q._id !== null && String(q._id).trim() !== '') return q._id;
+        return null;
+    }
+
+    formatQuoteQuantity(q) {
+        const rawQuantity = q.quantity ?? q.qty ?? q.quote_qty ?? null;
+        if (rawQuantity === null || rawQuantity === undefined || rawQuantity === '') {
+            return '-';
+        }
+        const num = Number(rawQuantity);
+        if (Number.isFinite(num) && String(rawQuantity).trim() !== '') {
+            return `${num.toLocaleString('th-TH')} ใบ`;
+        }
+        return String(rawQuantity);
+    }
+
+    formatQuoteDate(q, includeTime = true) {
+        const rawDate = q.created_at || q.date || null;
+        if (!rawDate) return '-';
+        const parsedDate = new Date(rawDate);
+        if (!isNaN(parsedDate.getTime())) {
+            return includeTime ? parsedDate.toLocaleString('th-TH') : parsedDate.toLocaleDateString('th-TH');
+        }
+        return String(rawDate);
+    }
+
+    getQuoteLogoSrc(q) {
+        return q.logo_img || q.image_src || null;
+    }
+
+    getQuoteCategoryName(q, categories = []) {
+        if (!q || !q.product_type) return 'อื่นๆ';
+        const catObj = categories.find(c => c.id === q.product_type || c.name_th === q.product_type || c.name_en === q.product_type);
+        if (catObj && catObj.name_th) return catObj.name_th;
+        return String(q.product_type);
+    }
+
     async loadDashboardView(container) {
         const products = await this.db.getAll('products');
         const portfolio = await this.db.getAll('portfolio');
         const quotes = await this.db.getAll('quotes');
-        const sortedQuotes = [...quotes].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        const pendingCount = quotes.filter(q => q.status === 'pending').length;
+        const getQuoteTime = (q) => {
+            const rawDate = q.created_at || q.date;
+            if (!rawDate) return 0;
+            const t = new Date(rawDate).getTime();
+            return isNaN(t) ? 0 : t;
+        };
+        const sortedQuotes = [...quotes].sort((a, b) => getQuoteTime(b) - getQuoteTime(a));
+        const pendingCount = quotes.filter(q => this.getNormalizedQuoteStatus(q.status) === 'pending').length;
 
         container.innerHTML = `
             <div class="grid-3" style="margin-bottom:30px;">
@@ -548,20 +599,29 @@ class CharoenAdmin {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${sortedQuotes.slice(0, 5).map(q => `
-                                    <tr>
-                                        <td><strong>${q.name}</strong></td>
-                                        <td>${q.phone}</td>
-                                        <td><span class="badge" style="background:#e6f9eb; color:#10b981;">${q.line}</span></td>
-                                        <td>${q.quantity.toLocaleString()} ใบ</td>
-                                        <td>${new Date(q.created_at).toLocaleDateString('th-TH')}</td>
-                                        <td>
-                                            <span class="badge ${q.status === 'pending' ? 'badge-danger' : 'badge-success'}">
-                                                ${q.status === 'pending' ? 'รอดำเนินการ' : 'ติดต่อแล้ว'}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                `).join('')}
+                                ${sortedQuotes.slice(0, 5).map(q => {
+                                    const quantityDisplay = this.formatQuoteQuantity(q);
+                                    const dateDisplay = this.formatQuoteDate(q, false);
+                                    const nameDisplay = q.name || '-';
+                                    const phoneDisplay = q.phone || '-';
+                                    const lineDisplay = q.line || '-';
+                                    const status = this.getNormalizedQuoteStatus(q.status);
+
+                                    return `
+                                        <tr>
+                                            <td><strong>${nameDisplay}</strong></td>
+                                            <td>${phoneDisplay}</td>
+                                            <td><span class="badge" style="background:#e6f9eb; color:#10b981;">${lineDisplay}</span></td>
+                                            <td>${quantityDisplay}</td>
+                                            <td>${dateDisplay}</td>
+                                            <td>
+                                                <span class="badge ${status === 'pending' ? 'badge-danger' : 'badge-success'}">
+                                                    ${status === 'pending' ? 'รอดำเนินการ' : 'ติดต่อแล้ว'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -1662,7 +1722,13 @@ class CharoenAdmin {
     async loadQuotesView(container) {
         const quotes = await this.db.getAll('quotes');
         const categories = await this.db.getAll('categories');
-        const sortedQuotes = [...quotes].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const getQuoteTime = (q) => {
+            const rawDate = q.created_at || q.date;
+            if (!rawDate) return 0;
+            const t = new Date(rawDate).getTime();
+            return isNaN(t) ? 0 : t;
+        };
+        const sortedQuotes = [...quotes].sort((a, b) => getQuoteTime(b) - getQuoteTime(a));
 
         container.innerHTML = `
             <h3 style="font-size:1.15rem; font-weight:700; color:var(--secondary); margin-bottom:20px;">รายการติดต่อขอใบเสนอราคา</h3>
@@ -1687,29 +1753,48 @@ class CharoenAdmin {
                             </thead>
                             <tbody>
                                 ${sortedQuotes.map(q => {
-                                    const catObj = categories.find(c => c.id === q.product_type);
-                                    const catName = catObj ? catObj.name_th : 'อื่นๆ';
+                                    const quoteId = this.resolveQuoteId(q);
+                                    const catName = this.getQuoteCategoryName(q, categories);
+                                    const quantityDisplay = this.formatQuoteQuantity(q);
+                                    const dateDisplay = this.formatQuoteDate(q, true);
+                                    const nameDisplay = q.name || '-';
+                                    const phoneDisplay = q.phone || '-';
+                                    const lineDisplay = q.line || '-';
+                                    const status = this.getNormalizedQuoteStatus(q.status);
+                                    const logoSrc = this.getQuoteLogoSrc(q);
+
                                     return `
                                         <tr>
-                                            <td><strong>${q.name}</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">${new Date(q.created_at).toLocaleString('th-TH')}</span></td>
-                                            <td>โทร: ${q.phone}<br>Line: <span class="badge" style="background:#e6f9eb; color:#10b981; font-weight:700;">${q.line}</span></td>
+                                            <td><strong>${nameDisplay}</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">${dateDisplay}</span></td>
+                                            <td>โทร: ${phoneDisplay}<br>Line: <span class="badge" style="background:#e6f9eb; color:#10b981; font-weight:700;">${lineDisplay}</span></td>
                                             <td>${catName}</td>
-                                            <td><strong>${q.quantity.toLocaleString()} ใบ</strong></td>
+                                            <td><strong>${quantityDisplay}</strong></td>
                                             <td style="max-width:240px; font-size:0.85rem; line-height:1.4;">${q.details || '-'}</td>
                                             <td>
-                                                ${q.logo_img ? `
-                                                    <div style="width:40px; height:40px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-sec); display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer;" onclick="window.charoenAdminApp.previewLogoImage('${q.logo_img}')">
-                                                        <img src="${q.logo_img}" style="width:100%; height:100%; object-fit:contain;">
+                                                ${logoSrc ? `
+                                                    <div style="width:40px; height:40px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-sec); display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer;" onclick="window.charoenAdminApp.previewLogoImage('${logoSrc}')">
+                                                        <img src="${logoSrc}" style="width:100%; height:100%; object-fit:contain;">
                                                     </div>
                                                 ` : '<span style="font-size:0.8rem; color:var(--text-muted);">ไม่มีไฟล์</span>'}
                                             </td>
                                             <td>
-                                                <button class="btn toggle-quote-status-btn" data-id="${q.id}" data-status="${q.status}" style="padding:4px 8px; font-size:0.72rem; border:none; border-radius:var(--radius-sm); background:${q.status === 'pending' ? '#fee2e2' : '#d1fae5'}; color:${q.status === 'pending' ? '#991b1b' : '#065f46'}; cursor:pointer; font-weight:700;">
-                                                    ${q.status === 'pending' ? 'รอดำเนินการ' : 'ติดต่อแล้ว'}
-                                                </button>
+                                                ${quoteId ? `
+                                                    <button class="btn toggle-quote-status-btn" data-id="${quoteId}" data-status="${status}" style="padding:4px 8px; font-size:0.72rem; border:none; border-radius:var(--radius-sm); background:${status === 'pending' ? '#fee2e2' : '#d1fae5'}; color:${status === 'pending' ? '#991b1b' : '#065f46'}; cursor:pointer; font-weight:700;">
+                                                        ${status === 'pending' ? 'รอดำเนินการ' : 'ติดต่อแล้ว'}
+                                                    </button>
+                                                ` : `
+                                                    <span class="badge badge-danger" style="padding:4px 8px; font-size:0.72rem;">${status === 'pending' ? 'รอดำเนินการ' : 'ติดต่อแล้ว'}</span>
+                                                `}
                                             </td>
                                             <td>
-                                                <button class="btn btn-outline del-quote-btn" data-id="${q.id}" style="padding:6px 12px; font-size:0.72rem; border-color:var(--danger); color:var(--danger);"><i class="fas fa-trash-alt"></i> ลบ</button>
+                                                <div style="display:flex; gap:6px; align-items:center;">
+                                                    ${quoteId ? `
+                                                        <button class="btn btn-outline view-quote-btn" data-id="${quoteId}" style="padding:6px 10px; font-size:0.72rem; border-color:var(--primary); color:var(--primary); font-weight:600;"><i class="fas fa-eye"></i> ดูรายละเอียด</button>
+                                                        <button class="btn btn-outline del-quote-btn" data-id="${quoteId}" style="padding:6px 10px; font-size:0.72rem; border-color:var(--danger); color:var(--danger); font-weight:600;"><i class="fas fa-trash-alt"></i> ลบ</button>
+                                                    ` : `
+                                                        <span style="font-size:0.72rem; color:var(--danger); font-weight:700;">ไม่พบรหัสรายการ</span>
+                                                    `}
+                                                </div>
                                             </td>
                                         </tr>
                                     `;
@@ -1721,12 +1806,23 @@ class CharoenAdmin {
             </div>
         `;
 
+        document.querySelectorAll('.view-quote-btn').forEach(btn => {
+            btn.onclick = () => {
+                const qId = btn.dataset.id;
+                if (qId) {
+                    this.openQuoteDetailDialog(qId);
+                }
+            };
+        });
+
         document.querySelectorAll('.toggle-quote-status-btn').forEach(btn => {
             btn.onclick = async () => {
-                const currentStatus = btn.dataset.status;
-                const newStatus = currentStatus === 'pending' ? 'contacted' : 'pending';
-                const quoteObj = await this.db.get('quotes', btn.dataset.id);
+                const qId = btn.dataset.id;
+                if (!qId) return;
+                const quoteObj = await this.db.get('quotes', qId);
                 if (quoteObj) {
+                    const currentStatus = this.getNormalizedQuoteStatus(quoteObj.status);
+                    const newStatus = currentStatus === 'pending' ? 'contacted' : 'pending';
                     quoteObj.status = newStatus;
                     await this.db.put('quotes', quoteObj);
                     this.renderActiveView();
@@ -1736,12 +1832,137 @@ class CharoenAdmin {
 
         document.querySelectorAll('.del-quote-btn').forEach(btn => {
             btn.onclick = async () => {
+                const qId = btn.dataset.id;
+                if (!qId) return;
                 if (confirm('คุณต้องการลบรายการขอใบเสนอราคานี้ออกอย่างถาวรหรือไม่?')) {
-                    await this.db.delete('quotes', btn.dataset.id);
+                    await this.db.delete('quotes', qId);
                     this.renderActiveView();
                 }
             };
         });
+    }
+
+    async openQuoteDetailDialog(quoteId) {
+        if (!quoteId) {
+            alert('ไม่พบรหัสรายการขอใบเสนอราคา');
+            return;
+        }
+
+        const quote = await this.db.get('quotes', quoteId);
+        if (!quote) {
+            alert('ไม่พบข้อมูลรายการขอใบเสนอราคานี้');
+            return;
+        }
+
+        const categories = await this.db.getAll('categories');
+        const catName = this.getQuoteCategoryName(quote, categories);
+        const quantityDisplay = this.formatQuoteQuantity(quote);
+        const dateDisplay = this.formatQuoteDate(quote, true);
+        const status = this.getNormalizedQuoteStatus(quote.status);
+        const logoSrc = this.getQuoteLogoSrc(quote);
+
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay active';
+        overlay.style.zIndex = '20000';
+        overlay.id = 'quote-detail-modal-overlay';
+        
+        overlay.innerHTML = `
+            <div class="modal-window" style="max-width:620px; width:92%; max-height:90vh; overflow-y:auto; padding:24px; box-sizing:border-box;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:12px; border-bottom:1px solid var(--border-color); width:100%; box-sizing:border-box;">
+                    <h3 style="font-size:1.15rem; font-weight:700; color:var(--primary); margin:0; line-height:1.4;">
+                        <i class="fas fa-file-invoice-dollar" style="color:var(--secondary); margin-right:8px;"></i> รายละเอียดใบเสนอราคา (Quote Details)
+                    </h3>
+                    <button type="button" class="modal-close-btn close-modal-btn" style="position:static; padding:4px 8px; font-size:0.8rem; flex-shrink:0;"><i class="fas fa-times"></i></button>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+                    <div style="background:var(--bg-sec); padding:12px 16px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                        <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; margin-bottom:4px;">ชื่อร้าน / ผู้ติดต่อ</div>
+                        <div style="font-size:0.95rem; font-weight:700; color:var(--primary);">${quote.name || '-'}</div>
+                    </div>
+                    <div style="background:var(--bg-sec); padding:12px 16px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                        <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; margin-bottom:4px;">วันที่ส่งคำขอ</div>
+                        <div style="font-size:0.95rem; font-weight:600; color:var(--text-main);">${dateDisplay}</div>
+                    </div>
+                    <div style="background:var(--bg-sec); padding:12px 16px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                        <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; margin-bottom:4px;">เบอร์โทรศัพท์</div>
+                        <div style="font-size:0.95rem; font-weight:600; color:var(--text-main);">${quote.phone || '-'}</div>
+                    </div>
+                    <div style="background:var(--bg-sec); padding:12px 16px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                        <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; margin-bottom:4px;">LINE ID</div>
+                        <div style="font-size:0.95rem; font-weight:600; color:#10b981;">${quote.line || '-'}</div>
+                    </div>
+                    <div style="background:var(--bg-sec); padding:12px 16px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                        <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; margin-bottom:4px;">ประเภทสินค้า</div>
+                        <div style="font-size:0.95rem; font-weight:600; color:var(--text-main);">${catName}</div>
+                    </div>
+                    <div style="background:var(--bg-sec); padding:12px 16px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                        <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; margin-bottom:4px;">จำนวนที่ต้องการ</div>
+                        <div style="font-size:0.95rem; font-weight:700; color:var(--secondary);">${quantityDisplay}</div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:20px; background:var(--bg-sec); padding:16px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                    <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; margin-bottom:6px;">ข้อความรายละเอียด / สเปกเพิ่มเติม</div>
+                    <div style="font-size:0.9rem; color:var(--text-main); line-height:1.6; white-space:pre-wrap;">${quote.details || '-'}</div>
+                </div>
+
+                <div style="margin-bottom:20px; background:var(--bg-sec); padding:16px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                    <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; margin-bottom:10px;">ไฟล์รูปภาพโลโก้ / ตัวอย่างงาน</div>
+                    ${logoSrc ? `
+                        <div style="max-width:200px; max-height:200px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:#fff; overflow:hidden; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="window.charoenAdminApp.previewLogoImage('${logoSrc}')">
+                            <img src="${logoSrc}" style="max-width:100%; max-height:200px; object-fit:contain;">
+                        </div>
+                        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">* คลิกที่รูปภาพเพื่อขยายใหญ่</div>
+                    ` : `
+                        <div style="font-size:0.85rem; color:var(--text-muted);">ไม่มีไฟล์รูปภาพแนบ</div>
+                    `}
+                </div>
+
+                <div style="margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; background:var(--bg-sec); padding:12px 16px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                    <div>
+                        <span style="font-size:0.8rem; color:var(--text-muted); font-weight:700; margin-right:8px;">สถานะปัจจุบัน:</span>
+                        <span class="badge ${status === 'pending' ? 'badge-danger' : 'badge-success'}" style="font-size:0.85rem; padding:4px 10px;">
+                            ${status === 'pending' ? 'รอดำเนินการ' : 'ติดต่อแล้ว'}
+                        </span>
+                    </div>
+                    <button type="button" class="btn modal-toggle-status-btn" style="padding:6px 14px; font-size:0.8rem; border:none; border-radius:var(--radius-sm); background:${status === 'pending' ? '#d1fae5' : '#fee2e2'}; color:${status === 'pending' ? '#065f46' : '#991b1b'}; cursor:pointer; font-weight:700;">
+                        ${status === 'pending' ? 'เปลี่ยนเป็น "ติดต่อแล้ว"' : 'เปลี่ยนเป็น "รอดำเนินการ"'}
+                    </button>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; padding-top:14px; border-top:1px solid var(--border-color);">
+                    <button type="button" class="btn btn-outline close-modal-btn" style="padding:8px 22px;">ปิด</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const closeModal = () => {
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        };
+
+        overlay.querySelectorAll('.close-modal-btn').forEach(btn => btn.onclick = closeModal);
+
+        overlay.onclick = (e) => {
+            if (e.target === overlay) closeModal();
+        };
+
+        const modalToggleBtn = overlay.querySelector('.modal-toggle-status-btn');
+        if (modalToggleBtn) {
+            modalToggleBtn.onclick = async () => {
+                const currentQuote = await this.db.get('quotes', quoteId);
+                if (currentQuote) {
+                    const currentStatus = this.getNormalizedQuoteStatus(currentQuote.status);
+                    const newStatus = currentStatus === 'pending' ? 'contacted' : 'pending';
+                    currentQuote.status = newStatus;
+                    await this.db.put('quotes', currentQuote);
+                    closeModal();
+                    this.renderActiveView();
+                }
+            };
+        }
     }
 
     // Settings View
