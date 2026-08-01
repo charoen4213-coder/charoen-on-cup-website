@@ -119,6 +119,42 @@
     --space-xl: 32px;
     --space-2xl: 40px;
     --space-3xl: 60px;
+
+    /* ==========================================================================
+       9. DESIGN SYSTEM PHASE 2 SEMANTIC ROLE ALIASES & COMPONENT TOKENS
+       ========================================================================== */
+    /* Safe Brand Role Aliases */
+    --brand-primary: var(--primary);
+    --brand-navy: var(--navy);
+    --brand-orange: var(--accent);
+    --brand-orange-hover: var(--accent-hover);
+
+    /* Safe Surface & Text Role Aliases */
+    --surface-page: var(--bg-main);
+    --surface-card: var(--bg-surface);
+    --surface-alt: var(--bg-surface-alt);
+
+    --text-primary: var(--text-main);
+    --text-secondary: var(--text-muted);
+
+    /* Shared Card Foundation Tokens */
+    --card-bg: var(--bg-surface);
+    --card-border-color: var(--border-color);
+    --card-radius: var(--radius-md);
+    --card-shadow: var(--shadow-sm);
+    --card-shadow-hover: var(--shadow-md);
+
+    /* Shared Form Foundation Tokens */
+    --input-height: 44px;
+    --input-radius: var(--radius-sm);
+    --input-border-color: var(--border-color);
+    --input-focus-color: var(--accent);
+    --input-focus-shadow: 0 0 0 3px rgba(255, 107, 0, 0.12);
+
+    /* Shared Motion & Interaction Aliases */
+    --motion-fast: var(--transition-fast);
+    --motion-normal: var(--transition-normal);
+    --motion-slow: var(--transition-slow);
 }
 
 /* RESET & BASICS */
