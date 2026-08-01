@@ -4771,23 +4771,27 @@ class CharoenApp {
                     </div>
                     <div class="detail-info-box">
                         ${catName ? `<span class="product-modal-badge">${catName}</span>` : ''}
-                        <h3 id="modal-product-title" style="margin-bottom:${secondaryTitle ? '4px' : '12px'};">${primaryTitle}</h3>
-                        ${secondaryTitle ? `<div style="font-size:0.9rem; color:var(--text-muted); font-weight:500; margin-bottom:12px;">${secondaryTitle}</div>` : ''}
+                        <h3 id="modal-product-title">${primaryTitle}</h3>
+                        ${secondaryTitle ? `<div class="product-modal-subtitle">${secondaryTitle}</div>` : ''}
                         ${descText ? `<p class="product-modal-desc">${descText}</p>` : ''}
                         
                         ${specRowsHtml ? `
-                            <h4 style="font-weight:700; margin-bottom:10px; color:var(--secondary);">${this.t('detail_title')}</h4>
-                            <table class="spec-table">
-                                ${specRowsHtml}
-                            </table>
+                            <div class="spec-table-container">
+                                <h4 class="spec-table-heading">${this.t('detail_title')}</h4>
+                                <table class="spec-table">
+                                    <tbody>
+                                        ${specRowsHtml}
+                                    </tbody>
+                                </table>
+                            </div>
                         ` : ''}
                         
-                        <div class="modal-action-buttons" style="display:flex; gap:12px; margin-top:20px;">
+                        <div class="modal-action-buttons">
                             <a href="#/quote" class="btn btn-primary" onclick="window.charoenApp.closeActiveModal()">
                                 <i class="fas fa-file-invoice-dollar"></i> ${this.lang === 'th' ? 'สอบถามและขอราคา' : 'Get Quote'}
                             </a>
                             ${lineHref ? `
-                                <a href="${lineHref}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="border-color:#10b981; color:#10b981;">
+                                <a href="${lineHref}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-line-inquire">
                                     <i class="fab fa-line"></i> ${this.t('cta_inquire')}
                                 </a>
                             ` : ''}
