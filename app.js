@@ -891,6 +891,144 @@ class CharoenApp {
         return targetVal;
     }
 
+    // Shared safe resolver for section background image references (Phase BG-A1)
+    async resolveSectionBackgroundImageSrc(val) {
+        if (!val) return '';
+
+        let targetVal = val;
+        if (typeof targetVal === 'object' && targetVal !== null) {
+            targetVal = targetVal.image_src || targetVal.url || targetVal.src || targetVal.path || targetVal.id || targetVal.name || '';
+        }
+
+        if (!targetVal || typeof targetVal !== 'string') {
+            return '';
+        }
+
+        targetVal = targetVal.trim();
+        if (!targetVal) return '';
+
+        if (targetVal.startsWith('data:') || targetVal.startsWith('http://') || targetVal.startsWith('https://') || targetVal.includes('/') || targetVal.endsWith('.webp') || targetVal.endsWith('.jpg') || targetVal.endsWith('.png') || targetVal.endsWith('.jpeg') || targetVal.endsWith('.svg')) {
+            return targetVal;
+        }
+
+        try {
+            const mediaList = await this.db.getAll('media');
+            if (Array.isArray(mediaList) && mediaList.length > 0) {
+                const match = mediaList.find(m => m && (m.id === targetVal || m.name === targetVal));
+                if (match && match.image_src) {
+                    return match.image_src;
+                }
+            }
+        } catch (e) {
+            console.warn('Failed to resolve section background image from media collection:', e);
+        }
+
+        return targetVal;
+    }
+
+    // Unified Section Background Data Resolver (Phase BG-A1)
+    async resolveSectionBackground(sectionObj) {
+        const sec = sectionObj || {};
+        const content = sec.content || {};
+
+        const bgStyle = content.backgroundStyle || sec.backgroundStyle || 'solid_color';
+        const rawBgImg = content.backgroundImage || sec.backgroundImage || '';
+        const resolvedImage = await this.resolveSectionBackgroundImageSrc(rawBgImg);
+
+        const rawOverlay = content.backgroundOverlay ?? sec.backgroundOverlay;
+        const bgOverlay = (function(raw) {
+            if (raw === undefined || raw === null || raw === '') return 55;
+            let val = Number(raw);
+            if (!Number.isFinite(val)) return 55;
+            if (val > 0 && val <= 1) val = val * 100;
+            return Math.min(80, Math.max(0, Math.round(val)));
+        })(rawOverlay);
+
+        const bgPos = content.backgroundPosition || sec.backgroundPosition || 'center center';
+
+        const rawBrightness = content.backgroundBrightness ?? sec.backgroundBrightness;
+        const bgBrightness = (function(raw) {
+            if (raw === undefined || raw === null || raw === '') return 100;
+            let val = Number(raw);
+            if (!Number.isFinite(val)) return 100;
+            return Math.min(120, Math.max(70, Math.round(val)));
+        })(rawBrightness);
+
+        const bgTextTheme = content.backgroundTextTheme || sec.backgroundTextTheme || 'auto';
+
+        const rawAttachment = content.backgroundAttachment ?? sec.backgroundAttachment;
+        const bgAttachment = rawAttachment === 'fixed' ? 'fixed' : 'scroll';
+
+        const hasImage = (bgStyle === 'image' || bgStyle === 'image_line_art') && Boolean(resolvedImage);
+        const hasLineArt = bgStyle === 'line_art' || bgStyle === 'image_line_art';
+        const isFixed = bgAttachment === 'fixed';
+
+        return {
+            style: bgStyle,
+            image: resolvedImage,
+            overlay: bgOverlay,
+            position: bgPos,
+            brightness: bgBrightness,
+            textTheme: bgTextTheme,
+            attachment: bgAttachment,
+            hasImage,
+            hasLineArt,
+            isFixed
+        };
+    }
+
+    // Unified Section Background Markup Generator (Phase BG-A1)
+    renderSectionBackgroundLayers(config) {
+        if (!config) return '';
+
+        let layersHtml = '';
+
+        if (config.hasImage && config.image) {
+            const fixedClass = config.isFixed ? 'is-section-bg-fixed' : '';
+            layersHtml += `
+                <div class="section-background-layer ${fixedClass}" aria-hidden="true" style="
+                    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                    background-image: url('${config.image}');
+                    background-size: cover;
+                    background-position: ${config.position || 'center center'};
+                    background-repeat: no-repeat;
+                    filter: brightness(${config.brightness ?? 100}%);
+                    z-index: 0;
+                    pointer-events: none;
+                "></div>
+                <div class="section-background-overlay" aria-hidden="true" style="
+                    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                    background-color: rgba(0, 0, 0, ${(config.overlay ?? 55) / 100});
+                    z-index: 0;
+                    pointer-events: none;
+                "></div>
+            `;
+        }
+
+        if (config.hasLineArt) {
+            const whiteTintClass = config.hasImage ? 'pattern-white-tint' : '';
+            layersHtml += `
+                <div class="section-pattern-wrapper ${whiteTintClass}" aria-hidden="true" style="z-index: 1;">
+                    <svg class="pattern-left-art" viewBox="0 0 360 480" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                        <g transform="translate(10, 40)" opacity="0.5">
+                            <rect x="20" y="140" width="150" height="110" rx="6" />
+                            <path d="M 40 140 L 40 50 L 150 50 L 150 140" />
+                            <line x1="20" y1="190" x2="170" y2="190" stroke-dasharray="4 4" />
+                        </g>
+                    </svg>
+                    <svg class="pattern-right-art" viewBox="0 0 360 480" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                        <g transform="translate(40, 40)" opacity="0.5">
+                            <path d="M 120 80 Q 170 20 220 80 T 300 80" />
+                            <path d="M 90 140 Q 150 90 210 140 T 310 140" />
+                        </g>
+                    </svg>
+                </div>
+            `;
+        }
+
+        return layersHtml;
+    }
+
     async renderHomeView(container) {
         // Load initial slides from IndexedDB cache first
         let localSlides = [];
