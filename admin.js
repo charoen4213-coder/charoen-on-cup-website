@@ -2018,6 +2018,35 @@ class CharoenAdmin {
 
         window.currentAboutGalleryImages = [...aboutGalleryList];
 
+        // Phase A2: ONE-STOP-SHOP Settings Retrieval
+        const bannerTitleTh = await this.db.get('settings', 'about_service_banner_title_th');
+        const bannerTitleEn = await this.db.get('settings', 'about_service_banner_title_en');
+        const bannerSubTh = await this.db.get('settings', 'about_service_banner_subtitle_th');
+        const bannerSubEn = await this.db.get('settings', 'about_service_banner_subtitle_en');
+
+        const serviceItemsObj = await this.db.get('settings', 'about_service_items');
+        let serviceItemsList = [];
+        if (serviceItemsObj?.value) {
+            try {
+                serviceItemsList = typeof serviceItemsObj.value === 'string' ? JSON.parse(serviceItemsObj.value) : serviceItemsObj.value;
+            } catch (e) {
+                serviceItemsList = [];
+            }
+        } else if (Array.isArray(serviceItemsObj)) {
+            serviceItemsList = serviceItemsObj;
+        }
+
+        if (!Array.isArray(serviceItemsList) || serviceItemsList.length === 0) {
+            serviceItemsList = [
+                { id: 'about_service_1', image: '', title_th: 'โรงงานผลิตและสกรีน', title_en: 'Factory & Screen Printing', desc_th: 'เครื่องจักรอุตสาหกรรมทันสมัย ควบคุมคุณภาพการผลิตทุกขั้นตอน', desc_en: 'Modern industrial machinery with strict quality control.', visible: true, order: 1 },
+                { id: 'about_service_2', image: '', title_th: 'บริการออกแบบ', title_en: 'Design Service', desc_th: 'ทีมกราฟิกช่วยออกแบบและจัดวางตำแหน่งโลโก้ฟรี', desc_en: 'In-house graphic team assists with free design layout.', visible: true, order: 2 },
+                { id: 'about_service_3', image: '', title_th: 'ตรวจแบบก่อนผลิต', title_en: 'Mockup Approval', desc_th: 'ส่ง Mockup ให้ตรวจสอบและยืนยันความถูกต้องก่อนพิมพ์จริง', desc_en: 'Digital mockup proofing for approval before printing.', visible: true, order: 3 },
+                { id: 'about_service_4', image: '', title_th: 'จัดส่งทั่วประเทศ', title_en: 'Nationwide Delivery', desc_th: 'แพ็คเกจบวมกันกระแทกอย่างดี จัดส่งตรงถึงหน้าร้านทั่วไทย', desc_en: 'Secure packaging with nationwide door-to-door shipping.', visible: true, order: 4 }
+            ];
+        }
+
+        window.currentAboutServiceItems = JSON.parse(JSON.stringify(serviceItemsList));
+
         const aboutEyebrowTh = await this.db.get('settings', 'about_eyebrow_th');
         const aboutEyebrowEn = await this.db.get('settings', 'about_eyebrow_en');
         const aboutCtaTextTh = await this.db.get('settings', 'about_cta_text_th');
@@ -2217,6 +2246,49 @@ class CharoenAdmin {
                                                 </div>
                                             `;
                                         }).join('')}
+                                    </div>
+                                </div>
+
+                                <!-- Phase A2: ONE-STOP-SHOP Service Showcase Panel -->
+                                <div class="form-group" style="margin-top:20px; border-top:1.5px solid var(--border-color); padding-top:16px;">
+                                    <label style="font-weight:700; font-size:0.95rem; color:var(--primary); display:block; margin-bottom:4px;">
+                                        <i class="fas fa-cubes" style="color:var(--secondary); margin-right:6px;"></i> ส่วนบริการครบวงจร ONE-STOP-SHOP (หน้าเกี่ยวกับเรา)
+                                    </label>
+                                    <p style="font-size:0.75rem; color:var(--text-sec); margin-bottom:12px;">
+                                        กำหนดหัวข้อแถบ Banner และรูปภาพบริการ 4 รายการ แสดงในหน้าเกี่ยวกับเรา (About Us)
+                                    </p>
+
+                                    <!-- Banner Fields -->
+                                    <div style="background:var(--bg-sec); padding:14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); margin-bottom:16px;">
+                                        <strong style="display:block; font-size:0.85rem; color:var(--secondary); margin-bottom:10px;"><i class="fas fa-heading"></i> แถบข้อความ Banner หลัก</strong>
+                                        <div class="grid-2">
+                                            <div>
+                                                <label style="font-weight:600; font-size:0.78rem;">หัวข้อหลัก (TH)</label>
+                                                <input type="text" id="set-about-one-stop-title-th" class="form-control" style="font-size:0.82rem;" value="${bannerTitleTh?.value || 'เจริญ ออน คัพ • ONE-STOP-SHOP'}">
+                                            </div>
+                                            <div>
+                                                <label style="font-weight:600; font-size:0.78rem;">หัวข้อหลัก (EN)</label>
+                                                <input type="text" id="set-about-one-stop-title-en" class="form-control" style="font-size:0.82rem;" value="${bannerTitleEn?.value || 'CHAROEN ON CUP • ONE-STOP-SHOP'}">
+                                            </div>
+                                        </div>
+                                        <div class="grid-2" style="margin-top:8px;">
+                                            <div>
+                                                <label style="font-weight:600; font-size:0.78rem;">ข้อความรอง (TH)</label>
+                                                <input type="text" id="set-about-one-stop-sub-th" class="form-control" style="font-size:0.82rem;" value="${bannerSubTh?.value || 'บริการครบจบในที่เดียว'}">
+                                            </div>
+                                            <div>
+                                                <label style="font-weight:600; font-size:0.78rem;">ข้อความรอง (EN)</label>
+                                                <input type="text" id="set-about-one-stop-sub-en" class="form-control" style="font-size:0.82rem;" value="${bannerSubEn?.value || 'Complete Cup Printing and Packaging Service'}">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 4 Service Items Editors Container -->
+                                    <div>
+                                        <strong style="display:block; font-size:0.85rem; color:var(--secondary); margin-bottom:10px;"><i class="fas fa-th-large"></i> รายการบริการ 4 รายการ (4 Feature Items)</strong>
+                                        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;" id="about-service-items-container">
+                                            <!-- Rendered dynamically by window.renderAboutServiceItemsAdmin() -->
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -2791,6 +2863,109 @@ class CharoenAdmin {
             }
         };
 
+        // --- Phase A2: About Page ONE-STOP-SHOP Service Showcase Handlers ---
+        window.renderAboutServiceItemsAdmin = () => {
+            const container = document.getElementById('about-service-items-container');
+            if (!container) return;
+
+            if (!Array.isArray(window.currentAboutServiceItems)) {
+                window.currentAboutServiceItems = [];
+            }
+
+            container.innerHTML = window.currentAboutServiceItems.map((item, idx) => `
+                <div class="admin-card" style="padding:16px; border:1px solid var(--border-color); background:white; position:relative;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border-color); padding-bottom:6px;">
+                        <span style="font-weight:700; font-size:0.82rem; color:var(--primary); text-transform:uppercase;">รายการบริการที่ ${idx + 1}</span>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <label style="font-size:0.78rem; cursor:pointer; margin-bottom:0; display:flex; align-items:center; gap:4px;">
+                                <input type="checkbox" onchange="window.updateAboutServiceItem(${idx}, 'visible', this.checked)" ${item.visible !== false ? 'checked' : ''}> แสดงผล
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Image Upload & Preview -->
+                    <div style="margin-bottom:12px;">
+                        <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:6px;">รูปภาพบริการ</label>
+                        <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+                            <button type="button" class="btn btn-outline" onclick="window.selectAboutServiceMedia(${idx})" style="padding:4px 8px; font-size:0.75rem;"><i class="fas fa-folder-open"></i> เลือกรูป</button>
+                            <label class="btn btn-outline" style="padding:4px 8px; font-size:0.75rem; cursor:pointer; margin-bottom:0;">
+                                <i class="fas fa-upload"></i> อัปโหลด <input type="file" accept="image/*" style="display:none;" onchange="window.uploadAboutServiceFile(${idx}, this)">
+                            </label>
+                            <button type="button" class="btn btn-outline" onclick="window.removeAboutServiceImage(${idx})" style="padding:4px 8px; font-size:0.75rem; color:var(--danger); border-color:var(--danger);"><i class="fas fa-trash"></i> ลบรูป</button>
+                        </div>
+                        <div style="height:110px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-sec); display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                            ${item.image ? `<img src="${item.image}" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'400\\' height=\\'300\\' viewBox=\\'0 0 400 300\\'%3E%3Crect width=\\'400\\' height=\\'300\\' fill=\\'%23f1f5f9\\'/ %3E%3Cpath d=\\'M150 120a20 20 0 1 0 0-40 20 20 0 0 0 0 40zm-60 100h220l-70-80-55 60-35-40-60 60z\\' fill=\\'%2394a3b8\\'/ %3E%3C/svg%3E';">` : `<span style="font-size:0.78rem; color:var(--text-muted);"><i class="fas fa-image"></i> ยังไม่ได้เลือกรูปภาพ</span>`}
+                        </div>
+                    </div>
+
+                    <!-- Fields -->
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <div class="grid-2">
+                            <div>
+                                <label style="font-weight:600; font-size:0.78rem;">ชื่อ TH</label>
+                                <input type="text" class="form-control" style="padding:6px; font-size:0.8rem;" value="${item.title_th || ''}" onchange="window.updateAboutServiceItem(${idx}, 'title_th', this.value)">
+                            </div>
+                            <div>
+                                <label style="font-weight:600; font-size:0.78rem;">ชื่อ EN</label>
+                                <input type="text" class="form-control" style="padding:6px; font-size:0.8rem;" value="${item.title_en || ''}" onchange="window.updateAboutServiceItem(${idx}, 'title_en', this.value)">
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-weight:600; font-size:0.78rem;">คำอธิบาย TH</label>
+                            <textarea class="form-control" style="padding:6px; font-size:0.8rem; height:50px; min-height:50px;" onchange="window.updateAboutServiceItem(${idx}, 'desc_th', this.value)">${item.desc_th || ''}</textarea>
+                        </div>
+                        <div>
+                            <label style="font-weight:600; font-size:0.78rem;">คำอธิบาย EN</label>
+                            <textarea class="form-control" style="padding:6px; font-size:0.8rem; height:50px; min-height:50px;" onchange="window.updateAboutServiceItem(${idx}, 'desc_en', this.value)">${item.desc_en || ''}</textarea>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                            <label style="font-size:0.78rem; font-weight:600;">ลำดับ (Order)</label>
+                            <input type="number" class="form-control" style="width:60px; padding:4px; font-size:0.8rem; text-align:center;" value="${item.order || (idx + 1)}" min="1" max="4" onchange="window.updateAboutServiceItem(${idx}, 'order', Number(this.value))">
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        window.updateAboutServiceItem = (idx, field, val) => {
+            if (window.currentAboutServiceItems && window.currentAboutServiceItems[idx]) {
+                window.currentAboutServiceItems[idx][field] = val;
+            }
+        };
+
+        window.selectAboutServiceMedia = (idx) => {
+            this.openMediaSelectorDialog((selectedBase64) => {
+                if (!window.currentAboutServiceItems) window.currentAboutServiceItems = [];
+                if (window.currentAboutServiceItems[idx]) {
+                    window.currentAboutServiceItems[idx].image = selectedBase64;
+                    window.renderAboutServiceItemsAdmin();
+                }
+            });
+        };
+
+        window.uploadAboutServiceFile = async (idx, inputEl) => {
+            if (inputEl.files && inputEl.files[0]) {
+                const webpData = await this.convertImageToWebP(inputEl.files[0]);
+                if (!window.currentAboutServiceItems) window.currentAboutServiceItems = [];
+                if (window.currentAboutServiceItems[idx]) {
+                    window.currentAboutServiceItems[idx].image = webpData;
+                    window.renderAboutServiceItemsAdmin();
+                }
+            }
+        };
+
+        window.removeAboutServiceImage = (idx) => {
+            if (window.currentAboutServiceItems && window.currentAboutServiceItems[idx]) {
+                window.currentAboutServiceItems[idx].image = '';
+                window.renderAboutServiceItemsAdmin();
+            }
+        };
+
+        // Render initial service items inside admin form
+        setTimeout(() => {
+            window.renderAboutServiceItemsAdmin();
+        }, 50);
+
         // --- Master Save Button Action ---
         const masterSaveBtn = document.getElementById('master-save-btn');
         if (masterSaveBtn) {
@@ -2818,6 +2993,21 @@ class CharoenAdmin {
                     return;
                 }
 
+                const cleanServiceItems = (Array.isArray(window.currentAboutServiceItems) ? window.currentAboutServiceItems : [])
+                    .slice(0, 4)
+                    .map((item, idx) => ({
+                        id: item.id || `about_service_${idx + 1}`,
+                        image: typeof item.image === 'string' ? item.image.trim() : '',
+                        title_th: typeof item.title_th === 'string' ? item.title_th.trim() : '',
+                        title_en: typeof item.title_en === 'string' ? item.title_en.trim() : '',
+                        desc_th: typeof item.desc_th === 'string' ? item.desc_th.trim() : '',
+                        desc_en: typeof item.desc_en === 'string' ? item.desc_en.trim() : '',
+                        visible: item.visible !== false,
+                        order: Number(item.order) || (idx + 1)
+                    }));
+
+                const serviceJson = JSON.stringify(cleanServiceItems);
+
                 console.log('[About Gallery] Saving', {
                     count: cleanGallery.length,
                     payloadLength: galleryJson.length
@@ -2825,6 +3015,11 @@ class CharoenAdmin {
 
                 const setObj = {
                     about_gallery_images: galleryJson,
+                    about_service_banner_title_th: document.getElementById('set-about-one-stop-title-th')?.value || '',
+                    about_service_banner_title_en: document.getElementById('set-about-one-stop-title-en')?.value || '',
+                    about_service_banner_subtitle_th: document.getElementById('set-about-one-stop-sub-th')?.value || '',
+                    about_service_banner_subtitle_en: document.getElementById('set-about-one-stop-sub-en')?.value || '',
+                    about_service_items: serviceJson,
                     logo_img: document.getElementById('set-logo-img-src')?.value || '',
                     company_name_th: document.getElementById('set-company-name-th')?.value || '',
                     company_name_en: document.getElementById('set-company-name-en')?.value || '',

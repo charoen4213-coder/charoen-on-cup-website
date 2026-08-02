@@ -3370,6 +3370,16 @@ class CharoenApp {
         const email = await this.db.get('settings', 'email');
         const hours = await this.db.get('settings', this.lang === 'th' ? 'business_hours_th' : 'business_hours_en');
 
+        // Social and Maps Links
+        const facebookUrlSetting = await this.db.get('settings', 'facebook_url');
+        const facebookLegacySetting = await this.db.get('settings', 'facebook');
+        const fbUrl = facebookUrlSetting?.value || facebookLegacySetting?.value || '';
+        const fbUrl1 = fbUrl;
+
+        const mapsKey = await this.db.get('settings', 'google_maps_url');
+        const mapsUrl = mapsKey?.value || '';
+        const mapUrl = mapsUrl;
+
         const companyName = await this.db.get('settings', this.lang === 'th' ? 'company_name_th' : 'company_name_en');
         const companyNameVal = companyName?.value || (this.lang === 'th' ? 'เจริญ ออน คัพ' : 'Charoen On Cup');
 
@@ -3439,13 +3449,39 @@ class CharoenApp {
             </div>
         ` : '';
 
-        // Social and Maps Links
-        const fbKey = await this.db.get('settings', 'facebook_url') || await this.db.get('settings', 'facebook');
-        const mapsKey = await this.db.get('settings', 'google_maps_url');
-        const fbUrl = fbKey?.value || '';
-        const mapsUrl = mapsKey?.value || '';
+        // Phase A2: ONE-STOP-SHOP Service Showcase Settings
+        const bannerTitleKey = await this.db.get('settings', this.lang === 'th' ? 'about_service_banner_title_th' : 'about_service_banner_title_en');
+        const bannerSubKey = await this.db.get('settings', this.lang === 'th' ? 'about_service_banner_subtitle_th' : 'about_service_banner_subtitle_en');
 
-        // 5 Dynamic Highlight Cards
+        const rawBannerTitle = bannerTitleKey?.value || (this.lang === 'th' ? 'เจริญ ออน คัพ • ONE-STOP-SHOP' : 'CHAROEN ON CUP • ONE-STOP-SHOP');
+        const bannerSubVal = bannerSubKey?.value || (this.lang === 'th' ? 'บริการครบจบในที่เดียว' : 'Complete Cup Printing and Packaging Service');
+
+        const bannerTitleVal = typeof rawBannerTitle === 'string' && rawBannerTitle.includes('ONE-STOP-SHOP')
+            ? rawBannerTitle.replace('ONE-STOP-SHOP', '<span class="about-one-stop-mobile-break">ONE-STOP-SHOP</span>')
+            : rawBannerTitle;
+
+        const serviceItemsKey = await this.db.get('settings', 'about_service_items');
+        let serviceItemsList = [];
+        if (serviceItemsKey?.value) {
+            try {
+                serviceItemsList = typeof serviceItemsKey.value === 'string' ? JSON.parse(serviceItemsKey.value) : serviceItemsKey.value;
+            } catch (e) {
+                serviceItemsList = [];
+            }
+        }
+
+        const validServiceItems = Array.isArray(serviceItemsList)
+            ? serviceItemsList
+                .filter(item => item && item.visible !== false && ((item.title_th && item.title_th.trim()) || (item.title_en && item.title_en.trim()) || (item.image && item.image.trim())))
+                .sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
+                .slice(0, 4)
+            : [];
+
+        for (const item of validServiceItems) {
+            item.resolvedImage = item.image ? (await this.resolveAboutImageSrc(item.image)) : '';
+        }
+
+        // 5 Dynamic Highlight Cards (Legacy Fallback Data)
         const defaultHighlightsTh = [
             { icon: 'fas fa-industry', title: 'โรงงานผลิตมาตรฐาน', desc: 'ใช้เครื่องจักรสกรีนแก้วทันสมัย ได้มาตรฐานอุตสาหกรรม ควบคุมคุณภาพทุกขั้นตอน' },
             { icon: 'fas fa-layer-group', title: 'ขั้นต่ำต่ำ เริ่มต้น 1,000 ใบ', desc: 'รองรับทั้งร้านกาแฟเปิดใหม่และธุรกิจขนาดใหญ่ สั่งผลิตได้ตามต้องการ' },
@@ -3542,36 +3578,68 @@ class CharoenApp {
                     ${galleryHtml}
                 </div>
             </section>
+            ${validServiceItems.length > 0 ? `
+                <section class="about-one-stop-section">
+                    <div class="about-one-stop-banner">
+                        <div class="container">
+                            <h2 class="about-one-stop-banner-title">${bannerTitleVal}</h2>
+                            <p class="about-one-stop-banner-subtitle">${bannerSubVal}</p>
+                        </div>
+                    </div>
 
-            <!-- SECTION 2: COMPANY HIGHLIGHTS (5 Cards) -->
-            <section class="section-padding" style="background-color: var(--bg-sec); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding: 75px 0;">
-                <div class="container">
-                    <div class="text-center" style="max-width: 750px; margin: 0 auto 48px auto;">
-                        <span class="section-eyebrow" style="font-weight: 700; color: var(--accent); font-size: 0.88rem; text-transform: uppercase; letter-spacing: 1.5px; display: block; margin-bottom: 10px;">
-                            ${this.lang === 'th' ? 'จุดเด่นของเรา' : 'OUR HIGHLIGHTS'}
-                        </span>
-                        <h3 style="font-size: 2rem; font-weight: 800; color: var(--secondary); font-family: 'Inter', 'Kanit', sans-serif; margin-bottom: 0;">
-                            ${this.lang === 'th' ? 'เหตุผลที่ลูกค้าไว้วางใจ เจริญ ออน คัพ' : 'Why Businesses Choose Charoen On Cup'}
-                        </h3>
+                    <div class="about-service-showcase container">
+                        <div class="about-service-grid">
+                            ${validServiceItems.map(item => {
+                                const itemTitle = this.lang === 'th' ? (item.title_th || item.title_en || '') : (item.title_en || item.title_th || '');
+                                const itemDesc = this.lang === 'th' ? (item.desc_th || item.desc_en || '') : (item.desc_en || item.desc_th || '');
+                                const fallbackSvg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f1f5f9'/%3E%3Cpath d='M150 120a20 20 0 1 0 0-40 20 20 0 0 0 0 40zm-60 100h220l-70-80-55 60-35-40-60 60z' fill='%2394a3b8'/%3E%3C/svg%3E`;
+                                const imgSrc = item.resolvedImage || fallbackSvg;
+                                return `
+                                    <article class="about-service-item">
+                                        <div class="about-service-img-wrapper">
+                                            <img src="${imgSrc}" alt="${itemTitle || 'เจริญ ออน คัพ บริการครบวงจร'}" loading="lazy" onerror="this.onerror=null; this.src='${fallbackSvg}';">
+                                        </div>
+                                        <div class="about-service-content">
+                                            <h3 class="about-service-title">${itemTitle}</h3>
+                                            <p class="about-service-desc">${itemDesc}</p>
+                                        </div>
+                                    </article>
+                                `;
+                            }).join('')}
+                        </div>
                     </div>
-                    
-                    <div class="about-highlights-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
-                        ${highlights.map((h, idx) => `
-                            <div class="about-highlight-card" style="background: white; padding: 32px 24px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04); border: 1px solid rgba(4, 53, 106, 0.08); border-top: 4px solid ${idx % 2 === 0 ? 'var(--primary)' : 'var(--accent)'}; transition: transform 0.3s ease, box-shadow 0.3s ease;">
-                                <div style="width: 54px; height: 54px; border-radius: 12px; background: rgba(255, 107, 0, 0.08); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 20px;">
-                                    <i class="${h.icon}"></i>
+                </section>
+            ` : `
+                <!-- FALLBACK: OLD 5 HIGHLIGHT CARDS SECTION -->
+                <section class="section-padding" style="background-color: var(--bg-sec); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding: 75px 0;">
+                    <div class="container">
+                        <div class="text-center" style="max-width: 750px; margin: 0 auto 48px auto;">
+                            <span class="section-eyebrow" style="font-weight: 700; color: var(--accent); font-size: 0.88rem; text-transform: uppercase; letter-spacing: 1.5px; display: block; margin-bottom: 10px;">
+                                ${this.lang === 'th' ? 'จุดเด่นของเรา' : 'OUR HIGHLIGHTS'}
+                            </span>
+                            <h3 style="font-size: 2rem; font-weight: 800; color: var(--secondary); font-family: 'Inter', 'Kanit', sans-serif; margin-bottom: 0;">
+                                ${this.lang === 'th' ? 'เหตุผลที่ลูกค้าไว้วางใจ เจริญ ออน คัพ' : 'Why Businesses Choose Charoen On Cup'}
+                            </h3>
+                        </div>
+                        
+                        <div class="about-highlights-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
+                            ${highlights.map((h, idx) => `
+                                <div class="about-highlight-card" style="background: white; padding: 32px 24px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04); border: 1px solid rgba(4, 53, 106, 0.08); border-top: 4px solid ${idx % 2 === 0 ? 'var(--primary)' : 'var(--accent)'}; transition: transform 0.3s ease, box-shadow 0.3s ease;">
+                                    <div style="width: 54px; height: 54px; border-radius: 12px; background: rgba(255, 107, 0, 0.08); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 20px;">
+                                        <i class="${h.icon}"></i>
+                                    </div>
+                                    <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--secondary); margin-bottom: 10px; font-family: 'Inter', 'Kanit', sans-serif;">
+                                        ${h.title}
+                                    </h4>
+                                    <p style="font-size: 0.92rem; color: var(--text-main); line-height: 1.65; margin: 0;">
+                                        ${h.desc}
+                                    </p>
                                 </div>
-                                <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--secondary); margin-bottom: 10px; font-family: 'Inter', 'Kanit', sans-serif;">
-                                    ${h.title}
-                                </h4>
-                                <p style="font-size: 0.92rem; color: var(--text-main); line-height: 1.65; margin: 0;">
-                                    ${h.desc}
-                                </p>
-                            </div>
-                        `).join('')}
+                            `).join('')}
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
+            `}
 
             <!-- SECTION 3: CONTACT INFORMATION (Centered Premium Contact Card) -->
             <section class="section-padding" style="background-color: var(--bg-main); padding: 80px 0;">
@@ -3647,14 +3715,14 @@ class CharoenApp {
 
                         <!-- Facebook & Google Maps Buttons -->
                         <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
-                            ${fbUrl ? `
-                                <a href="${fbUrl}" target="_blank" class="btn" style="background: #1877f2; color: white; padding: 12px 28px; border-radius: 30px; font-weight: 700; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(24, 119, 242, 0.3); transition: all 0.3s ease;">
+                            ${(fbUrl || fbUrl1) ? `
+                                <a href="${fbUrl || fbUrl1}" target="_blank" class="btn" style="background: #1877f2; color: white; padding: 12px 28px; border-radius: 30px; font-weight: 700; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(24, 119, 242, 0.3); transition: all 0.3s ease;">
                                     <i class="fab fa-facebook-f" style="font-size: 1.1rem;"></i>
                                     <span>Facebook Fanpage</span>
                                 </a>
                             ` : ''}
-                            ${mapsUrl ? `
-                                <a href="${mapsUrl}" target="_blank" class="btn" style="background: var(--primary); color: white; padding: 12px 28px; border-radius: 30px; font-weight: 700; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(4, 53, 106, 0.3); transition: all 0.3s ease;">
+                            ${(mapsUrl || mapUrl) ? `
+                                <a href="${mapsUrl || mapUrl}" target="_blank" class="btn" style="background: var(--primary); color: white; padding: 12px 28px; border-radius: 30px; font-weight: 700; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(4, 53, 106, 0.3); transition: all 0.3s ease;">
                                     <i class="fas fa-map-marked-alt" style="font-size: 1.1rem;"></i>
                                     <span>${this.lang === 'th' ? 'ดูตำแหน่งบน Google Maps' : 'View on Google Maps'}</span>
                                 </a>
