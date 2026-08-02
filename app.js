@@ -2244,98 +2244,31 @@ class CharoenApp {
                     let secDesc = this.lang === 'th' ? (sec.content.desc_th || sec.content.subtitle_th || '') : (sec.content.desc_en || sec.content.subtitle_en || '');
                     if (secDesc === 'null' || secDesc === 'undefined') secDesc = '';
 
-                    // Extract Background Appearance Settings (Milestone 5.2 Activities Background Manager)
-                    const newsBgStyle = sec.content?.backgroundStyle || sec.backgroundStyle || 'solid_color';
-                    let newsBgImg = sec.content?.backgroundImage || sec.backgroundImage || '';
+                    // Resolve Background Configuration using shared Phase BG-A1 helper
+                    const bgConfig = await this.resolveSectionBackground(sec);
+                    const bgLayersHtml = this.renderSectionBackgroundLayers(bgConfig);
 
-                    if (typeof newsBgImg === 'object' && newsBgImg !== null) {
-                        newsBgImg = newsBgImg.url || newsBgImg.image_src || newsBgImg.src || newsBgImg.path || '';
-                    }
-
-                    if (newsBgImg && !newsBgImg.startsWith('data:') && !newsBgImg.startsWith('http') && !newsBgImg.includes('/') && !newsBgImg.endsWith('.webp') && !newsBgImg.endsWith('.jpg') && !newsBgImg.endsWith('.png')) {
-                        try {
-                            const mediaItem = await this.db.getAll('media').then(list => list.find(m => m.name === newsBgImg || m.id === newsBgImg));
-                            if (mediaItem && mediaItem.image_src) {
-                                newsBgImg = mediaItem.image_src;
-                            }
-                        } catch (e) {
-                            console.warn("Failed to lookup media item for news background:", e);
-                        }
-                    }
-
-                    const newsRawOverlay = sec.content?.backgroundOverlay ?? sec.backgroundOverlay;
-                    const newsBgOverlay = (function(raw) {
-                        if (raw === undefined || raw === null || raw === '') return 55;
-                        let val = Number(raw);
-                        if (!Number.isFinite(val)) return 55;
-                        if (val > 0 && val <= 1) val = val * 100;
-                        return Math.min(80, Math.max(0, Math.round(val)));
-                    })(newsRawOverlay);
-                    const newsBgPos = sec.content?.backgroundPosition || sec.backgroundPosition || 'center center';
-                    const newsBgBrightness = sec.content?.backgroundBrightness !== undefined ? sec.content.backgroundBrightness : (sec.backgroundBrightness !== undefined ? sec.backgroundBrightness : 100);
-                    const newsBgTextTheme = sec.content?.backgroundTextTheme || sec.backgroundTextTheme || 'auto';
-
-                    const newsHasImageBg = (newsBgStyle === 'image' || newsBgStyle === 'image_line_art') && Boolean(newsBgImg);
-                    const newsHasLineArt = newsBgStyle === 'line_art' || newsBgStyle === 'image_line_art';
-
-                    const newsIsLightText = (newsHasImageBg && (newsBgTextTheme === 'auto' || newsBgTextTheme === 'light')) || newsBgTextTheme === 'light';
+                    const newsIsLightText = (bgConfig.hasImage && (bgConfig.textTheme === 'auto' || bgConfig.textTheme === 'light')) || bgConfig.textTheme === 'light';
                     const newsTitleTextColorStyle = newsIsLightText ? 'color: #ffffff !important;' : '';
                     const newsDescTextColorStyle = newsIsLightText ? 'color: rgba(255, 255, 255, 0.85) !important;' : 'color: var(--text-sec);';
 
-                    const newsCoffeeBgPatternLeft = `
-                        <svg class="pattern-left-art" viewBox="0 0 360 480" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-                            <g transform="translate(10, 40)" opacity="0.5">
-                                <rect x="20" y="140" width="150" height="110" rx="6" />
-                                <path d="M 40 140 L 40 50 L 150 50 L 150 140" />
-                                <line x1="20" y1="190" x2="170" y2="190" stroke-dasharray="4 4" />
-                            </g>
-                        </svg>
-                    `;
-
-                    const newsCoffeeBgPatternRight = `
-                        <svg class="pattern-right-art" viewBox="0 0 320 480" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-                            <g transform="translate(110, 160)" opacity="0.5">
-                                <path d="M 45 -35 L 70 -90 L 80 -86 L 53 -32" />
-                                <path d="M 5 0 C 5 -35 85 -35 85 0 Z" />
-                                <line x1="0" y1="0" x2="90" y2="0" />
-                                <path d="M 7 0 L 18 120 C 19 126 25 132 32 132 L 58 132 C 65 132 71 126 72 120 L 83 0" />
-                            </g>
-                        </svg>
-                    `;
-
                     const descHtml = secDesc ? `<p class="section-subtitle" style="margin-top:10px; font-size:1.05rem; ${newsDescTextColorStyle}">${secDesc}</p>` : '';
+
+                    const bgClasses = [
+                        'section-padding',
+                        'section-background-system',
+                        'section-bg-manager',
+                        bgConfig.hasImage ? 'has-bg-image has-section-background' : '',
+                        bgConfig.hasLineArt ? 'has-section-line-art' : '',
+                        bgConfig.isFixed ? 'is-section-bg-fixed' : ''
+                    ].filter(Boolean).join(' ');
 
                     html += `
                         <!-- Activities & Support Section -->
-                        <section class="section-padding section-bg-manager ${newsHasImageBg ? 'has-bg-image' : ''}" style="position: relative; overflow: hidden; background-color: ${newsHasImageBg ? 'transparent' : 'var(--bg-main)'}; border-bottom: 1px solid var(--border-color);" data-overlay="${newsBgOverlay}">
-                            ${newsHasImageBg ? `
-                                <!-- Background Image Layer -->
-                                <div class="sec-bg-image-layer" style="
-                                    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-                                    background-image: url(&quot;${newsBgImg}&quot;);
-                                    background-size: cover;
-                                    background-position: ${newsBgPos};
-                                    filter: brightness(${newsBgBrightness}%);
-                                    z-index: 0;
-                                    pointer-events: none;
-                                "></div>
-                                <!-- Dark Overlay Layer -->
-                                <div class="sec-bg-overlay-layer" style="
-                                    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-                                    background-color: rgba(0, 0, 0, ${newsBgOverlay / 100});
-                                    z-index: 0;
-                                    pointer-events: none;
-                                "></div>
-                            ` : ''}
+                        <section class="${bgClasses}" style="position: relative; overflow: hidden; background-color: ${bgConfig.hasImage ? 'transparent' : 'var(--bg-main)'}; border-bottom: 1px solid var(--border-color);" data-overlay="${bgConfig.overlay}">
+                            ${bgLayersHtml}
 
-                            ${newsHasLineArt ? `
-                                <div class="section-pattern-wrapper ${newsHasImageBg ? 'pattern-white-tint' : ''}" style="z-index: 1;">
-                                    ${newsCoffeeBgPatternLeft}
-                                    ${newsCoffeeBgPatternRight}
-                                </div>
-                            ` : ''}
-
-                            <div class="container text-center" style="position: relative; z-index: 2;">
+                            <div class="section-background-content container text-center" style="position: relative; z-index: 2;">
                                 <h2 class="section-title" style="${newsTitleTextColorStyle}">${secTitle}</h2>
                                 ${descHtml}
                                 

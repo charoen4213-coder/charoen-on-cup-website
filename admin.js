@@ -5243,6 +5243,53 @@ class CharoenAdmin {
             `;
         } else {
             // General Title/Subtitle/Description text boxes editor (for about_company, featured_portfolio, clients, latest_news, contact_info)
+            if (!window.toggleBgStyleControls) {
+                window.toggleBgStyleControls = (val) => {
+                    const box = document.getElementById('bg-img-controls-box');
+                    if (box) {
+                        box.style.display = (val === 'image' || val === 'image_line_art') ? 'block' : 'none';
+                    }
+                };
+            }
+            if (!window.selectSecBgMedia) {
+                window.selectSecBgMedia = () => {
+                    this.openMediaSelectorDialog((selectedBase64) => {
+                        window.currentActiveSecBgImg = selectedBase64;
+                        const prev = document.getElementById('sec-bg-img-preview');
+                        const empty = document.getElementById('sec-bg-img-empty');
+                        const rmBtn = document.getElementById('remove-sec-bg-btn');
+                        if (prev) { prev.src = selectedBase64; prev.style.display = 'inline-block'; }
+                        if (empty) empty.style.display = 'none';
+                        if (rmBtn) rmBtn.style.display = 'inline-flex';
+                    });
+                };
+            }
+            if (!window.uploadSecBgFile) {
+                window.uploadSecBgFile = async (inputEl) => {
+                    if (inputEl.files && inputEl.files[0]) {
+                        const webpData = await this.convertImageToWebP(inputEl.files[0]);
+                        window.currentActiveSecBgImg = webpData;
+                        const prev = document.getElementById('sec-bg-img-preview');
+                        const empty = document.getElementById('sec-bg-img-empty');
+                        const rmBtn = document.getElementById('remove-sec-bg-btn');
+                        if (prev) { prev.src = webpData; prev.style.display = 'inline-block'; }
+                        if (empty) empty.style.display = 'none';
+                        if (rmBtn) rmBtn.style.display = 'inline-flex';
+                    }
+                };
+            }
+            if (!window.removeSecBgImg) {
+                window.removeSecBgImg = () => {
+                    window.currentActiveSecBgImg = '';
+                    const prev = document.getElementById('sec-bg-img-preview');
+                    const empty = document.getElementById('sec-bg-img-empty');
+                    const rmBtn = document.getElementById('remove-sec-bg-btn');
+                    if (prev) { prev.src = ''; prev.style.display = 'none'; }
+                    if (empty) empty.style.display = 'block';
+                    if (rmBtn) rmBtn.style.display = 'none';
+                };
+            }
+
             innerContentHtml = `
                 <div class="form-group">
                     <label>หัวข้อใหญ่ภาษาไทย (Title TH) <span style="color:var(--danger)">*</span></label>
@@ -5262,6 +5309,7 @@ class CharoenAdmin {
                         <textarea id="sec-desc-en" class="form-control" style="min-height:90px;">${sec.content.desc_en || sec.content.subtitle_en || ''}</textarea>
                     </div>
                 ` : ''}
+                ${sec.type === 'latest_news' ? window.renderBgAppearancePanelHtml(sec) : ''}
             `;
         }
 

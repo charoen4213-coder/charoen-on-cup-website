@@ -6718,4 +6718,59 @@ body.no-scroll {
     }
 }
 
+/* ==========================================================================
+   Unified Section Background System (Phase BG-A3)
+   ========================================================================== */
+
+.section-background-system {
+    position: relative;
+    overflow: hidden;
+}
+
+.section-background-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-repeat: no-repeat;
+    background-size: cover;
+    z-index: 0;
+}
+
+.section-background-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.section-background-content {
+    position: relative;
+    z-index: 2;
+}
+
+.has-section-background {
+    /* Marker class indicating section has image background */
+}
+
+.has-section-line-art {
+    /* Marker class preserving line-art rendering */
+}
+
+/* Desktop Fixed Background Behavior (1025px and above) */
+@media (min-width: 1025px) {
+    .is-section-bg-fixed .section-background-layer {
+        background-attachment: fixed;
+    }
+}
+
+/* Mobile & Tablet Scroll Fallback (1024px and below) */
+@media (max-width: 1024px) {
+    .section-background-layer {
+        background-attachment: scroll !important;
+    }
+}
+
+
 
