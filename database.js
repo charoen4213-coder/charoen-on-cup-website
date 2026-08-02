@@ -175,32 +175,11 @@ class CharoenOnCupDB {
     }
 
     // Generic Operations (Offline-First cache pattern with fail-safe try-catches)
-    // Generic Operations (Cloud-First cache pattern for online content stores with IndexedDB offline fallback)
+    // Generic Operations (Phase P1 Local-First cache pattern with safe background Cloud refresh)
     async getAll(storeName) {
-        const cloudFirstStores = [
-            'homepage', 'slider', 'product_slider', 'categories', 'products', 'portfolio',
-            'settings', 'news', 'faq', 'reviews', 'clients', 'articles', 'quotes'
-        ];
-        const isCloudFirst = cloudFirstStores.includes(storeName);
+        const unSyncedStores = ['media', 'home_videos'];
 
-        if (isCloudFirst && this.isCloudEnabled && navigator.onLine !== false) {
-            try {
-                const cloudList = await this.syncCollectionFromCloud(storeName);
-                if (cloudList) {
-                    this.memCache[storeName] = cloudList;
-                    return cloudList;
-                }
-            } catch (err) {
-                console.warn(`CharoenOnCupDB: Cloud-first getAll for "${storeName}" failed, falling back to local:`, err);
-            }
-        }
-
-        // Memory cache check for local/background or offline reads
-        if (this.memCache[storeName]) {
-            return this.memCache[storeName];
-        }
-
-        // Read local cache first for instant loading
+        // 1. Read IndexedDB local data immediately
         const localList = await new Promise((resolve) => {
             try {
                 if (!this.db || !this.db.objectStoreNames.contains(storeName)) {
@@ -218,37 +197,50 @@ class CharoenOnCupDB {
             }
         });
 
-        // Background sync for non-cloud-first stores if cloud is enabled
-        const unSyncedStores = ['media', 'home_videos'];
-        if (this.isCloudEnabled && !unSyncedStores.includes(storeName) && !isCloudFirst) {
-            this.syncCollectionFromCloud(storeName).catch(err => {
-                console.warn(`CharoenOnCupDB: Background sync failed for ${storeName}:`, err);
-            });
+        // 2. If local data exists and is non-empty, return immediately and sync in background
+        if (Array.isArray(localList) && localList.length > 0) {
+            this.memCache[storeName] = localList;
+
+            if (this.isCloudEnabled && navigator.onLine !== false && !unSyncedStores.includes(storeName)) {
+                this.syncCollectionFromCloud(storeName).then(cloudList => {
+                    if (Array.isArray(cloudList) && cloudList.length > 0) {
+                        this.memCache[storeName] = cloudList;
+                    }
+                }).catch(err => {
+                    console.warn(`CharoenOnCupDB: Background collection refresh failed for "${storeName}"`, err);
+                });
+            }
+
+            return localList;
         }
 
-        this.memCache[storeName] = localList;
-        return localList;
-    }
+        // 3. If local data is empty, check memory cache
+        if (this.memCache[storeName] && this.memCache[storeName].length > 0) {
+            return this.memCache[storeName];
+        }
 
-    async get(storeName, id) {
-        const cloudFirstStores = [
-            'homepage', 'slider', 'product_slider', 'categories', 'products', 'portfolio',
-            'settings', 'news', 'faq', 'reviews', 'clients', 'articles', 'quotes'
-        ];
-        const isCloudFirst = cloudFirstStores.includes(storeName);
-
-        if (isCloudFirst && this.isCloudEnabled && navigator.onLine !== false) {
+        // 4. Fallback: If local data is empty and cloud is enabled, await cloud sync as last resort
+        if (this.isCloudEnabled && navigator.onLine !== false && !unSyncedStores.includes(storeName)) {
             try {
-                const cloudItem = await this.syncDocFromCloud(storeName, id);
-                if (cloudItem) {
-                    return cloudItem;
+                const cloudList = await this.syncCollectionFromCloud(storeName);
+                if (Array.isArray(cloudList) && cloudList.length > 0) {
+                    this.memCache[storeName] = cloudList;
+                    return cloudList;
                 }
             } catch (err) {
-                console.warn(`CharoenOnCupDB: Cloud-first get for "${storeName}/${id}" failed, falling back to local:`, err);
+                console.warn(`CharoenOnCupDB: Cloud fallback getAll for "${storeName}" failed:`, err);
             }
         }
 
-        // Read local cache first
+        // 5. Safe fallback return
+        this.memCache[storeName] = localList || [];
+        return this.memCache[storeName];
+    }
+
+    async get(storeName, id) {
+        const unSyncedStores = ['media', 'home_videos'];
+
+        // 1. Read requested record from IndexedDB immediately
         const localItem = await new Promise((resolve) => {
             try {
                 if (!this.db || !this.db.objectStoreNames.contains(storeName)) {
@@ -266,15 +258,29 @@ class CharoenOnCupDB {
             }
         });
 
-        // Background doc sync for non-cloud-first stores
-        const unSyncedStores = ['media', 'home_videos'];
-        if (this.isCloudEnabled && !unSyncedStores.includes(storeName) && !isCloudFirst) {
-            this.syncDocFromCloud(storeName, id).catch(err => {
-                console.warn(`CharoenOnCupDB: Background doc sync failed for ${storeName}/${id}:`, err);
-            });
+        // 2. If record exists locally, return immediately and trigger background sync
+        if (localItem !== null && localItem !== undefined) {
+            if (this.isCloudEnabled && navigator.onLine !== false && !unSyncedStores.includes(storeName)) {
+                this.syncDocFromCloud(storeName, id).catch(err => {
+                    console.warn(`CharoenOnCupDB: Background document refresh failed for "${storeName}/${id}"`, err);
+                });
+            }
+            return localItem;
         }
 
-        return localItem;
+        // 3. If no local record exists, attempt cloud read fallback
+        if (this.isCloudEnabled && navigator.onLine !== false && !unSyncedStores.includes(storeName)) {
+            try {
+                const cloudItem = await this.syncDocFromCloud(storeName, id);
+                if (cloudItem) {
+                    return cloudItem;
+                }
+            } catch (err) {
+                console.warn(`CharoenOnCupDB: Cloud fallback get for "${storeName}/${id}" failed:`, err);
+            }
+        }
+
+        return null;
     }
 
     async put(storeName, item) {
@@ -368,30 +374,32 @@ class CharoenOnCupDB {
                 cloudList.push(doc.data());
             });
 
-            // Update local IndexedDB with cloud items (even if empty to prevent stale/deleted items)
-            await new Promise((resolve, reject) => {
-                try {
-                    if (!this.db || !this.db.objectStoreNames.contains(storeName)) {
-                        resolve();
-                        return;
+            // Update local IndexedDB with cloud items if query returned records
+            if (cloudList.length > 0) {
+                await new Promise((resolve, reject) => {
+                    try {
+                        if (!this.db || !this.db.objectStoreNames.contains(storeName)) {
+                            resolve();
+                            return;
+                        }
+                        const transaction = this.db.transaction(storeName, 'readwrite');
+                        const store = transaction.objectStore(storeName);
+                        
+                        store.clear();
+                        for (const item of cloudList) {
+                            store.put(item);
+                        }
+                        
+                        transaction.oncomplete = () => {
+                            delete this.memCache[storeName];
+                            resolve();
+                        };
+                        transaction.onerror = () => reject(transaction.error);
+                    } catch (err) {
+                        reject(err);
                     }
-                    const transaction = this.db.transaction(storeName, 'readwrite');
-                    const store = transaction.objectStore(storeName);
-                    
-                    store.clear();
-                    for (const item of cloudList) {
-                        store.put(item);
-                    }
-                    
-                    transaction.oncomplete = () => {
-                        delete this.memCache[storeName];
-                        resolve();
-                    };
-                    transaction.onerror = () => reject(transaction.error);
-                } catch (err) {
-                    reject(err);
-                }
-            });
+                });
+            }
 
             return cloudList;
         } catch (err) {
