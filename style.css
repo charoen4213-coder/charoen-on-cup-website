@@ -5168,6 +5168,58 @@ body.no-scroll {
         text-align: center;
         gap: 10px;
     }
+
+    /* Mobile Footer Contact Info Alignment & Typography (<=768px) */
+    .footer-contact-info {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .footer-contact-info li {
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+        margin-bottom: 0 !important;
+        font-size: 0.9rem !important;
+        line-height: 1.6 !important;
+    }
+
+    .footer-contact-info li i {
+        font-size: 1rem !important;
+        margin-top: 3px !important;
+        flex: 0 0 20px !important;
+        width: 20px !important;
+        text-align: center;
+        flex-shrink: 0 !important;
+        color: var(--accent) !important;
+    }
+
+    .footer-contact-info li span,
+    .footer-contact-info li a {
+        flex: 1 !important;
+        min-width: 0 !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
+        font-size: 0.9rem !important;
+        line-height: 1.6 !important;
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    .footer-contact-info .footer-label,
+    .footer-contact-info li strong,
+    .footer-contact-info li b {
+        flex: 0 0 auto !important;
+        white-space: nowrap !important;
+        font-weight: 600;
+    }
+
+    .footer-contact-info .footer-value {
+        flex: 1 !important;
+        min-width: 0 !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
+    }
 }
 
 /* Public Desktop Header Refinement (>=1025px) — Refined White Corporate Direction */

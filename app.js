@@ -857,73 +857,73 @@ class CharoenApp {
     }
 
     // Shared safe resolver for about_image references
-    async resolveAboutImageSrc(val) {
-        if (!val) return 'about_banner.webp';
+    // Shared Safe Image Resolver (Phase M1)
+    async resolveImageSrc(value, fallbackSrc = '') {
+        if (!value) return fallbackSrc;
 
-        let targetVal = val;
+        let targetVal = value;
         if (typeof targetVal === 'object' && targetVal !== null) {
-            targetVal = targetVal.image_src || targetVal.url || targetVal.src || targetVal.path || targetVal.id || targetVal.name || '';
+            targetVal = targetVal.image_src || targetVal.url || targetVal.src || targetVal.path || targetVal.id || targetVal.name || targetVal.filename || targetVal.file_name || '';
         }
 
         if (!targetVal || typeof targetVal !== 'string') {
-            return 'about_banner.webp';
+            return fallbackSrc;
         }
 
         targetVal = targetVal.trim();
-        if (!targetVal) return 'about_banner.webp';
+        if (!targetVal) return fallbackSrc;
 
+        // 1. Data URLs (Base64) or full HTTP/HTTPS URLs
         if (targetVal.startsWith('data:') || targetVal.startsWith('http://') || targetVal.startsWith('https://')) {
             return targetVal;
         }
 
+        // 2. Safe static paths (explicit directory prefix or verified static assets)
+        const verifiedAssets = [
+            'about_banner.webp',
+            'coffee_bg.webp',
+            'cup_print_mockup.webp',
+            'portfolio_banner.webp',
+            'contact_banner.webp',
+            'faq_banner.webp'
+        ];
+
+        const hasPathPrefix = targetVal.startsWith('./') || targetVal.startsWith('../') || targetVal.startsWith('/') || targetVal.startsWith('assets/') || targetVal.startsWith('images/');
+
+        if (verifiedAssets.includes(targetVal) || hasPathPrefix) {
+            return targetVal;
+        }
+
+        // 3. Bare ID / UUID / Filename lookup in Media collection
         try {
             const mediaList = await this.db.getAll('media');
             if (Array.isArray(mediaList) && mediaList.length > 0) {
-                const match = mediaList.find(m => m && (m.id === targetVal || m.name === targetVal));
+                const match = mediaList.find(m => m && (
+                    m.id === targetVal ||
+                    m.name === targetVal ||
+                    m.filename === targetVal ||
+                    m.file_name === targetVal
+                ));
                 if (match && match.image_src) {
                     return match.image_src;
                 }
             }
         } catch (e) {
-            console.warn('Failed to resolve about_image from media collection:', e);
+            console.warn('Failed to resolve image from media collection:', e);
         }
 
-        return targetVal;
+        // 4. Unresolved reference: Return fallbackSrc (never return unresolved bare UUID filename string)
+        return fallbackSrc;
+    }
+
+    // Shared safe resolver for about_image references (backward compatibility wrapper)
+    async resolveAboutImageSrc(val, fallbackSrc = 'about_banner.webp') {
+        return await this.resolveImageSrc(val, fallbackSrc);
     }
 
     // Shared safe resolver for section background image references (Phase BG-A1)
     async resolveSectionBackgroundImageSrc(val) {
-        if (!val) return '';
-
-        let targetVal = val;
-        if (typeof targetVal === 'object' && targetVal !== null) {
-            targetVal = targetVal.image_src || targetVal.url || targetVal.src || targetVal.path || targetVal.id || targetVal.name || '';
-        }
-
-        if (!targetVal || typeof targetVal !== 'string') {
-            return '';
-        }
-
-        targetVal = targetVal.trim();
-        if (!targetVal) return '';
-
-        if (targetVal.startsWith('data:') || targetVal.startsWith('http://') || targetVal.startsWith('https://') || targetVal.includes('/') || targetVal.endsWith('.webp') || targetVal.endsWith('.jpg') || targetVal.endsWith('.png') || targetVal.endsWith('.jpeg') || targetVal.endsWith('.svg')) {
-            return targetVal;
-        }
-
-        try {
-            const mediaList = await this.db.getAll('media');
-            if (Array.isArray(mediaList) && mediaList.length > 0) {
-                const match = mediaList.find(m => m && (m.id === targetVal || m.name === targetVal));
-                if (match && match.image_src) {
-                    return match.image_src;
-                }
-            }
-        } catch (e) {
-            console.warn('Failed to resolve section background image from media collection:', e);
-        }
-
-        return targetVal;
+        return await this.resolveImageSrc(val, '');
     }
 
     // Unified Section Background Data Resolver (Phase BG-A1)
