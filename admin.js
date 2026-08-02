@@ -1218,7 +1218,7 @@ class CharoenAdmin {
                                     <tr>
                                         <td style="width:100px;">
                                             <div style="width:80px; height:45px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-sec); display:flex; align-items:center; justify-content:center; overflow:hidden;">
-                                                ${s.bg_src ? `<img src="${s.bg_src}" style="width:100%; height:100%; object-fit:cover;">` : `<i class="fas fa-images" style="color:var(--text-muted);"></i>`}
+                                                ${s.bg_src ? `<img src="${s.bg_src}" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'80\\' height=\\'45\\' viewBox=\\'0 0 80 45\\'%3E%3Crect width=\\'80\\' height=\\'45\\' fill=\\'%23f1f5f9\\'/ %3E%3Cpath d=\\'M30 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-10 15h40l-12-14-10 11-6-7-12 10z\\' fill=\\'%2394a3b8\\'/ %3E%3C/svg%3E';">` : `<i class="fas fa-images" style="color:var(--text-muted);"></i>`}
                                             </div>
                                         </td>
                                         <td><strong>${s.title_th}</strong><br><span style="font-size:0.78rem; color:var(--text-muted);">${s.subtitle_th || ''}</span></td>
@@ -1287,7 +1287,7 @@ class CharoenAdmin {
                                     <tr>
                                         <td style="width:100px;">
                                             <div style="width:80px; height:45px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-sec); display:flex; align-items:center; justify-content:center; overflow:hidden;">
-                                                ${s.bg_src ? `<img src="${s.bg_src}" style="width:100%; height:100%; object-fit:cover;">` : `<i class="fas fa-images" style="color:var(--text-muted);"></i>`}
+                                                ${s.bg_src ? `<img src="${s.bg_src}" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'80\\' height=\\'45\\' viewBox=\\'0 0 80 45\\'%3E%3Crect width=\\'80\\' height=\\'45\\' fill=\\'%23f1f5f9\\'/ %3E%3Cpath d=\\'M30 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-10 15h40l-12-14-10 11-6-7-12 10z\\' fill=\\'%2394a3b8\\'/ %3E%3C/svg%3E';">` : `<i class="fas fa-images" style="color:var(--text-muted);"></i>`}
                                             </div>
                                         </td>
                                         <td><strong>${s.title_th}</strong><br><span style="font-size:0.78rem; color:var(--text-muted);">${s.subtitle_th || ''}</span></td>
@@ -4282,6 +4282,10 @@ class CharoenAdmin {
                                 <button type="button" class="btn btn-outline" id="select-slide-media-btn" style="padding:8px 12px; font-size:0.75rem;"><i class="fas fa-folder-open"></i> เลือกจากคลังภาพ</button>
                             </div>
                             
+                            <div id="slide-form-img-warning" style="display:none; margin-top:8px; padding:8px 12px; font-size:0.8rem; background:#fffbe6; border:1px solid #ffe58f; color:#d48806; border-radius:var(--radius-sm);">
+                                <i class="fas fa-exclamation-triangle"></i> ไม่พบไฟล์ภาพเดิม กรุณาเลือกภาพใหม่
+                            </div>
+
                             <div style="margin-top:10px; text-align:center;">
                                 <img src="${slide.bg_src || ''}" id="slide-form-img-preview" style="max-height:120px; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:${slide.bg_src ? 'inline-block' : 'none'};">
                             </div>
@@ -4294,6 +4298,10 @@ class CharoenAdmin {
                                 <button type="button" class="btn btn-outline" id="select-slide-media-mobile-btn" style="padding:8px 12px; font-size:0.75rem;"><i class="fas fa-folder-open"></i> เลือกจากคลังภาพ</button>
                             </div>
                             
+                            <div id="slide-form-img-mobile-warning" style="display:none; margin-top:8px; padding:8px 12px; font-size:0.8rem; background:#fffbe6; border:1px solid #ffe58f; color:#d48806; border-radius:var(--radius-sm);">
+                                <i class="fas fa-exclamation-triangle"></i> ไม่พบไฟล์ภาพเดิมสำหรับมือถือ กรุณาเลือกภาพใหม่
+                            </div>
+
                             <div style="margin-top:10px; text-align:center;">
                                 <img src="${slide.bg_src_mobile || ''}" id="slide-form-img-mobile-preview" style="max-height:120px; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:${slide.bg_src_mobile ? 'inline-block' : 'none'};">
                             </div>
@@ -4313,12 +4321,33 @@ class CharoenAdmin {
         document.getElementById('close-modal-btn').onclick = closeDialog;
         document.getElementById('close-modal-cancel-btn').onclick = closeDialog;
 
+        // Image loading error detectors & warning triggers
+        const preview = document.getElementById('slide-form-img-preview');
+        const warning = document.getElementById('slide-form-img-warning');
+        if (preview) {
+            preview.onerror = () => {
+                preview.style.display = 'none';
+                if (warning) warning.style.display = 'block';
+            };
+        }
+
+        const previewMobile = document.getElementById('slide-form-img-mobile-preview');
+        const warningMobile = document.getElementById('slide-form-img-mobile-warning');
+        if (previewMobile) {
+            previewMobile.onerror = () => {
+                previewMobile.style.display = 'none';
+                if (warningMobile) warningMobile.style.display = 'block';
+            };
+        }
+
         // Select from media library
         document.getElementById('select-slide-media-btn').onclick = () => {
             this.openMediaSelectorDialog((selectedBase64) => {
-                const preview = document.getElementById('slide-form-img-preview');
-                preview.src = selectedBase64;
-                preview.style.display = 'inline-block';
+                if (preview) {
+                    preview.src = selectedBase64;
+                    preview.style.display = 'inline-block';
+                }
+                if (warning) warning.style.display = 'none';
                 slide.bg_src = selectedBase64;
             });
         };
@@ -4326,9 +4355,11 @@ class CharoenAdmin {
         // Select from media library (Mobile)
         document.getElementById('select-slide-media-mobile-btn').onclick = () => {
             this.openMediaSelectorDialog((selectedBase64) => {
-                const preview = document.getElementById('slide-form-img-mobile-preview');
-                preview.src = selectedBase64;
-                preview.style.display = 'inline-block';
+                if (previewMobile) {
+                    previewMobile.src = selectedBase64;
+                    previewMobile.style.display = 'inline-block';
+                }
+                if (warningMobile) warningMobile.style.display = 'none';
                 slide.bg_src_mobile = selectedBase64;
             });
         };
@@ -4339,9 +4370,11 @@ class CharoenAdmin {
             fileInput.onchange = async (e) => {
                 if (e.target.files && e.target.files[0]) {
                     const webpData = await this.convertImageToWebP(e.target.files[0]);
-                    const preview = document.getElementById('slide-form-img-preview');
-                    preview.src = webpData;
-                    preview.style.display = 'inline-block';
+                    if (preview) {
+                        preview.src = webpData;
+                        preview.style.display = 'inline-block';
+                    }
+                    if (warning) warning.style.display = 'none';
                     slide.bg_src = webpData;
                 }
             };
@@ -4353,9 +4386,11 @@ class CharoenAdmin {
             fileMobileInput.onchange = async (e) => {
                 if (e.target.files && e.target.files[0]) {
                     const webpData = await this.convertImageToWebP(e.target.files[0]);
-                    const preview = document.getElementById('slide-form-img-mobile-preview');
-                    preview.src = webpData;
-                    preview.style.display = 'inline-block';
+                    if (previewMobile) {
+                        previewMobile.src = webpData;
+                        previewMobile.style.display = 'inline-block';
+                    }
+                    if (warningMobile) warningMobile.style.display = 'none';
                     slide.bg_src_mobile = webpData;
                 }
             };
