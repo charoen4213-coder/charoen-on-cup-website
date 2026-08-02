@@ -21,6 +21,8 @@ window.renderBgAppearancePanelHtml = (sectionObj) => {
     const bgPos = sectionObj.content?.backgroundPosition || sectionObj.backgroundPosition || 'center center';
     const bgBrightness = sectionObj.content?.backgroundBrightness !== undefined ? sectionObj.content.backgroundBrightness : 100;
     const bgTextTheme = sectionObj.content?.backgroundTextTheme || sectionObj.backgroundTextTheme || 'auto';
+    const rawBgAttachment = sectionObj.content?.backgroundAttachment ?? sectionObj.backgroundAttachment;
+    const bgAttachment = rawBgAttachment === 'fixed' ? 'fixed' : 'scroll';
 
     window.currentActiveSecBgImg = bgImg;
 
@@ -111,6 +113,15 @@ window.renderBgAppearancePanelHtml = (sectionObj) => {
                             <option value="auto" ${bgTextTheme === 'auto' ? 'selected' : ''}>Auto (ปรับอัตโนมัติตามพื้นหลัง)</option>
                             <option value="light" ${bgTextTheme === 'light' ? 'selected' : ''}>Light (ข้อความสีขาวสำหรับภาพเข้ม)</option>
                             <option value="dark" ${bgTextTheme === 'dark' ? 'selected' : ''}>Dark (ข้อความสีเข้มสำหรับภาพสว่าง)</option>
+                        </select>
+                    </div>
+
+                    <!-- 7. Background Attachment -->
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; margin-bottom:4px;">7. พฤติกรรมพื้นหลัง (Background Attachment):</label>
+                        <select id="sec-bg-attachment" class="form-control">
+                            <option value="scroll" ${bgAttachment === 'scroll' ? 'selected' : ''}>เลื่อนตามหน้าเว็บ (Scroll - ปกติ)</option>
+                            <option value="fixed" ${bgAttachment === 'fixed' ? 'selected' : ''}>อยู่กับที่ขณะเลื่อนหน้า (Fixed - เฉพาะ Desktop)</option>
                         </select>
                     </div>
                 </div>
@@ -1060,6 +1071,7 @@ class CharoenAdmin {
         const bgPosObj = await adminApp.db.get('settings', 'portfolio_hero_background_position');
         const bgBrightnessObj = await adminApp.db.get('settings', 'portfolio_hero_background_brightness');
         const bgTextThemeObj = await adminApp.db.get('settings', 'portfolio_hero_background_text_theme');
+        const bgAttachmentObj = await adminApp.db.get('settings', 'portfolio_hero_background_attachment');
         const heightObj = await adminApp.db.get('settings', 'portfolio_hero_height');
 
         const heroSecObj = {
@@ -1069,7 +1081,8 @@ class CharoenAdmin {
                 backgroundOverlay: bgOverlayObj?.value !== undefined ? bgOverlayObj.value : 55,
                 backgroundPosition: bgPosObj?.value || 'center center',
                 backgroundBrightness: bgBrightnessObj?.value !== undefined ? bgBrightnessObj.value : 100,
-                backgroundTextTheme: bgTextThemeObj?.value || 'auto'
+                backgroundTextTheme: bgTextThemeObj?.value || 'auto',
+                backgroundAttachment: bgAttachmentObj?.value === 'fixed' ? 'fixed' : 'scroll'
             }
         };
 
@@ -1151,6 +1164,7 @@ class CharoenAdmin {
             const bgPos = document.getElementById('sec-bg-pos')?.value || 'center center';
             const bgBrightness = parseInt(document.getElementById('sec-bg-brightness')?.value, 10) || 100;
             const bgTextTheme = document.querySelector('input[name="bg-text-theme-radio"]:checked')?.value || document.getElementById('sec-bg-text-theme')?.value || 'auto';
+            const bgAttachment = document.getElementById('sec-bg-attachment')?.value === 'fixed' ? 'fixed' : 'scroll';
 
             await adminApp.db.put('settings', { key: 'portfolio_hero_title_th', value: document.getElementById('port-hero-title-th').value });
             await adminApp.db.put('settings', { key: 'portfolio_hero_title_en', value: document.getElementById('port-hero-title-en').value });
@@ -1164,6 +1178,7 @@ class CharoenAdmin {
             await adminApp.db.put('settings', { key: 'portfolio_hero_background_position', value: bgPos });
             await adminApp.db.put('settings', { key: 'portfolio_hero_background_brightness', value: bgBrightness });
             await adminApp.db.put('settings', { key: 'portfolio_hero_background_text_theme', value: bgTextTheme });
+            await adminApp.db.put('settings', { key: 'portfolio_hero_background_attachment', value: bgAttachment });
 
             alert('บันทึกการตั้งค่า Portfolio Hero เรียบร้อยแล้ว');
             closeModal();
@@ -4857,6 +4872,8 @@ class CharoenAdmin {
             const bgPos = sectionObj.content?.backgroundPosition || sectionObj.backgroundPosition || 'center center';
             const bgBrightness = sectionObj.content?.backgroundBrightness !== undefined ? sectionObj.content.backgroundBrightness : 100;
             const bgTextTheme = sectionObj.content?.backgroundTextTheme || sectionObj.backgroundTextTheme || 'auto';
+            const rawBgAttachment = sectionObj.content?.backgroundAttachment ?? sectionObj.backgroundAttachment;
+            const bgAttachment = rawBgAttachment === 'fixed' ? 'fixed' : 'scroll';
 
             window.currentActiveSecBgImg = bgImg;
 
@@ -4947,6 +4964,15 @@ class CharoenAdmin {
                                     <option value="auto" ${bgTextTheme === 'auto' ? 'selected' : ''}>Auto (ปรับอัตโนมัติตามพื้นหลัง)</option>
                                     <option value="light" ${bgTextTheme === 'light' ? 'selected' : ''}>Light (ข้อความสีขาวสำหรับภาพเข้ม)</option>
                                     <option value="dark" ${bgTextTheme === 'dark' ? 'selected' : ''}>Dark (ข้อความสีเข้มสำหรับภาพสว่าง)</option>
+                                </select>
+                            </div>
+
+                            <!-- 7. Background Attachment -->
+                            <div class="form-group" style="margin-bottom:14px;">
+                                <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; margin-bottom:4px;">7. พฤติกรรมพื้นหลัง (Background Attachment):</label>
+                                <select id="sec-bg-attachment" class="form-control">
+                                    <option value="scroll" ${bgAttachment === 'scroll' ? 'selected' : ''}>เลื่อนตามหน้าเว็บ (Scroll - ปกติ)</option>
+                                    <option value="fixed" ${bgAttachment === 'fixed' ? 'selected' : ''}>อยู่กับที่ขณะเลื่อนหน้า (Fixed - เฉพาะ Desktop)</option>
                                 </select>
                             </div>
                         </div>
@@ -5499,6 +5525,7 @@ class CharoenAdmin {
                 sec.content.backgroundPosition = document.getElementById('sec-bg-pos')?.value || 'center center';
                 sec.content.backgroundBrightness = parseInt(document.getElementById('sec-bg-brightness')?.value) || 100;
                 sec.content.backgroundTextTheme = document.getElementById('sec-bg-text-theme')?.value || 'auto';
+                sec.content.backgroundAttachment = document.getElementById('sec-bg-attachment')?.value === 'fixed' ? 'fixed' : 'scroll';
 
                 sec.content.items = (window.currentStrengthsItems || []).map(it => ({
                     title_th: it.title_th || '',
@@ -5523,6 +5550,7 @@ class CharoenAdmin {
                 sec.content.backgroundPosition = document.getElementById('sec-bg-pos')?.value || 'center center';
                 sec.content.backgroundBrightness = parseInt(document.getElementById('sec-bg-brightness')?.value) || 100;
                 sec.content.backgroundTextTheme = document.getElementById('sec-bg-text-theme')?.value || 'auto';
+                sec.content.backgroundAttachment = document.getElementById('sec-bg-attachment')?.value === 'fixed' ? 'fixed' : 'scroll';
 
                 sec.content.items = [0, 1, 2].map(idx => ({
                     title_th: document.getElementById(`why-title-th-${idx}`).value,
@@ -5567,6 +5595,25 @@ class CharoenAdmin {
                         sec.content.subtitle_th = descVal;
                         sec.content.subtitle_en = descEnVal;
                     }
+                }
+                if (document.getElementById('sec-bg-attachment')) {
+                    const selectedBgStyle = document.querySelector('input[name="bg-style-radio"]:checked')?.value || 'line_art';
+                    sec.content.backgroundStyle = selectedBgStyle;
+                    sec.content.backgroundImage = window.currentActiveSecBgImg || sec.content.backgroundImage || '';
+                    const rawOverlayInput = document.getElementById('sec-bg-overlay')?.value;
+                    if (rawOverlayInput !== undefined) {
+                        sec.content.backgroundOverlay = window.normalizeSectionOverlay(rawOverlayInput);
+                    }
+                    if (document.getElementById('sec-bg-pos')) {
+                        sec.content.backgroundPosition = document.getElementById('sec-bg-pos').value || 'center center';
+                    }
+                    if (document.getElementById('sec-bg-brightness')) {
+                        sec.content.backgroundBrightness = parseInt(document.getElementById('sec-bg-brightness').value) || 100;
+                    }
+                    if (document.getElementById('sec-bg-text-theme')) {
+                        sec.content.backgroundTextTheme = document.getElementById('sec-bg-text-theme').value || 'auto';
+                    }
+                    sec.content.backgroundAttachment = document.getElementById('sec-bg-attachment').value === 'fixed' ? 'fixed' : 'scroll';
                 }
             }
 
