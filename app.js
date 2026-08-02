@@ -1646,12 +1646,31 @@ class CharoenApp {
                     break;
 
                 case 'services':
+                    const servicesBgConfig = await this.resolveSectionBackground(sec);
+                    const servicesBgLayersHtml = this.renderSectionBackgroundLayers(servicesBgConfig);
+
+                    const servicesIsLightText = (servicesBgConfig.hasImage && (servicesBgConfig.textTheme === 'auto' || servicesBgConfig.textTheme === 'light')) || servicesBgConfig.textTheme === 'light';
+                    const servicesTitleTextColorStyle = servicesIsLightText ? 'color: #ffffff !important;' : '';
+                    const servicesSubtitleTextColorStyle = servicesIsLightText ? 'color: rgba(255, 255, 255, 0.85) !important;' : 'color: var(--text-sec);';
+
+                    const servicesClasses = [
+                        'home-category-section',
+                        'section-padding',
+                        'section-background-system',
+                        'section-bg-manager',
+                        servicesBgConfig.hasImage ? 'has-bg-image has-section-background' : '',
+                        servicesBgConfig.hasLineArt ? 'has-section-line-art' : '',
+                        servicesBgConfig.isFixed ? 'is-section-bg-fixed' : ''
+                    ].filter(Boolean).join(' ');
+
                     html += `
                         <!-- Categories Grid Section (6 Cards matching WorldWide Coffee style) -->
-                        <section class="home-category-section section-padding" style="background-color: var(--bg-main); border-bottom: 1px solid var(--border-color);">
-                            <div class="container text-center">
-                                <h2 class="section-title">${this.lang === 'th' ? sec.content.title_th : sec.content.title_en}</h2>
-                                <p class="section-subtitle">${this.lang === 'th' ? sec.content.subtitle_th : sec.content.subtitle_en}</p>
+                        <section class="${servicesClasses}" style="position: relative; overflow: hidden; background-color: ${servicesBgConfig.hasImage ? 'transparent' : 'var(--bg-main)'}; border-bottom: 1px solid var(--border-color);" data-overlay="${servicesBgConfig.overlay}">
+                            ${servicesBgLayersHtml}
+
+                            <div class="section-background-content container text-center" style="position: relative; z-index: 2;">
+                                <h2 class="section-title" style="${servicesTitleTextColorStyle}">${this.lang === 'th' ? sec.content.title_th : sec.content.title_en}</h2>
+                                <p class="section-subtitle" style="${servicesSubtitleTextColorStyle}">${this.lang === 'th' ? sec.content.subtitle_th : sec.content.subtitle_en}</p>
                                 
                                 <div class="home-category-grid">
                                     ${sortedCategories.slice(0, 6).map(cat => {

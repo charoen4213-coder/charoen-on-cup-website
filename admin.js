@@ -4987,6 +4987,53 @@ class CharoenAdmin {
         if (sec.type === 'hero_banner') {
             innerContentHtml = `<p style="color:var(--text-muted); font-size:0.9rem;">หัวข้อสไลด์แบนเนอร์หลักหน้าแรกถูกจัดการผ่านเมนู "จัดการภาพสไลด์หน้าแรก" ในแถบนำทางหลัก</p>`;
         } else if (sec.type === 'services') {
+            if (!window.toggleBgStyleControls) {
+                window.toggleBgStyleControls = (val) => {
+                    const box = document.getElementById('bg-img-controls-box');
+                    if (box) {
+                        box.style.display = (val === 'image' || val === 'image_line_art') ? 'block' : 'none';
+                    }
+                };
+            }
+            if (!window.selectSecBgMedia) {
+                window.selectSecBgMedia = () => {
+                    this.openMediaSelectorDialog((selectedBase64) => {
+                        window.currentActiveSecBgImg = selectedBase64;
+                        const prev = document.getElementById('sec-bg-img-preview');
+                        const empty = document.getElementById('sec-bg-img-empty');
+                        const rmBtn = document.getElementById('remove-sec-bg-btn');
+                        if (prev) { prev.src = selectedBase64; prev.style.display = 'inline-block'; }
+                        if (empty) empty.style.display = 'none';
+                        if (rmBtn) rmBtn.style.display = 'inline-flex';
+                    });
+                };
+            }
+            if (!window.uploadSecBgFile) {
+                window.uploadSecBgFile = async (inputEl) => {
+                    if (inputEl.files && inputEl.files[0]) {
+                        const webpData = await this.convertImageToWebP(inputEl.files[0]);
+                        window.currentActiveSecBgImg = webpData;
+                        const prev = document.getElementById('sec-bg-img-preview');
+                        const empty = document.getElementById('sec-bg-img-empty');
+                        const rmBtn = document.getElementById('remove-sec-bg-btn');
+                        if (prev) { prev.src = webpData; prev.style.display = 'inline-block'; }
+                        if (empty) empty.style.display = 'none';
+                        if (rmBtn) rmBtn.style.display = 'inline-flex';
+                    }
+                };
+            }
+            if (!window.removeSecBgImg) {
+                window.removeSecBgImg = () => {
+                    window.currentActiveSecBgImg = '';
+                    const prev = document.getElementById('sec-bg-img-preview');
+                    const empty = document.getElementById('sec-bg-img-empty');
+                    const rmBtn = document.getElementById('remove-sec-bg-btn');
+                    if (prev) { prev.src = ''; prev.style.display = 'none'; }
+                    if (empty) empty.style.display = 'block';
+                    if (rmBtn) rmBtn.style.display = 'none';
+                };
+            }
+
             innerContentHtml = `
                 <div class="form-group">
                     <label>หัวข้อภาษาไทย (Title TH)</label>
@@ -5004,6 +5051,7 @@ class CharoenAdmin {
                     <label>รายละเอียดภาษาอังกฤษ (Subtitle EN)</label>
                     <input type="text" id="sec-sub-en" class="form-control" value="${sec.content.subtitle_en || ''}">
                 </div>
+                ${window.renderBgAppearancePanelHtml(sec)}
             `;
         } else if (sec.type === 'strengths') {
             const items = sec.content.items || [];
@@ -5558,6 +5606,27 @@ class CharoenAdmin {
                 sec.content.title_en = document.getElementById('sec-title-en').value;
                 sec.content.subtitle_th = document.getElementById('sec-sub-th').value;
                 sec.content.subtitle_en = document.getElementById('sec-sub-en').value;
+
+                // Save Background Appearance Settings (Services Section)
+                if (document.getElementById('sec-bg-attachment')) {
+                    const selectedBgStyle = document.querySelector('input[name="bg-style-radio"]:checked')?.value || 'line_art';
+                    sec.content.backgroundStyle = selectedBgStyle;
+                    sec.content.backgroundImage = window.currentActiveSecBgImg !== undefined ? window.currentActiveSecBgImg : (sec.content.backgroundImage || '');
+                    const rawOverlayInput = document.getElementById('sec-bg-overlay')?.value;
+                    if (rawOverlayInput !== undefined) {
+                        sec.content.backgroundOverlay = window.normalizeSectionOverlay(rawOverlayInput);
+                    }
+                    if (document.getElementById('sec-bg-pos')) {
+                        sec.content.backgroundPosition = document.getElementById('sec-bg-pos').value || 'center center';
+                    }
+                    if (document.getElementById('sec-bg-brightness')) {
+                        sec.content.backgroundBrightness = parseInt(document.getElementById('sec-bg-brightness').value) || 100;
+                    }
+                    if (document.getElementById('sec-bg-text-theme')) {
+                        sec.content.backgroundTextTheme = document.getElementById('sec-bg-text-theme').value || 'auto';
+                    }
+                    sec.content.backgroundAttachment = document.getElementById('sec-bg-attachment').value === 'fixed' ? 'fixed' : 'scroll';
+                }
             } else if (sec.type === 'strengths') {
                 sec.content.title_th = document.getElementById('sec-title-th').value;
                 sec.content.title_en = document.getElementById('sec-title-en').value;
