@@ -2003,6 +2003,21 @@ class CharoenAdmin {
         const aboutBulletsTh = await this.db.get('settings', 'about_bullets_th');
         const aboutBulletsEn = await this.db.get('settings', 'about_bullets_en');
 
+        const aboutGalleryObj = await this.db.get('settings', 'about_gallery_images');
+        let aboutGalleryList = [];
+        if (aboutGalleryObj?.value) {
+            try {
+                aboutGalleryList = typeof aboutGalleryObj.value === 'string' ? JSON.parse(aboutGalleryObj.value) : aboutGalleryObj.value;
+            } catch (e) {
+                aboutGalleryList = Array.isArray(aboutGalleryObj.value) ? aboutGalleryObj.value : [];
+            }
+        } else if (Array.isArray(aboutGalleryObj)) {
+            aboutGalleryList = aboutGalleryObj;
+        }
+        if (!Array.isArray(aboutGalleryList)) aboutGalleryList = [];
+
+        window.currentAboutGalleryImages = [...aboutGalleryList];
+
         const aboutEyebrowTh = await this.db.get('settings', 'about_eyebrow_th');
         const aboutEyebrowEn = await this.db.get('settings', 'about_eyebrow_en');
         const aboutCtaTextTh = await this.db.get('settings', 'about_cta_text_th');
@@ -2154,6 +2169,55 @@ class CharoenAdmin {
                                 <div class="form-group">
                                     <label style="font-weight:600; font-size:0.85rem;">จุดเด่นบริษัทย่อภาษาอังกฤษ (1 บรรทัดต่อข้อ) (About Bullets EN)</label>
                                     <textarea id="set-about-bullets-en" class="form-control" style="min-height:70px;" placeholder="Custom production&#10;Supporting cafe businesses&#10;Free shipping in service area&#10;In-house design team">${aboutBulletsEn?.value || ''}</textarea>
+                                </div>
+
+                                <!-- Phase A1: About Company Gallery Panel (Max 4 Images) -->
+                                <div class="form-group" style="margin-top:16px; border-top:1px dashed var(--border-color); padding-top:16px;">
+                                    <label style="font-weight:700; font-size:0.9rem; color:var(--primary); display:block; margin-bottom:4px;">
+                                        <i class="fas fa-images" style="color:var(--secondary); margin-right:6px;"></i> แกลเลอรีเกี่ยวกับบริษัท (สูงสุด 4 ภาพ)
+                                    </label>
+                                    <p style="font-size:0.75rem; color:var(--text-sec); margin-bottom:12px;">
+                                        แสดงในหน้าเกี่ยวกับเรา (About Us) ใต้รายละเอียดบริษัท แนะนำภาพบรรยากาศโรงงาน กระบวนการผลิต หรือการทำงาน
+                                    </p>
+
+                                    <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;" id="about-gallery-grid-box">
+                                        ${[0, 1, 2, 3].map(idx => {
+                                            const imgVal = aboutGalleryList[idx] || '';
+                                            return `
+                                                <div class="about-gallery-slot-box" style="background:var(--bg-sec); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                                        <span style="font-weight:700; font-size:0.8rem; color:var(--primary);">ภาพที่ ${idx + 1}</span>
+                                                        ${imgVal ? `
+                                                            <button type="button" class="btn btn-outline" onclick="window.removeAboutGalleryImg(${idx})" style="padding:2px 8px; font-size:0.7rem; color:var(--danger); border-color:var(--danger);" aria-label="ลบภาพที่ ${idx + 1}">
+                                                                <i class="fas fa-trash"></i> ลบรูป
+                                                            </button>
+                                                        ` : ''}
+                                                    </div>
+
+                                                    <div style="text-align:center; margin-bottom:8px;">
+                                                        ${imgVal ? `
+                                                            <img src="${imgVal}" id="about-gal-preview-${idx}" style="width:100%; height:90px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                                                        ` : `
+                                                            <div id="about-gal-empty-${idx}" style="height:90px; background:var(--bg-main); border:1px dashed var(--border-color); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:4px; color:var(--text-muted); font-size:0.75rem;">
+                                                                <i class="fas fa-image" style="font-size:1.2rem;"></i>
+                                                                <span>ยังไม่ได้เลือกรูปภาพ</span>
+                                                            </div>
+                                                        `}
+                                                    </div>
+
+                                                    <div style="display:flex; gap:6px;">
+                                                        <input type="file" id="about-gal-file-${idx}" accept="image/*" style="display:none;" onchange="window.uploadAboutGalleryFile(${idx}, this)">
+                                                        <button type="button" class="btn btn-outline" onclick="document.getElementById('about-gal-file-${idx}').click()" style="padding:4px 8px; font-size:0.72rem; flex:1;">
+                                                            <i class="fas fa-upload"></i> อัปโหลด
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline" onclick="window.selectAboutGalleryMedia(${idx})" style="padding:4px 8px; font-size:0.72rem; flex:1; border-color:var(--secondary); color:var(--secondary);">
+                                                            <i class="fas fa-folder-open"></i> คลังภาพ
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
                                 </div>
                                 <div class="form-group">
                                     <label style="font-weight:600; font-size:0.85rem;">SEO Title (หัวข้อเว็บแสดงบนเบราว์เซอร์)</label>
@@ -2663,101 +2727,204 @@ class CharoenAdmin {
             };
         }
 
-        // --- Master Save Button Action ---
-        document.getElementById('master-save-btn').onclick = async () => {
-            const setObj = {
-                logo_img: document.getElementById('set-logo-img-src').value,
-                company_name_th: document.getElementById('set-company-name-th').value,
-                company_name_en: document.getElementById('set-company-name-en').value,
-                about_eyebrow_th: document.getElementById('set-about-eyebrow-th')?.value || '',
-                about_eyebrow_en: document.getElementById('set-about-eyebrow-en')?.value || '',
-                about_title_th: document.getElementById('set-about-title-th').value,
-                about_title_en: document.getElementById('set-about-title-en').value,
-                about_desc_th: document.getElementById('set-about-desc-th').value,
-                about_desc_en: document.getElementById('set-about-desc-en').value,
-                about_cta_text_th: document.getElementById('set-about-cta-text-th')?.value || '',
-                about_cta_text_en: document.getElementById('set-about-cta-text-en')?.value || '',
-                about_cta_link: document.getElementById('set-about-cta-link')?.value || '#contact',
-                about_image: document.getElementById('set-about-img-src').value,
-                about_bullets_th: document.getElementById('set-about-bullets-th').value,
-                about_bullets_en: document.getElementById('set-about-bullets-en').value,
+        // --- Phase A1: About Company Gallery Handlers ---
+        window.selectAboutGalleryMedia = (idx) => {
+            this.openMediaSelectorDialog((selectedBase64) => {
+                if (!window.currentAboutGalleryImages) window.currentAboutGalleryImages = [];
+                window.currentAboutGalleryImages[idx] = selectedBase64;
+                window.renderAboutGalleryPreview(idx, selectedBase64);
+            });
+        };
 
-                // 5 Highlight Cards keys
-                about_h1_icon: document.getElementById('set-about-h1-icon')?.value || '',
-                about_h1_title_th: document.getElementById('set-about-h1-title-th')?.value || '',
-                about_h1_title_en: document.getElementById('set-about-h1-title-en')?.value || '',
-                about_h1_desc_th: document.getElementById('set-about-h1-desc-th')?.value || '',
-                about_h1_desc_en: document.getElementById('set-about-h1-desc-en')?.value || '',
-
-                about_h2_icon: document.getElementById('set-about-h2-icon')?.value || '',
-                about_h2_title_th: document.getElementById('set-about-h2-title-th')?.value || '',
-                about_h2_title_en: document.getElementById('set-about-h2-title-en')?.value || '',
-                about_h2_desc_th: document.getElementById('set-about-h2-desc-th')?.value || '',
-                about_h2_desc_en: document.getElementById('set-about-h2-desc-en')?.value || '',
-
-                about_h3_icon: document.getElementById('set-about-h3-icon')?.value || '',
-                about_h3_title_th: document.getElementById('set-about-h3-title-th')?.value || '',
-                about_h3_title_en: document.getElementById('set-about-h3-title-en')?.value || '',
-                about_h3_desc_th: document.getElementById('set-about-h3-desc-th')?.value || '',
-                about_h3_desc_en: document.getElementById('set-about-h3-desc-en')?.value || '',
-
-                about_h4_icon: document.getElementById('set-about-h4-icon')?.value || '',
-                about_h4_title_th: document.getElementById('set-about-h4-title-th')?.value || '',
-                about_h4_title_en: document.getElementById('set-about-h4-title-en')?.value || '',
-                about_h4_desc_th: document.getElementById('set-about-h4-desc-th')?.value || '',
-                about_h4_desc_en: document.getElementById('set-about-h4-desc-en')?.value || '',
-
-                about_h5_icon: document.getElementById('set-about-h5-icon')?.value || '',
-                about_h5_title_th: document.getElementById('set-about-h5-title-th')?.value || '',
-                about_h5_title_en: document.getElementById('set-about-h5-title-en')?.value || '',
-                about_h5_desc_th: document.getElementById('set-about-h5-desc-th')?.value || '',
-                about_h5_desc_en: document.getElementById('set-about-h5-desc-en')?.value || '',
-                phone: document.getElementById('set-phone').value,
-                line: document.getElementById('set-line-url').value, // compatibility sync
-                facebook: document.getElementById('set-facebook-url').value, // compatibility sync
-                email: document.getElementById('set-email').value,
-                address_th: document.getElementById('set-address-th').value,
-                address_en: document.getElementById('set-address-en').value,
-                business_hours_th: document.getElementById('set-hours-th').value,
-                business_hours_en: document.getElementById('set-hours-en').value,
-                seo_title: document.getElementById('set-seo-title').value,
-                seo_desc: document.getElementById('set-seo-desc').value,
-                show_home_video: document.getElementById('set-show-video').checked ? 'true' : 'false',
-
-                // Contact and map keys
-                contact_title_th: document.getElementById('set-contact-title-th').value,
-                contact_title_en: document.getElementById('set-contact-title-en').value,
-                contact_description_th: document.getElementById('set-contact-desc-th').value,
-                contact_description_en: document.getElementById('set-contact-desc-en').value,
-                google_maps_url: document.getElementById('set-maps-url').value,
-                google_maps_embed_url: document.getElementById('set-maps-embed-url').value,
-                line_url: document.getElementById('set-line-url').value,
-                line_qr_image: document.getElementById('set-line-qr-img-src').value,
-                contact_visible: document.getElementById('set-contact-visible').checked ? 'true' : 'false',
-                line_qr_visible: document.getElementById('set-line-qr-visible').checked ? 'true' : 'false',
-
-                // Socials keys
-                facebook_url: document.getElementById('set-facebook-url').value,
-                facebook_visible: document.getElementById('set-facebook-visible').checked ? 'true' : 'false',
-                instagram_url: document.getElementById('set-instagram-url').value,
-                instagram_visible: document.getElementById('set-instagram-visible').checked ? 'true' : 'false',
-                tiktok_url: document.getElementById('set-tiktok-url').value,
-                tiktok_visible: document.getElementById('set-tiktok-visible').checked ? 'true' : 'false',
-                youtube_url: document.getElementById('set-youtube-url').value,
-                youtube_visible: document.getElementById('set-youtube-visible').checked ? 'true' : 'false',
-                line_visible: document.getElementById('set-line-visible').checked ? 'true' : 'false'
-            };
-
-            try {
-                for (const key of Object.keys(setObj)) {
-                    await this.db.put('settings', { key: key, value: setObj[key] });
-                }
-                alert('บันทึกข้อมูลการตั้งค่าและหน้าร้านทั้งหมดเรียบร้อยแล้ว!');
-                this.renderActiveView();
-            } catch (err) {
-                alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' + err.message);
+        window.uploadAboutGalleryFile = async (idx, inputEl) => {
+            if (inputEl.files && inputEl.files[0]) {
+                const webpData = await this.convertImageToWebP(inputEl.files[0]);
+                if (!window.currentAboutGalleryImages) window.currentAboutGalleryImages = [];
+                window.currentAboutGalleryImages[idx] = webpData;
+                window.renderAboutGalleryPreview(idx, webpData);
             }
         };
+
+        window.removeAboutGalleryImg = (idx) => {
+            if (window.currentAboutGalleryImages && window.currentAboutGalleryImages[idx] !== undefined) {
+                window.currentAboutGalleryImages[idx] = '';
+                window.renderAboutGalleryPreview(idx, '');
+            }
+        };
+
+        window.renderAboutGalleryPreview = (idx, src) => {
+            const boxes = document.querySelectorAll('.about-gallery-slot-box');
+            if (!boxes || !boxes[idx]) return;
+            const box = boxes[idx];
+            const imgEl = box.querySelector('img');
+            const emptyEl = box.querySelector('div[id^="about-gal-empty"]');
+            const headerEl = box.querySelector('div');
+
+            if (src) {
+                if (imgEl) {
+                    imgEl.src = src;
+                    imgEl.style.display = 'block';
+                } else if (emptyEl) {
+                    emptyEl.outerHTML = `<img src="${src}" id="about-gal-preview-${idx}" style="width:100%; height:90px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border-color);">`;
+                }
+                if (!headerEl.querySelector('.btn-outline[onclick*="removeAboutGalleryImg"]')) {
+                    const rmBtn = document.createElement('button');
+                    rmBtn.type = 'button';
+                    rmBtn.className = 'btn btn-outline';
+                    rmBtn.style = 'padding:2px 8px; font-size:0.7rem; color:var(--danger); border-color:var(--danger);';
+                    rmBtn.setAttribute('aria-label', `ลบภาพที่ ${idx + 1}`);
+                    rmBtn.onclick = () => window.removeAboutGalleryImg(idx);
+                    rmBtn.innerHTML = `<i class="fas fa-trash"></i> ลบรูป`;
+                    headerEl.appendChild(rmBtn);
+                }
+            } else {
+                if (imgEl) {
+                    imgEl.outerHTML = `
+                        <div id="about-gal-empty-${idx}" style="height:90px; background:var(--bg-main); border:1px dashed var(--border-color); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:4px; color:var(--text-muted); font-size:0.75rem;">
+                            <i class="fas fa-image" style="font-size:1.2rem;"></i>
+                            <span>ยังไม่ได้เลือกรูปภาพ</span>
+                        </div>
+                    `;
+                }
+                const rmBtn = headerEl.querySelector('.btn-outline[onclick*="removeAboutGalleryImg"]');
+                if (rmBtn) rmBtn.remove();
+            }
+        };
+
+        // --- Master Save Button Action ---
+        const masterSaveBtn = document.getElementById('master-save-btn');
+        if (masterSaveBtn) {
+            masterSaveBtn.onclick = async () => {
+                const originalHtml = masterSaveBtn.innerHTML;
+                masterSaveBtn.disabled = true;
+                masterSaveBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...`;
+
+                const cleanGallery = (Array.isArray(window.currentAboutGalleryImages)
+                    ? window.currentAboutGalleryImages
+                    : [])
+                    .map(item => typeof item === 'string' ? item.trim() : item)
+                    .filter(Boolean)
+                    .filter((item, index, arr) => arr.indexOf(item) === index)
+                    .slice(0, 4);
+
+                const galleryJson = JSON.stringify(cleanGallery);
+                const galleryPayloadBytes = new Blob([galleryJson]).size;
+                const MAX_GALLERY_BYTES = 850 * 1024; // 850 KB safe limit
+
+                if (galleryPayloadBytes > MAX_GALLERY_BYTES) {
+                    alert(`ขนาดไฟล์ภาพแกลเลอรีรวมกันใหญ่เกินกำหนด (${(galleryPayloadBytes / 1024).toFixed(1)} KB > 850 KB)\nกรุณาใช้รูปภาพขนาดเล็กลง หรือเลือกรูปภาพที่ผ่านการบีบอัดแล้วจากคลังสื่อ`);
+                    masterSaveBtn.disabled = false;
+                    masterSaveBtn.innerHTML = originalHtml;
+                    return;
+                }
+
+                console.log('[About Gallery] Saving', {
+                    count: cleanGallery.length,
+                    payloadLength: galleryJson.length
+                });
+
+                const setObj = {
+                    about_gallery_images: galleryJson,
+                    logo_img: document.getElementById('set-logo-img-src')?.value || '',
+                    company_name_th: document.getElementById('set-company-name-th')?.value || '',
+                    company_name_en: document.getElementById('set-company-name-en')?.value || '',
+                    about_eyebrow_th: document.getElementById('set-about-eyebrow-th')?.value || '',
+                    about_eyebrow_en: document.getElementById('set-about-eyebrow-en')?.value || '',
+                    about_title_th: document.getElementById('set-about-title-th')?.value || '',
+                    about_title_en: document.getElementById('set-about-title-en')?.value || '',
+                    about_desc_th: document.getElementById('set-about-desc-th')?.value || '',
+                    about_desc_en: document.getElementById('set-about-desc-en')?.value || '',
+                    about_cta_text_th: document.getElementById('set-about-cta-text-th')?.value || '',
+                    about_cta_text_en: document.getElementById('set-about-cta-text-en')?.value || '',
+                    about_cta_link: document.getElementById('set-about-cta-link')?.value || '#contact',
+                    about_image: document.getElementById('set-about-img-src')?.value || '',
+                    about_bullets_th: document.getElementById('set-about-bullets-th')?.value || '',
+                    about_bullets_en: document.getElementById('set-about-bullets-en')?.value || '',
+
+                    // 5 Highlight Cards keys
+                    about_h1_icon: document.getElementById('set-about-h1-icon')?.value || '',
+                    about_h1_title_th: document.getElementById('set-about-h1-title-th')?.value || '',
+                    about_h1_title_en: document.getElementById('set-about-h1-title-en')?.value || '',
+                    about_h1_desc_th: document.getElementById('set-about-h1-desc-th')?.value || '',
+                    about_h1_desc_en: document.getElementById('set-about-h1-desc-en')?.value || '',
+
+                    about_h2_icon: document.getElementById('set-about-h2-icon')?.value || '',
+                    about_h2_title_th: document.getElementById('set-about-h2-title-th')?.value || '',
+                    about_h2_title_en: document.getElementById('set-about-h2-title-en')?.value || '',
+                    about_h2_desc_th: document.getElementById('set-about-h2-desc-th')?.value || '',
+                    about_h2_desc_en: document.getElementById('set-about-h2-desc-en')?.value || '',
+
+                    about_h3_icon: document.getElementById('set-about-h3-icon')?.value || '',
+                    about_h3_title_th: document.getElementById('set-about-h3-title-th')?.value || '',
+                    about_h3_title_en: document.getElementById('set-about-h3-title-en')?.value || '',
+                    about_h3_desc_th: document.getElementById('set-about-h3-desc-th')?.value || '',
+                    about_h3_desc_en: document.getElementById('set-about-h3-desc-en')?.value || '',
+
+                    about_h4_icon: document.getElementById('set-about-h4-icon')?.value || '',
+                    about_h4_title_th: document.getElementById('set-about-h4-title-th')?.value || '',
+                    about_h4_title_en: document.getElementById('set-about-h4-title-en')?.value || '',
+                    about_h4_desc_th: document.getElementById('set-about-h4-desc-th')?.value || '',
+                    about_h4_desc_en: document.getElementById('set-about-h4-desc-en')?.value || '',
+
+                    about_h5_icon: document.getElementById('set-about-h5-icon')?.value || '',
+                    about_h5_title_th: document.getElementById('set-about-h5-title-th')?.value || '',
+                    about_h5_title_en: document.getElementById('set-about-h5-title-en')?.value || '',
+                    about_h5_desc_th: document.getElementById('set-about-h5-desc-th')?.value || '',
+                    about_h5_desc_en: document.getElementById('set-about-h5-desc-en')?.value || '',
+                    phone: document.getElementById('set-phone')?.value || '',
+                    line: document.getElementById('set-line-url')?.value || '', // compatibility sync
+                    facebook: document.getElementById('set-facebook-url')?.value || '', // compatibility sync
+                    email: document.getElementById('set-email')?.value || '',
+                    address_th: document.getElementById('set-address-th')?.value || '',
+                    address_en: document.getElementById('set-address-en')?.value || '',
+                    business_hours_th: document.getElementById('set-hours-th')?.value || '',
+                    business_hours_en: document.getElementById('set-hours-en')?.value || '',
+                    seo_title: document.getElementById('set-seo-title')?.value || '',
+                    seo_desc: document.getElementById('set-seo-desc')?.value || '',
+                    show_home_video: document.getElementById('set-show-video')?.checked ? 'true' : 'false',
+
+                    // Contact and map keys
+                    contact_title_th: document.getElementById('set-contact-title-th')?.value || '',
+                    contact_title_en: document.getElementById('set-contact-title-en')?.value || '',
+                    contact_description_th: document.getElementById('set-contact-desc-th')?.value || '',
+                    contact_description_en: document.getElementById('set-contact-desc-en')?.value || '',
+                    google_maps_url: document.getElementById('set-maps-url')?.value || '',
+                    google_maps_embed_url: document.getElementById('set-maps-embed-url')?.value || '',
+                    line_url: document.getElementById('set-line-url')?.value || '',
+                    line_qr_image: document.getElementById('set-line-qr-img-src')?.value || '',
+                    contact_visible: document.getElementById('set-contact-visible')?.checked ? 'true' : 'false',
+                    line_qr_visible: document.getElementById('set-line-qr-visible')?.checked ? 'true' : 'false',
+
+                    // Socials keys
+                    facebook_url: document.getElementById('set-facebook-url')?.value || '',
+                    facebook_visible: document.getElementById('set-facebook-visible')?.checked ? 'true' : 'false',
+                    instagram_url: document.getElementById('set-instagram-url')?.value || '',
+                    instagram_visible: document.getElementById('set-instagram-visible')?.checked ? 'true' : 'false',
+                    tiktok_url: document.getElementById('set-tiktok-url')?.value || '',
+                    tiktok_visible: document.getElementById('set-tiktok-visible')?.checked ? 'true' : 'false',
+                    youtube_url: document.getElementById('set-youtube-url')?.value || '',
+                    youtube_visible: document.getElementById('set-youtube-visible')?.checked ? 'true' : 'false',
+                    line_visible: document.getElementById('set-line-visible')?.checked ? 'true' : 'false'
+                };
+
+                try {
+                    for (const key of Object.keys(setObj)) {
+                        await this.db.put('settings', { key: key, value: setObj[key] });
+                    }
+                    console.log('[About Gallery] Saved successfully');
+                    alert('บันทึกข้อมูลการตั้งค่าและหน้าร้านทั้งหมดเรียบร้อยแล้ว!');
+                    this.renderActiveView();
+                } catch (err) {
+                    console.error('[About Gallery] Save failed', err);
+                    alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' + err.message);
+                } finally {
+                    if (masterSaveBtn) {
+                        masterSaveBtn.disabled = false;
+                        masterSaveBtn.innerHTML = originalHtml;
+                    }
+                }
+            };
+        }
 
         // Firebase config submit
         document.getElementById('firebase-settings-form').onsubmit = async (e) => {

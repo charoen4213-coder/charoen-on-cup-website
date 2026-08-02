@@ -6772,5 +6772,58 @@ body.no-scroll {
     }
 }
 
+/* ==========================================================================
+   About Company Gallery (Phase A1)
+   ========================================================================== */
+
+.about-company-gallery {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 48px;
+    width: 100%;
+}
+
+.about-company-gallery-item {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(4, 53, 106, 0.08);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+    background: var(--bg-main);
+}
+
+.about-company-gallery-item img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s ease;
+}
+
+.about-company-gallery-item img:hover {
+    transform: scale(1.04);
+}
+
+/* Tablet (641px - 1024px) */
+@media (max-width: 1024px) {
+    .about-company-gallery {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+        margin-top: 36px;
+    }
+}
+
+/* Mobile (<= 640px) */
+@media (max-width: 640px) {
+    .about-company-gallery {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-top: 28px;
+    }
+}
+
+
 
 

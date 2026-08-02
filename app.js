@@ -3396,6 +3396,49 @@ class CharoenApp {
         const rawAboutVal = aboutImgKey?.value || '';
         const aboutImgVal = await this.resolveAboutImageSrc(rawAboutVal) || 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1200&q=80';
 
+        // Dynamic About Company Gallery Images (Phase A1)
+        const aboutGalleryKey = await this.db.get('settings', 'about_gallery_images');
+        let rawGalleryVal = aboutGalleryKey?.value;
+        let galleryImages = [];
+
+        if (Array.isArray(rawGalleryVal)) {
+            galleryImages = rawGalleryVal;
+        } else if (typeof rawGalleryVal === 'string' && rawGalleryVal.trim()) {
+            try {
+                const parsed = JSON.parse(rawGalleryVal);
+                if (Array.isArray(parsed)) {
+                    galleryImages = parsed;
+                } else if (typeof parsed === 'string' && parsed.trim()) {
+                    galleryImages = [parsed];
+                }
+            } catch (e) {
+                galleryImages = [rawGalleryVal];
+            }
+        }
+
+        const validGalleryImages = [];
+        if (Array.isArray(galleryImages)) {
+            for (const item of galleryImages) {
+                if (item && typeof item === 'string' && item.trim()) {
+                    const resolved = await this.resolveAboutImageSrc(item);
+                    if (resolved && !validGalleryImages.includes(resolved)) {
+                        validGalleryImages.push(resolved);
+                    }
+                }
+                if (validGalleryImages.length >= 4) break;
+            }
+        }
+
+        const galleryHtml = validGalleryImages.length > 0 ? `
+            <div class="about-company-gallery" aria-label="${this.lang === 'th' ? 'ภาพบรรยากาศและการดำเนินงานของบริษัท' : 'Company and production gallery'}">
+                ${validGalleryImages.map((imgUrl, idx) => `
+                    <figure class="about-company-gallery-item">
+                        <img src="${imgUrl}" alt="${this.lang === 'th' ? `ภาพบรรยากาศและการดำเนินงานของเจริญ ออน คัพ ลำดับที่ ${idx + 1}` : `Charoen On Cup company and production gallery image ${idx + 1}`}" loading="lazy">
+                    </figure>
+                `).join('')}
+            </div>
+        ` : '';
+
         // Social and Maps Links
         const fbKey = await this.db.get('settings', 'facebook_url') || await this.db.get('settings', 'facebook');
         const mapsKey = await this.db.get('settings', 'google_maps_url');
@@ -3496,6 +3539,7 @@ class CharoenApp {
                             </a>
                         </div>
                     </div>
+                    ${galleryHtml}
                 </div>
             </section>
 
