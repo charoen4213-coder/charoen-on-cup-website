@@ -1733,6 +1733,61 @@ class CharoenAdmin {
         }
     }
 
+    // Shared Safe Media Image Resolver (Phase M1)
+    async resolveMediaImageSrc(value, fallbackSrc = '') {
+        if (!value) return fallbackSrc;
+
+        let targetVal = value;
+        if (typeof targetVal === 'object' && targetVal !== null) {
+            targetVal = targetVal.image_src || targetVal.url || targetVal.src || targetVal.path || targetVal.id || targetVal.name || targetVal.filename || targetVal.file_name || '';
+        }
+
+        if (!targetVal || typeof targetVal !== 'string') {
+            return fallbackSrc;
+        }
+
+        targetVal = targetVal.trim();
+        if (!targetVal) return fallbackSrc;
+
+        if (targetVal.startsWith('data:') || targetVal.startsWith('http://') || targetVal.startsWith('https://')) {
+            return targetVal;
+        }
+
+        const verifiedAssets = [
+            'about_banner.webp',
+            'coffee_bg.webp',
+            'cup_print_mockup.webp',
+            'portfolio_banner.webp',
+            'contact_banner.webp',
+            'faq_banner.webp'
+        ];
+
+        const hasPathPrefix = targetVal.startsWith('./') || targetVal.startsWith('../') || targetVal.startsWith('/') || targetVal.startsWith('assets/') || targetVal.startsWith('images/');
+
+        if (verifiedAssets.includes(targetVal) || hasPathPrefix) {
+            return targetVal;
+        }
+
+        try {
+            const mediaList = await this.db.getAll('media');
+            if (Array.isArray(mediaList) && mediaList.length > 0) {
+                const match = mediaList.find(m => m && (
+                    m.id === targetVal ||
+                    m.name === targetVal ||
+                    m.filename === targetVal ||
+                    m.file_name === targetVal
+                ));
+                if (match && match.image_src) {
+                    return match.image_src;
+                }
+            }
+        } catch (e) {
+            console.warn('Failed to resolve admin media image:', e);
+        }
+
+        return fallbackSrc;
+    }
+
     // Quotes View
     async loadQuotesView(container) {
         const quotes = await this.db.getAll('quotes');
@@ -2018,6 +2073,15 @@ class CharoenAdmin {
 
         window.currentAboutGalleryImages = [...aboutGalleryList];
 
+        // Phase M1: Safe Resolution for Admin About Previews
+        const resolvedAboutImgSrc = await this.resolveMediaImageSrc(aboutImage?.value, '');
+        const resolvedGalleryList = [];
+        for (let i = 0; i < 4; i++) {
+            const rawUrl = aboutGalleryList[i] || '';
+            const resolvedUrl = rawUrl ? (await this.resolveMediaImageSrc(rawUrl, '')) : '';
+            resolvedGalleryList.push(resolvedUrl);
+        }
+
         // Phase A2: ONE-STOP-SHOP Settings Retrieval
         const bannerTitleTh = await this.db.get('settings', 'about_service_banner_title_th');
         const bannerTitleEn = await this.db.get('settings', 'about_service_banner_title_en');
@@ -2151,7 +2215,7 @@ class CharoenAdmin {
                                     <label style="font-weight:600; font-size:0.85rem;">รูปภาพแนะนำบริษัท (About Image) <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">(สำหรับแสดงในหน้าแรกและหน้าเกี่ยวกับเรา)</span></label>
                                     <div style="display:flex; gap:16px; align-items:center; margin-top:8px;">
                                         <div id="set-about-drop-zone" style="width:120px; height:80px; border-radius:var(--radius-sm); border:2px dashed var(--border-color); background:var(--bg-sec); display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer; position:relative; transition:all 0.3s ease;">
-                                            ${aboutImage?.value ? `<img src="${aboutImage.value}" id="set-about-preview" style="width:100%; height:100%; object-fit:cover;">` : `<i class="fas fa-image" style="color:var(--text-muted); font-size:1.5rem;"></i>`}
+                                            ${resolvedAboutImgSrc ? `<img src="${resolvedAboutImgSrc}" id="set-about-preview" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.parentNode.innerHTML='<i class=\\'fas fa-image\\' style=\\'color:var(--text-muted); font-size:1.5rem;\\'></i>';">` : `<i class="fas fa-image" style="color:var(--text-muted); font-size:1.5rem;"></i>`}
                                             <div id="set-about-drag-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255,107,0,0.15); display:none; align-items:center; justify-content:center; color:var(--primary); font-size:0.75rem; font-weight:700;"><i class="fas fa-cloud-upload-alt"></i></div>
                                         </div>
                                         <div style="display:flex; flex-direction:column; gap:6px;">
@@ -2160,7 +2224,7 @@ class CharoenAdmin {
                                                 <button type="button" class="btn btn-outline" id="set-about-library-btn" style="padding:4px 10px; font-size:0.72rem; border-color:var(--secondary); color:var(--secondary);"><i class="fas fa-folder-open"></i> เลือกจากคลัง</button>
                                                 ${aboutImage?.value ? `<button type="button" class="btn btn-outline" id="set-about-clear-btn" style="padding:4px 10px; font-size:0.72rem; border-color:var(--danger); color:var(--danger);"><i class="fas fa-times"></i> ล้างค่า</button>` : ''}
                                             </div>
-                                            <span style="font-size:0.68rem; color:var(--text-muted);">ลากรูปมาวางในกรอบ หรือกดปุ่มด้านบน (เซฟเฉพาะลิงก์ภาพ ห้ามเซฟ Base64)</span>
+                                            <span style="font-size:0.68rem; color:var(--text-muted);">ลากรูปมาวางในกรอบ หรือกดปุ่มด้านบน</span>
                                         </div>
                                     </div>
                                     <input type="file" id="set-about-file-input" accept="image/*" style="display:none;">
@@ -2212,6 +2276,7 @@ class CharoenAdmin {
                                     <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;" id="about-gallery-grid-box">
                                         ${[0, 1, 2, 3].map(idx => {
                                             const imgVal = aboutGalleryList[idx] || '';
+                                            const previewSrc = resolvedGalleryList[idx] || '';
                                             return `
                                                 <div class="about-gallery-slot-box" style="background:var(--bg-sec); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
                                                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -2224,8 +2289,8 @@ class CharoenAdmin {
                                                     </div>
 
                                                     <div style="text-align:center; margin-bottom:8px;">
-                                                        ${imgVal ? `
-                                                            <img src="${imgVal}" id="about-gal-preview-${idx}" style="width:100%; height:90px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                                                        ${previewSrc ? `
+                                                            <img src="${previewSrc}" id="about-gal-preview-${idx}" style="width:100%; height:90px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border-color);" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'400\\' height=\\'300\\' viewBox=\\'0 0 400 300\\'%3E%3Crect width=\\'400\\' height=\\'300\\' fill=\\'%23f1f5f9\\'/ %3E%3Cpath d=\\'M150 120a20 20 0 1 0 0-40 20 20 0 0 0 0 40zm-60 100h220l-70-80-55 60-35-40-60 60z\\' fill=\\'%2394a3b8\\'/ %3E%3C/svg%3E';">
                                                         ` : `
                                                             <div id="about-gal-empty-${idx}" style="height:90px; background:var(--bg-main); border:1px dashed var(--border-color); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:4px; color:var(--text-muted); font-size:0.75rem;">
                                                                 <i class="fas fa-image" style="font-size:1.2rem;"></i>
@@ -2824,7 +2889,7 @@ class CharoenAdmin {
             }
         };
 
-        window.renderAboutGalleryPreview = (idx, src) => {
+        window.renderAboutGalleryPreview = async (idx, src) => {
             const boxes = document.querySelectorAll('.about-gallery-slot-box');
             if (!boxes || !boxes[idx]) return;
             const box = boxes[idx];
@@ -2832,12 +2897,14 @@ class CharoenAdmin {
             const emptyEl = box.querySelector('div[id^="about-gal-empty"]');
             const headerEl = box.querySelector('div');
 
-            if (src) {
+            const resolvedSrc = src ? (await this.resolveMediaImageSrc(src, '')) : '';
+
+            if (resolvedSrc) {
                 if (imgEl) {
-                    imgEl.src = src;
+                    imgEl.src = resolvedSrc;
                     imgEl.style.display = 'block';
                 } else if (emptyEl) {
-                    emptyEl.outerHTML = `<img src="${src}" id="about-gal-preview-${idx}" style="width:100%; height:90px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border-color);">`;
+                    emptyEl.outerHTML = `<img src="${resolvedSrc}" id="about-gal-preview-${idx}" style="width:100%; height:90px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border-color);" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'400\\' height=\\'300\\' viewBox=\\'0 0 400 300\\'%3E%3Crect width=\\'400\\' height=\\'300\\' fill=\\'%23f1f5f9\\'/ %3E%3Cpath d=\\'M150 120a20 20 0 1 0 0-40 20 20 0 0 0 0 40zm-60 100h220l-70-80-55 60-35-40-60 60z\\' fill=\\'%2394a3b8\\'/ %3E%3C/svg%3E';">`;
                 }
                 if (!headerEl.querySelector('.btn-outline[onclick*="removeAboutGalleryImg"]')) {
                     const rmBtn = document.createElement('button');
@@ -2864,7 +2931,7 @@ class CharoenAdmin {
         };
 
         // --- Phase A2: About Page ONE-STOP-SHOP Service Showcase Handlers ---
-        window.renderAboutServiceItemsAdmin = () => {
+        window.renderAboutServiceItemsAdmin = async () => {
             const container = document.getElementById('about-service-items-container');
             if (!container) return;
 
@@ -2872,7 +2939,13 @@ class CharoenAdmin {
                 window.currentAboutServiceItems = [];
             }
 
-            container.innerHTML = window.currentAboutServiceItems.map((item, idx) => `
+            const resolvedItems = [];
+            for (const item of window.currentAboutServiceItems) {
+                const resImg = item.image ? (await this.resolveMediaImageSrc(item.image, '')) : '';
+                resolvedItems.push({ ...item, resolvedImage: resImg });
+            }
+
+            container.innerHTML = resolvedItems.map((item, idx) => `
                 <div class="admin-card" style="padding:16px; border:1px solid var(--border-color); background:white; position:relative;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border-color); padding-bottom:6px;">
                         <span style="font-weight:700; font-size:0.82rem; color:var(--primary); text-transform:uppercase;">รายการบริการที่ ${idx + 1}</span>
@@ -2894,7 +2967,7 @@ class CharoenAdmin {
                             <button type="button" class="btn btn-outline" onclick="window.removeAboutServiceImage(${idx})" style="padding:4px 8px; font-size:0.75rem; color:var(--danger); border-color:var(--danger);"><i class="fas fa-trash"></i> ลบรูป</button>
                         </div>
                         <div style="height:110px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-sec); display:flex; align-items:center; justify-content:center; overflow:hidden;">
-                            ${item.image ? `<img src="${item.image}" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'400\\' height=\\'300\\' viewBox=\\'0 0 400 300\\'%3E%3Crect width=\\'400\\' height=\\'300\\' fill=\\'%23f1f5f9\\'/ %3E%3Cpath d=\\'M150 120a20 20 0 1 0 0-40 20 20 0 0 0 0 40zm-60 100h220l-70-80-55 60-35-40-60 60z\\' fill=\\'%2394a3b8\\'/ %3E%3C/svg%3E';">` : `<span style="font-size:0.78rem; color:var(--text-muted);"><i class="fas fa-image"></i> ยังไม่ได้เลือกรูปภาพ</span>`}
+                            ${item.resolvedImage ? `<img src="${item.resolvedImage}" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'400\\' height=\\'300\\' viewBox=\\'0 0 400 300\\'%3E%3Crect width=\\'400\\' height=\\'300\\' fill=\\'%23f1f5f9\\'/ %3E%3Cpath d=\\'M150 120a20 20 0 1 0 0-40 20 20 0 0 0 0 40zm-60 100h220l-70-80-55 60-35-40-60 60z\\' fill=\\'%2394a3b8\\'/ %3E%3C/svg%3E';">` : `<span style="font-size:0.78rem; color:var(--text-muted);"><i class="fas fa-image"></i> ยังไม่ได้เลือกรูปภาพ</span>`}
                         </div>
                     </div>
 
@@ -6031,7 +6104,7 @@ class CharoenAdmin {
                 // Save Background Appearance Settings (Milestone 4.5)
                 const selectedBgStyle = document.querySelector('input[name="bg-style-radio"]:checked')?.value || 'line_art';
                 sec.content.backgroundStyle = selectedBgStyle;
-                sec.content.backgroundImage = window.currentActiveSecBgImg || '';
+                sec.content.backgroundImage = window.currentActiveSecBgImg !== undefined ? window.currentActiveSecBgImg : (sec.content.backgroundImage || '');
                 
                 const rawOverlayInput = document.getElementById('sec-bg-overlay')?.value;
                 sec.content.backgroundOverlay = window.normalizeSectionOverlay(rawOverlayInput);
@@ -6056,7 +6129,7 @@ class CharoenAdmin {
                 // Save Background Appearance Settings (Milestone 4.5.1 Why Choose Us)
                 const selectedBgStyle = document.querySelector('input[name="bg-style-radio"]:checked')?.value || 'line_art';
                 sec.content.backgroundStyle = selectedBgStyle;
-                sec.content.backgroundImage = window.currentActiveSecBgImg || '';
+                sec.content.backgroundImage = window.currentActiveSecBgImg !== undefined ? window.currentActiveSecBgImg : (sec.content.backgroundImage || '');
                 
                 const rawOverlayInput = document.getElementById('sec-bg-overlay')?.value;
                 sec.content.backgroundOverlay = window.normalizeSectionOverlay(rawOverlayInput);
@@ -6113,7 +6186,7 @@ class CharoenAdmin {
                 if (document.getElementById('sec-bg-attachment')) {
                     const selectedBgStyle = document.querySelector('input[name="bg-style-radio"]:checked')?.value || 'line_art';
                     sec.content.backgroundStyle = selectedBgStyle;
-                    sec.content.backgroundImage = window.currentActiveSecBgImg || sec.content.backgroundImage || '';
+                    sec.content.backgroundImage = window.currentActiveSecBgImg !== undefined ? window.currentActiveSecBgImg : (sec.content.backgroundImage || '');
                     const rawOverlayInput = document.getElementById('sec-bg-overlay')?.value;
                     if (rawOverlayInput !== undefined) {
                         sec.content.backgroundOverlay = window.normalizeSectionOverlay(rawOverlayInput);
