@@ -1330,36 +1330,71 @@ class CharoenAdmin {
         const sortedVids = [...videos].sort((a, b) => a.order - b.order);
 
         container.innerHTML = `
-            <h3 style="font-size:1.15rem; font-weight:700; color:var(--secondary); margin-bottom:20px;">สปอตวิดีโอแนะนำหน้าแรก (Home Videos - 2 คลิป)</h3>
+            <h3 style="font-size:1.15rem; font-weight:700; color:var(--secondary); margin-bottom:6px;">สปอตวิดีโอแนะนำหน้าแรก (Home Videos - 2 คลิป)</h3>
+            <div style="background:#fff8f0; border:1px solid rgba(255,107,0,0.25); border-radius:var(--radius-sm); padding:10px 14px; margin-bottom:20px; font-size:0.8rem; color:#92400e; display:flex; align-items:flex-start; gap:10px;">
+                <i class="fas fa-folder-open" style="font-size:1rem; color:var(--accent); flex-shrink:0; margin-top:1px;"></i>
+                <span>นำไฟล์วิดีโอ (.mp4) และภาพปก (.webp) ไปวางในโฟลเดอร์ <code style="background:rgba(0,0,0,0.07); padding:1px 5px; border-radius:3px;">assets/videos/home/</code> จากนั้นระบุ Path ด้านล่างและ Deploy เว็บไซต์ใหม่</span>
+            </div>
             
             <div class="grid-2">
-                ${sortedVids.map((v, idx) => `
+                ${sortedVids.map((v, idx) => {
+                    const videoPath = v.video_path || '';
+                    const posterPath = v.poster_path || '';
+                    const hasLegacyBase64 = v.video_src && typeof v.video_src === 'string' && v.video_src.startsWith('data:video/');
+                    const hasPath = videoPath.trim() !== '';
+                    const hasPoster = posterPath.trim() !== '';
+                    return `
                     <div class="admin-card" style="display:flex; flex-direction:column; justify-content:space-between;">
                         <div>
                             <span style="font-weight:700; color:var(--primary); font-size:0.78rem; text-transform:uppercase;">ช่องสปอตวิดีโอตำแหน่งที่ ${idx + 1}</span>
-                            <h4 style="font-size:1.1rem; font-weight:700; color:var(--secondary); margin:8px 0 12px 0;">${v.title_th || 'ยังไม่มีตัววิดีโอ'}</h4>
-                            <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.5; margin-bottom:16px;">${v.desc_th || 'คำอธิบายสปอตวิดีโอหน้าร้าน'}</p>
-                            
-                            <div style="background:#0f223d; aspect-ratio:16/9; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid var(--border-color); position:relative; margin-bottom:16px;">
-                                ${v.video_src ? `
-                                    <video src="${v.video_src}" poster="${v.poster_src || ''}" controls style="width:100%; height:100%; object-fit:contain;"></video>
+                            <h4 style="font-size:1.05rem; font-weight:700; color:var(--secondary); margin:8px 0 12px 0;">${v.title_th || 'ยังไม่ได้ตั้งชื่อ'}</h4>
+
+                            ${hasLegacyBase64 ? `
+                                <div style="background:#fff3cd; border:1px solid #ffc107; border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:12px; font-size:0.78rem; color:#856404; line-height:1.55;">
+                                    <i class="fas fa-exclamation-triangle" style="color:#f59e0b; margin-right:6px;"></i>
+                                    <strong>วิดีโอนี้เป็นไฟล์ Local เดิมและจะแสดงเฉพาะเบราว์เซอร์เครื่องนี้</strong><br>
+                                    กรุณานำไฟล์ต้นฉบับไปวางใน <code style="background:rgba(0,0,0,0.07); padding:1px 4px; border-radius:3px;">assets/videos/home/</code> แล้วระบุ Video Path ใหม่
+                                </div>
+                            ` : ''}
+
+                            <div style="background:#0f223d; aspect-ratio:16/9; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid var(--border-color); position:relative; margin-bottom:14px;">
+                                ${hasPoster ? `
+                                    <img src="${posterPath}" alt="Video Poster" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div style="display:none; position:absolute; inset:0; align-items:center; justify-content:center; flex-direction:column; gap:6px; color:rgba(255,255,255,0.5); text-align:center;">
+                                        <i class="fas fa-image-slash" style="font-size:2rem;"></i>
+                                        <div style="font-size:0.72rem;">ไม่พบภาพปก (Poster) ตาม Path ที่ระบุ</div>
+                                    </div>
                                 ` : `
                                     <div style="color:rgba(255,255,255,0.4); text-align:center;">
                                         <i class="fas fa-video-slash" style="font-size:2.5rem; margin-bottom:8px;"></i>
-                                        <div style="font-size:0.8rem;">ยังไม่ได้อัปโหลดไฟล์วิดีโอ</div>
+                                        <div style="font-size:0.8rem;">${hasPath ? 'ยังไม่ได้ระบุภาพปก (Poster)' : 'ยังไม่ได้ระบุ Video Path'}</div>
                                     </div>
                                 `}
+                                ${hasPath ? `
+                                    <div style="position:absolute; bottom:8px; left:8px; background:rgba(0,0,0,0.7); border-radius:4px; padding:3px 8px; font-size:0.68rem; color:rgba(255,255,255,0.9); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:calc(100% - 16px);">
+                                        <i class="fas fa-film" style="margin-right:4px;"></i>${videoPath}
+                                    </div>
+                                ` : ''}
+                            </div>
+
+                            <div style="font-size:0.75rem; margin-bottom:4px;">
+                                <span style="color:var(--text-muted);">Video Path:</span>
+                                <span style="color:${hasPath ? 'var(--success)' : 'var(--text-muted)'}; font-weight:600; margin-left:6px;">${hasPath ? videoPath : 'ยังไม่ได้ระบุ'}</span>
+                            </div>
+                            <div style="font-size:0.75rem; margin-bottom:12px;">
+                                <span style="color:var(--text-muted);">Poster Path:</span>
+                                <span style="color:${hasPoster ? 'var(--success)' : 'var(--text-muted)'}; font-weight:600; margin-left:6px;">${hasPoster ? posterPath : 'ยังไม่ได้ระบุ'}</span>
                             </div>
                         </div>
                         
                         <div style="border-top:1.5px solid var(--border-color); padding-top:16px; display:flex; gap:12px;">
                             <button class="btn btn-outline edit-video-btn" data-id="${v.id}" style="flex-grow:1; font-size:0.8rem; border-color:var(--secondary); color:var(--secondary);"><i class="fas fa-edit"></i> แก้ไขคลิป / ข้อมูล</button>
-                            ${v.video_src ? `
-                                <button class="btn btn-outline clear-video-btn" data-id="${v.id}" style="font-size:0.8rem; border-color:var(--danger); color:var(--danger);"><i class="fas fa-trash-alt"></i> เคลียร์ไฟล์</button>
+                            ${(hasPath || hasLegacyBase64) ? `
+                                <button class="btn btn-outline clear-video-btn" data-id="${v.id}" style="font-size:0.8rem; border-color:var(--danger); color:var(--danger);"><i class="fas fa-trash-alt"></i> เคลียร์</button>
                             ` : ''}
                         </div>
                     </div>
-                `).join('')}
+                `}).join('')}
             </div>
         `;
 
@@ -1369,11 +1404,13 @@ class CharoenAdmin {
 
         document.querySelectorAll('.clear-video-btn').forEach(btn => {
             btn.onclick = async () => {
-                if (confirm('คุณต้องการเคลียร์หรือลบไฟล์วิดีโอนี้ออกใช่หรือไม่? (ข้อมูลข้อความหลักจะยังคงอยู่)')) {
+                if (confirm('คุณต้องการเคลียร์ Video Path, Poster Path และข้อมูลวิดีโอนี้ออกใช่หรือไม่? (ข้อมูลข้อความหลักจะยังคงอยู่)')) {
                     const videoObj = await this.db.get('home_videos', btn.dataset.id);
                     if (videoObj) {
                         videoObj.video_src = '';
                         videoObj.poster_src = '';
+                        videoObj.video_path = '';
+                        videoObj.poster_path = '';
                         await this.db.put('home_videos', videoObj);
                         this.renderActiveView();
                     }
@@ -4889,6 +4926,8 @@ class CharoenAdmin {
             title_en: '',
             desc_th: '',
             desc_en: '',
+            video_path: '',
+            poster_path: '',
             poster_src: '',
             video_src: '',
             order: 1
@@ -4896,62 +4935,143 @@ class CharoenAdmin {
 
         const fetched = await this.db.get('home_videos', videoId);
         if (fetched) {
-            video = fetched;
+            video = { ...video, ...fetched };
         }
+
+        const hasLegacyBase64 = video.video_src && typeof video.video_src === 'string' && video.video_src.startsWith('data:video/');
+
+        // Path normalization helper
+        const normalizeHomeVideoPath = (val) => {
+            if (!val || typeof val !== 'string') return '';
+            let v = val.trim().replace(/\\/g, '/').replace(/^\.\//, '');
+            if (v.startsWith('file://') || v.startsWith('blob:') || v.startsWith('data:')) return '';
+            if (/^[A-Za-z]:[/\\]/.test(v)) return '';
+            if (v.includes('../') || v.includes('..\\')) return '';
+            return v;
+        };
+
+        // Validation helpers
+        const validateVideoPath = (val) => {
+            if (!val || !val.trim()) return { ok: false, msg: 'ยังไม่ได้ระบุ Video Path' };
+            const v = val.trim();
+            if (/^[A-Za-z]:[/\\]/.test(v)) return { ok: false, msg: 'ไม่อนุญาต Local Windows Path' };
+            if (v.startsWith('data:') || v.startsWith('blob:') || v.startsWith('file://')) return { ok: false, msg: 'ไม่อนุญาต data:, blob:, หรือ file:// URL' };
+            if (v.includes('../')) return { ok: false, msg: 'ไม่อนุญาต path traversal (../)' };
+            if (v.startsWith('https://')) return { ok: true, msg: 'Path ถูกต้อง (External URL)' };
+            if (!v.startsWith('assets/videos/home/')) return { ok: false, msg: 'กรุณาใช้ Path ภายใน assets/videos/home/' };
+            if (!v.match(/\.(mp4|webm)$/i)) return { ok: false, msg: 'รองรับเฉพาะ MP4 หรือ WebM' };
+            return { ok: true, msg: '✓ Path ถูกต้อง — ตรวจสอบหลัง Deploy' };
+        };
+
+        const validatePosterPath = (val) => {
+            if (!val || !val.trim()) return { ok: null, msg: 'ยังไม่ได้ระบุ Poster Path (ไม่บังคับ)' };
+            const v = val.trim();
+            if (/^[A-Za-z]:[/\\]/.test(v)) return { ok: false, msg: 'ไม่อนุญาต Local Windows Path' };
+            if (v.startsWith('data:') || v.startsWith('blob:') || v.startsWith('file://')) return { ok: false, msg: 'ไม่อนุญาต data:, blob:, หรือ file:// URL' };
+            if (v.includes('../')) return { ok: false, msg: 'ไม่อนุญาต path traversal (../)' };
+            if (v.startsWith('https://')) return { ok: true, msg: 'Path ถูกต้อง (External URL)' };
+            if (!v.startsWith('assets/videos/home/')) return { ok: false, msg: 'กรุณาใช้ Path ภายใน assets/videos/home/' };
+            if (!v.match(/\.(webp|jpg|jpeg|png)$/i)) return { ok: false, msg: 'รองรับเฉพาะ WebP, JPG, หรือ PNG' };
+            return { ok: true, msg: '✓ Path ถูกต้อง — ตรวจสอบหลัง Deploy' };
+        };
+
+        const statusColor = (result) => {
+            if (result.ok === true) return 'var(--success, #16a34a)';
+            if (result.ok === false) return 'var(--danger, #dc2626)';
+            return 'var(--text-muted)';
+        };
+
+        const videoPathInit = video.video_path || '';
+        const posterPathInit = video.poster_path || '';
+        const vResult = validateVideoPath(videoPathInit);
+        const pResult = validatePosterPath(posterPathInit);
 
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay active';
         overlay.id = 'admin-edit-modal';
 
         overlay.innerHTML = `
-            <div class="modal-window" style="max-width:600px; padding:30px;">
+            <div class="modal-window" style="max-width:620px; padding:30px;">
                 <button class="modal-close-btn" id="close-modal-btn"><i class="fas fa-times"></i></button>
                 <h3 style="font-size:1.25rem; font-weight:800; color:var(--secondary); margin-bottom:20px; border-bottom:1.5px solid var(--border-color); padding-bottom:8px;">
                     แก้ไขคลิปวิดีโอแนะนำหน้าแรก
                 </h3>
                 
                 <form id="edit-home-video-form">
-                    <div style="display:flex; flex-direction:column; gap:12px; max-height:60vh; overflow-y:auto; padding-right:8px;">
+                    <div style="display:flex; flex-direction:column; gap:14px; max-height:65vh; overflow-y:auto; padding-right:8px;">
+                        
+                        <!-- Text Metadata -->
                         <div class="form-group">
                             <label style="font-weight:600; font-size:0.85rem;">หัวข้อวิดีโอภาษาไทย (TH Title) <span style="color:var(--danger)">*</span></label>
-                            <input type="text" id="vid-form-title-th" class="form-control" value="${video.title_th}" required>
+                            <input type="text" id="vid-form-title-th" class="form-control" value="${video.title_th || ''}" required>
                         </div>
                         <div class="form-group">
                             <label style="font-weight:600; font-size:0.85rem;">หัวข้อวิดีโอภาษาอังกฤษ (EN Title)</label>
                             <input type="text" id="vid-form-title-en" class="form-control" value="${video.title_en || ''}">
                         </div>
                         <div class="form-group">
-                            <label style="font-weight:600; font-size:0.85rem;">คำบรรยายอธิบายภาษาไทย (TH Description)</label>
+                            <label style="font-weight:600; font-size:0.85rem;">คำบรรยายภาษาไทย (TH Description)</label>
                             <textarea id="vid-form-desc-th" class="form-control" style="min-height:50px;">${video.desc_th || ''}</textarea>
                         </div>
                         <div class="form-group">
-                            <label style="font-weight:600; font-size:0.85rem;">คำบรรยายอธิบายภาษาอังกฤษ (EN Description)</label>
+                            <label style="font-weight:600; font-size:0.85rem;">คำบรรยายภาษาอังกฤษ (EN Description)</label>
                             <textarea id="vid-form-desc-en" class="form-control" style="min-height:50px;">${video.desc_en || ''}</textarea>
                         </div>
-                        
-                        <!-- Thumbnail/Poster upload -->
-                        <div class="form-group">
-                            <label style="font-weight:600; font-size:0.85rem;">ภาพหน้าปกวิดีโอ (Thumbnail / Poster)</label>
-                            <div style="display:flex; gap:10px; align-items:center;">
-                                <input type="file" id="vid-form-poster-file" class="form-control" accept="image/*" style="padding:6px; flex-grow:1;">
-                                <button type="button" class="btn btn-outline" id="select-vid-poster-btn" style="padding:8px 12px; font-size:0.75rem;"><i class="fas fa-folder-open"></i> เลือกจากคลังภาพ</button>
+
+                        <hr style="border-color:var(--border-color); margin:4px 0;">
+
+                        <!-- Static Path Instructions -->
+                        <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:var(--radius-sm); padding:12px 14px; font-size:0.78rem; color:#0c4a6e; line-height:1.6;">
+                            <i class="fas fa-info-circle" style="color:#0284c7; margin-right:6px;"></i>
+                            <strong>วิธีใช้งาน Static File Path:</strong><br>
+                            1. นำไฟล์ <code style="background:rgba(0,0,0,0.08); padding:1px 4px; border-radius:3px;">.mp4</code> และ <code style="background:rgba(0,0,0,0.08); padding:1px 4px; border-radius:3px;">.webp</code> ไปวางในโฟลเดอร์ <code style="background:rgba(0,0,0,0.08); padding:1px 4px; border-radius:3px;">assets/videos/home/</code><br>
+                            2. ระบุ Path ด้านล่าง เช่น <code style="background:rgba(0,0,0,0.08); padding:1px 4px; border-radius:3px;">assets/videos/home/home-video-01.mp4</code><br>
+                            3. บันทึก แล้ว Deploy เว็บไซต์ใหม่ — วิดีโอจะใช้งานได้ทุกเครื่อง
+                        </div>
+
+                        ${hasLegacyBase64 ? `
+                            <div style="background:#fff3cd; border:1px solid #ffc107; border-radius:var(--radius-sm); padding:10px 12px; font-size:0.78rem; color:#856404; line-height:1.55;">
+                                <i class="fas fa-exclamation-triangle" style="color:#f59e0b; margin-right:6px;"></i>
+                                <strong>วิดีโอนี้เป็นไฟล์ Local เดิมและจะแสดงเฉพาะเบราว์เซอร์เครื่องนี้</strong><br>
+                                กรุณานำไฟล์ต้นฉบับไปวางใน <code style="background:rgba(0,0,0,0.07); padding:1px 4px; border-radius:3px;">assets/videos/home/</code> แล้วระบุ Video Path ใหม่ในช่องด้านล่าง
                             </div>
-                            <div style="margin-top:10px; text-align:center;">
-                                <img src="${video.poster_src || ''}" id="vid-form-poster-preview" style="max-height:80px; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:${video.poster_src ? 'inline-block' : 'none'};">
+                        ` : ''}
+
+                        <!-- Video Path Input -->
+                        <div class="form-group">
+                            <label style="font-weight:600; font-size:0.85rem;">Video Path <span style="color:var(--danger)">*</span></label>
+                            <input type="text" id="vid-form-video-path" class="form-control" 
+                                value="${videoPathInit}"
+                                placeholder="assets/videos/home/home-video-01.mp4"
+                                style="font-family:monospace; font-size:0.85rem;">
+                            <div id="vid-path-status" style="margin-top:5px; font-size:0.75rem; font-weight:600; color:${statusColor(vResult)};">
+                                ${vResult.msg}
                             </div>
                         </div>
 
-                        <!-- Video file upload (Max 20MB limit!) -->
+                        <!-- Poster Path Input -->
                         <div class="form-group">
-                            <label style="font-weight:600; font-size:0.85rem;">อัปโหลดคลิปวิดีโอ (MP4/WebM - ขนาดไฟล์ห้ามเกิน 20MB) <span style="color:var(--danger)">*</span></label>
-                            <div style="display:flex; gap:10px; align-items:center;">
-                                <input type="file" id="vid-form-file" class="form-control" accept="video/mp4,video/webm" style="padding: 6px; flex-grow:1;" ${!video.video_src ? 'required' : ''}>
-                                <button type="button" class="btn btn-outline" id="select-vid-media-btn" style="padding:8px 12px; font-size:0.75rem;"><i class="fas fa-folder-open"></i> เลือกจากคลังสื่อ</button>
+                            <label style="font-weight:600; font-size:0.85rem;">Poster Path (ภาพปกวิดีโอ)</label>
+                            <input type="text" id="vid-form-poster-path" class="form-control" 
+                                value="${posterPathInit}"
+                                placeholder="assets/videos/home/home-video-01.webp"
+                                style="font-family:monospace; font-size:0.85rem;">
+                            <div id="vid-poster-status" style="margin-top:5px; font-size:0.75rem; font-weight:600; color:${statusColor(pResult)};">
+                                ${pResult.msg}
                             </div>
-                            <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">(หากต้องการความลื่นไหล ควรบีบอัดไฟล์ให้อยู่ระหว่าง 2MB - 10MB)</div>
-                            
-                            <div style="margin-top:10px; text-align:center;">
-                                <span id="vid-form-file-status" style="font-size:0.8rem; font-weight:700; color:var(--success); display:${video.video_src ? 'inline' : 'none'};"><i class="fas fa-check-circle"></i> มีไฟล์วิดีโอพร้อมแสดงผลเรียบร้อยแล้ว</span>
+                        </div>
+
+                        <!-- Poster Preview -->
+                        <div id="vid-poster-preview-wrap" style="display:${posterPathInit ? 'block' : 'none'}; margin-top:2px;">
+                            <label style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">ตัวอย่างภาพปก (Poster Preview):</label>
+                            <div style="margin-top:6px; border-radius:var(--radius-sm); overflow:hidden; max-height:160px; background:#0f223d; display:flex; align-items:center; justify-content:center;">
+                                <img id="vid-poster-preview-img" src="${posterPathInit}" alt="Poster Preview" 
+                                    style="max-width:100%; max-height:160px; object-fit:contain;"
+                                    onerror="document.getElementById('vid-poster-preview-err').style.display='flex'; this.style.display='none';">
+                                <div id="vid-poster-preview-err" style="display:none; padding:16px; color:rgba(255,255,255,0.5); font-size:0.78rem; text-align:center; flex-direction:column; gap:6px;">
+                                    <i class="fas fa-image-slash" style="font-size:1.5rem;"></i>
+                                    <span>ไม่พบภาพปกตาม Path ที่ระบุ (ตรวจสอบหลัง Deploy)</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -4969,71 +5089,38 @@ class CharoenAdmin {
         document.getElementById('close-modal-btn').onclick = closeDialog;
         document.getElementById('close-modal-cancel-btn').onclick = closeDialog;
 
-        // Select poster
-        document.getElementById('select-vid-poster-btn').onclick = () => {
-            this.openMediaSelectorDialog((selectedBase64) => {
-                const preview = document.getElementById('vid-form-poster-preview');
-                preview.src = selectedBase64;
-                preview.style.display = 'inline-block';
-                video.poster_src = selectedBase64;
-            });
-        };
-
-        // Poster file upload
-        const posterInput = document.getElementById('vid-form-poster-file');
-        if (posterInput) {
-            posterInput.onchange = async (e) => {
-                if (e.target.files && e.target.files[0]) {
-                    const webpData = await this.convertImageToWebP(e.target.files[0]);
-                    const preview = document.getElementById('vid-form-poster-preview');
-                    preview.src = webpData;
-                    preview.style.display = 'inline-block';
-                    video.poster_src = webpData;
-                }
+        // Live validation on video path input
+        const videoPathInput = document.getElementById('vid-form-video-path');
+        const videoPathStatus = document.getElementById('vid-path-status');
+        if (videoPathInput && videoPathStatus) {
+            videoPathInput.oninput = () => {
+                const raw = normalizeHomeVideoPath(videoPathInput.value);
+                const result = validateVideoPath(raw);
+                videoPathStatus.textContent = result.msg;
+                videoPathStatus.style.color = statusColor(result);
             };
         }
 
-        // Select video from library
-        document.getElementById('select-vid-media-btn').onclick = () => {
-            this.openMediaSelectorDialog((selectedBase64) => {
-                const status = document.getElementById('vid-form-file-status');
-                status.textContent = 'เลือกไฟล์จากคลังเรียบร้อยแล้ว';
-                status.style.display = 'inline';
-                video.video_src = selectedBase64;
-            }, true); // Filter only videos
-        };
+        // Live validation + preview on poster path input
+        const posterPathInput = document.getElementById('vid-form-poster-path');
+        const posterPathStatus = document.getElementById('vid-poster-status');
+        const posterPreviewWrap = document.getElementById('vid-poster-preview-wrap');
+        const posterPreviewImg = document.getElementById('vid-poster-preview-img');
+        const posterPreviewErr = document.getElementById('vid-poster-preview-err');
 
-        // Video file selector with 20MB limit checking
-        const videoInput = document.getElementById('vid-form-file');
-        if (videoInput) {
-            videoInput.onchange = async (e) => {
-                if (e.target.files && e.target.files[0]) {
-                    const file = e.target.files[0];
-                    if (file.size > 20 * 1024 * 1024) {
-                        alert('ข้อผิดพลาด: ไฟล์วิดีโอที่ท่านเลือกมีขนาดใหญ่เกิน 20MB!\n\nกรุณาเลือกไฟล์ใหม่ที่มีขนาดเล็กกว่า 20MB หรือนำคลิปไปบีบอัดความละเอียดลงก่อนอัปโหลดครับ');
-                        videoInput.value = ''; // Reset
-                        return;
-                    }
-
-                    // Show loader spinner
-                    const status = document.getElementById('vid-form-file-status');
-                    status.innerHTML = `<i class="fas fa-spinner fa-spin"></i> กำลังประมวลผลไฟล์คลิป...`;
-                    status.style.display = 'inline';
-                    
-                    try {
-                        const videoBase64 = await new Promise((resolve, reject) => {
-                            const reader = new FileReader();
-                            reader.onload = () => resolve(reader.result);
-                            reader.onerror = () => reject(reader.error);
-                            reader.readAsDataURL(file);
-                        });
-                        
-                        video.video_src = videoBase64;
-                        status.innerHTML = `<i class="fas fa-check-circle"></i> โหลดวิดีโอใหม่สำเร็จ (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
-                    } catch (err) {
-                        alert('เกิดข้อผิดพลาดในการโหลดไฟล์คลิป: ' + err.message);
-                        status.style.display = 'none';
-                    }
+        if (posterPathInput && posterPathStatus) {
+            posterPathInput.oninput = () => {
+                const raw = normalizeHomeVideoPath(posterPathInput.value);
+                const result = validatePosterPath(raw);
+                posterPathStatus.textContent = result.msg;
+                posterPathStatus.style.color = statusColor(result);
+                if (raw && result.ok !== false) {
+                    posterPreviewWrap.style.display = 'block';
+                    posterPreviewImg.src = raw;
+                    posterPreviewImg.style.display = '';
+                    posterPreviewErr.style.display = 'none';
+                } else {
+                    posterPreviewWrap.style.display = 'none';
                 }
             };
         }
@@ -5041,16 +5128,35 @@ class CharoenAdmin {
         // Form Submit
         document.getElementById('edit-home-video-form').onsubmit = async (e) => {
             e.preventDefault();
-            
+
+            const rawVideoPath = normalizeHomeVideoPath(videoPathInput?.value || '');
+            const rawPosterPath = normalizeHomeVideoPath(posterPathInput?.value || '');
+
+            // Defensive: reject Base64/blob/file paths on save
+            if (rawVideoPath.startsWith('data:') || rawVideoPath.startsWith('blob:') || rawVideoPath.startsWith('file://')) {
+                alert('ข้อผิดพลาด: ไม่สามารถบันทึก URL ประเภท data:, blob: หรือ file:// ได้\nกรุณาใช้ Static Path เช่น assets/videos/home/video.mp4');
+                return;
+            }
+
+            const vCheck = validateVideoPath(rawVideoPath);
+            if (rawVideoPath && vCheck.ok === false) {
+                alert('Video Path ไม่ถูกต้อง: ' + vCheck.msg + '\n\nกรุณาแก้ไขก่อนบันทึก');
+                return;
+            }
+
             const updated = {
                 id: video.id,
                 title_th: document.getElementById('vid-form-title-th').value,
                 title_en: document.getElementById('vid-form-title-en').value,
                 desc_th: document.getElementById('vid-form-desc-th').value,
                 desc_en: document.getElementById('vid-form-desc-en').value,
-                poster_src: video.poster_src,
-                video_src: video.video_src,
-                order: video.order
+                video_path: rawVideoPath,
+                poster_path: rawPosterPath,
+                // Preserve legacy fields for backward compatibility (do not set new Base64)
+                poster_src: video.poster_src || '',
+                video_src: video.video_src || '',
+                order: video.order || 1,
+                updated_at: new Date().toISOString()
             };
 
             await this.db.put('home_videos', updated);

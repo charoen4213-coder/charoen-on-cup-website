@@ -1256,8 +1256,27 @@ class CharoenApp {
                     const showHomeVideo = await this.getSetting('show_home_video', 'true');
                     const homeVideos = await this.db.getAll('home_videos');
 
+                    // Safe URL check: allow static relative paths and HTTPS URLs; reject Base64/blob/file
+                    const isSafeVideoSrc = (src) => {
+                        if (!src || typeof src !== 'string' || !src.trim()) return false;
+                        const s = src.trim();
+                        if (s.startsWith('data:') || s.startsWith('blob:') || s.startsWith('file://')) return false;
+                        return true;
+                    };
+                    const isSafePosterSrc = (src) => {
+                        if (!src || typeof src !== 'string' || !src.trim()) return false;
+                        const s = src.trim();
+                        if (s.startsWith('data:') || s.startsWith('blob:') || s.startsWith('file://')) return false;
+                        return true;
+                    };
+
                     const validHomeVideos = (homeVideos || [])
-                        .filter(v => v && v.video_src && typeof v.video_src === 'string' && v.video_src.trim() !== '')
+                        .filter(v => {
+                            if (!v) return false;
+                            const videoSrc = v.video_path ||
+                                (isSafeVideoSrc(v.video_src) ? v.video_src : '');
+                            return videoSrc && videoSrc.trim() !== '';
+                        })
                         .sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
 
                     if (showHomeVideo !== 'false' && validHomeVideos.length > 0) {
@@ -1399,7 +1418,9 @@ class CharoenApp {
 
                                             const title = cleanText(rawTitle);
                                             const desc = cleanText(rawDesc);
-                                            const posterSrc = v.poster_src && typeof v.poster_src === 'string' ? v.poster_src.trim() : '';
+                                            const posterSrc = v.poster_path && isSafePosterSrc(v.poster_path)
+                                                ? v.poster_path.trim()
+                                                : (isSafePosterSrc(v.poster_src) ? v.poster_src.trim() : '');
 
                                             const hasCardText = title !== '' || desc !== '';
 
@@ -5384,8 +5405,25 @@ class CharoenApp {
         this.closeActiveModal();
 
         const videoObj = await this.db.get('home_videos', videoId);
-        if (!videoObj || !videoObj.video_src) {
-            alert(this.lang === 'th' ? 'ขออภัย! ไม่พบแหล่งข้อมูลไฟล์คลิปวิดีโอนี้ในระบบคลังสื่อครับ' : 'Sorry, video source file not found in media library.');
+        if (!videoObj) {
+            alert(this.lang === 'th' ? 'ขออภัย! ไม่พบข้อมูลวิดีโอในระบบ' : 'Sorry, video record not found.');
+            return;
+        }
+
+        // Resolve video source: prefer static path, fall back to legacy video_src if safe (non-Base64)
+        const _isSafeVideoUrl = (src) => {
+            if (!src || typeof src !== 'string' || !src.trim()) return false;
+            const s = src.trim();
+            return !s.startsWith('data:') && !s.startsWith('blob:') && !s.startsWith('file://');
+        };
+        const resolvedVideoSrc =
+            (videoObj.video_path && videoObj.video_path.trim()) ||
+            (_isSafeVideoUrl(videoObj.video_src) ? videoObj.video_src.trim() : '');
+
+        if (!resolvedVideoSrc) {
+            alert(this.lang === 'th'
+                ? 'ขออภัย! ยังไม่ได้ระบุ Video Path\n\nกรุณาไปที่ Admin CMS → Home Videos แล้วระบุ Path ไฟล์วิดีโอ'
+                : 'Sorry, no video path configured.\n\nPlease set the Video Path in Admin CMS → Home Videos.');
             return;
         }
 
@@ -5479,10 +5517,13 @@ class CharoenApp {
         errorBox.innerHTML = `
             <i class="fas fa-exclamation-triangle" style="font-size: 2.8rem; color: #EF4444;"></i>
             <p style="font-size: 1.05rem; font-weight: 700; margin: 0; color: #F3F4F6; font-family: 'Kanit', sans-serif;">
-                ${this.lang === 'th' ? 'ไม่สามารถเล่นวิดีโอนี้ได้' : 'Unable to play this video'}
+                ${this.lang === 'th' ? 'ไม่พบไฟล์วิดีโอ' : 'Video File Not Found'}
             </p>
-            <p style="font-size: 0.85rem; color: #9CA3AF; max-width: 320px; margin: 0; text-align: center; line-height: 1.5; font-family: 'Prompt', sans-serif;">
-                ${this.lang === 'th' ? 'ไฟล์วิดีโออาจเสียหายหรือไม่รองรับกับเบราว์เซอร์นี้' : 'The video file might be corrupted or unsupported by your browser.'}
+            <p style="font-size: 0.85rem; color: #9CA3AF; max-width: 340px; margin: 0; text-align: center; line-height: 1.6; font-family: 'Prompt', sans-serif;">
+                ${this.lang === 'th'
+                    ? 'ไม่พบไฟล์วิดีโอ กรุณาตรวจสอบ Path และ Deploy ไฟล์อีกครั้ง<br><code style="font-size:0.78rem; color:#6B7280;">' + resolvedVideoSrc + '</code>'
+                    : 'Video file not found. Please verify the path and redeploy the website.<br><code style="font-size:0.78rem; color:#6B7280;">' + resolvedVideoSrc + '</code>'
+                }
             </p>
             <button type="button" class="btn btn-outline close-error-btn" style="margin-top: 8px; border-color: rgba(255,255,255,0.4); color: #fff; padding: 6px 20px; font-size: 0.85rem; border-radius: 8px; cursor: pointer;">
                 ${this.lang === 'th' ? 'ปิดหน้าต่าง' : 'Close Window'}
@@ -5520,7 +5561,7 @@ class CharoenApp {
 
         // 6. Native Video Element
         const videoEl = document.createElement('video');
-        videoEl.src = videoObj.video_src;
+        videoEl.src = resolvedVideoSrc;
         videoEl.autoplay = true;
         videoEl.controls = true;
         videoEl.playsInline = true;

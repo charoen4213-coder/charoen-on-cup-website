@@ -570,8 +570,8 @@ class CharoenOnCupDB {
 
             // 5. Seed default home videos (Only insert default if record does not already exist)
             const videos = [
-                { id: 'video_1', title_th: 'ตัวอย่างงานพิมพ์สกรีนแก้ว Capsule 16 ออนซ์', title_en: '16oz Capsule Cup Screen Print Preview', desc_th: 'งานพิมพ์สกรีนสีส้มคมชัด เม็ดสีแน่น ไม่หลุดลอก แม้โดนความชื้นสะสม', desc_en: 'Vibrant orange screen printing, clean details, non-peelable and water-resistant.', poster_src: '', video_src: '', order: 1 },
-                { id: 'video_2', title_th: 'ตัวอย่างสกรีนลายฟิล์มม้วนซีลปากแก้วความร้อน', title_en: 'Sealing Roll Film Printing Demo', desc_th: 'รายละเอียดความคมกริบของงานสกรีนม้วนซีล พลาสติกเกรดอาหารปลอดภัย 100%', desc_en: 'Ultra-sharp printing resolution on sealing rolls, 100% food-grade safe.', poster_src: '', video_src: '', order: 2 }
+                { id: 'video_1', title_th: 'ตัวอย่างงานพิมพ์สกรีนแก้ว Capsule 16 ออนซ์', title_en: '16oz Capsule Cup Screen Print Preview', desc_th: 'งานพิมพ์สกรีนสีส้มคมชัด เม็ดสีแน่น ไม่หลุดลอก แม้โดนความชื้นสะสม', desc_en: 'Vibrant orange screen printing, clean details, non-peelable and water-resistant.', video_path: 'assets/videos/home/home-video-01.mp4', poster_path: 'assets/videos/home/home-video-01.webp', poster_src: '', video_src: '', order: 1 },
+                { id: 'video_2', title_th: 'ตัวอย่างสกรีนลายฟิล์มม้วนซีลปากแก้วความร้อน', title_en: 'Sealing Roll Film Printing Demo', desc_th: 'รายละเอียดความคมกริบของงานสกรีนม้วนซีล พลาสติกเกรดอาหารปลอดภัย 100%', desc_en: 'Ultra-sharp printing resolution on sealing rolls, 100% food-grade safe.', video_path: 'assets/videos/home/home-video-02.mp4', poster_path: 'assets/videos/home/home-video-02.webp', poster_src: '', video_src: '', order: 2 }
             ];
 
             for (const v of videos) {
