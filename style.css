@@ -5828,11 +5828,84 @@ body.no-scroll {
     }
 }
 
-/* 1 column on mobile */
-@media (max-width: 768px) {
+/* 2 columns on normal mobile (360px–768px) */
+@media (min-width: 360px) and (max-width: 768px) {
+    .home-category-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 12px !important;
+        margin-top: 28px !important;
+    }
+
+    .home-category-card {
+        min-width: 0 !important;
+        height: 260px !important;
+        border-radius: 14px !important;
+    }
+
+    .home-category-content {
+        padding: 14px 12px !important;
+    }
+
+    .home-category-title {
+        font-size: 1rem !important;
+        line-height: 1.25 !important;
+        margin-bottom: 4px !important;
+    }
+
+    .home-category-description {
+        font-size: 0.78rem !important;
+        line-height: 1.38 !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+        margin-bottom: 10px !important;
+        color: rgba(255, 255, 255, 0.88) !important;
+    }
+
+    .home-category-link {
+        font-size: 0.78rem !important;
+        min-height: 34px !important;
+        padding: 6px 12px !important;
+        gap: 4px !important;
+        border-radius: 30px !important;
+    }
+
+    .home-category-link i {
+        font-size: 0.7rem !important;
+    }
+}
+
+/* Very small mobile 1-column fallback (<=359px) */
+@media (max-width: 359px) {
     .home-category-grid {
         grid-template-columns: 1fr !important;
-        gap: 16px !important;
+        gap: 14px !important;
+        margin-top: 24px !important;
+    }
+
+    .home-category-card {
+        height: 240px !important;
+        border-radius: var(--radius-md) !important;
+    }
+
+    .home-category-content {
+        padding: 16px 14px !important;
+    }
+
+    .home-category-title {
+        font-size: 1.1rem !important;
+        margin-bottom: 6px !important;
+    }
+
+    .home-category-description {
+        font-size: 0.8rem !important;
+        margin-bottom: 10px !important;
+    }
+
+    .home-category-link {
+        font-size: 0.78rem !important;
+        padding: 6px 14px !important;
     }
 }
 
@@ -5993,22 +6066,7 @@ body.no-scroll {
     }
 }
 
-/* Mobile Responsive Adjustment */
-@media (max-width: 480px) {
-    .home-category-card {
-        height: 250px !important;
-    }
-    .home-category-content {
-        padding: 18px !important;
-    }
-    .home-category-title {
-        font-size: 1.2rem !important;
-    }
-    .home-category-description {
-        font-size: 0.82rem !important;
-        margin-bottom: 12px !important;
-    }
-}
+
 
 /* PRODUCTS PAGE HERO SLIDER (PREMIUM CORPORATE) */
 .products-hero-slider {
