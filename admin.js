@@ -2055,6 +2055,7 @@ class CharoenAdmin {
         const aboutDescEn = await this.db.get('settings', 'about_desc_en');
 
         const aboutImage = await this.db.get('settings', 'about_image');
+        const aboutHeroImage = await this.db.get('settings', 'about_hero_image');
         const aboutBulletsTh = await this.db.get('settings', 'about_bullets_th');
         const aboutBulletsEn = await this.db.get('settings', 'about_bullets_en');
 
@@ -2110,6 +2111,8 @@ class CharoenAdmin {
         }
 
         window.currentAboutServiceItems = JSON.parse(JSON.stringify(serviceItemsList));
+
+
 
         const aboutEyebrowTh = await this.db.get('settings', 'about_eyebrow_th');
         const aboutEyebrowEn = await this.db.get('settings', 'about_eyebrow_en');
@@ -2356,6 +2359,8 @@ class CharoenAdmin {
                                         </div>
                                     </div>
                                 </div>
+
+
                                 <div class="form-group">
                                     <label style="font-weight:600; font-size:0.85rem;">SEO Title (หัวข้อเว็บแสดงบนเบราว์เซอร์)</label>
                                     <input type="text" id="set-seo-title" class="form-control" value="${seoTitle?.value || ''}">
@@ -3081,11 +3086,6 @@ class CharoenAdmin {
 
                 const serviceJson = JSON.stringify(cleanServiceItems);
 
-                console.log('[About Gallery] Saving', {
-                    count: cleanGallery.length,
-                    payloadLength: galleryJson.length
-                });
-
                 const setObj = {
                     about_gallery_images: galleryJson,
                     about_service_banner_title_th: document.getElementById('set-about-one-stop-title-th')?.value || '',
@@ -3105,7 +3105,8 @@ class CharoenAdmin {
                     about_cta_text_th: document.getElementById('set-about-cta-text-th')?.value || '',
                     about_cta_text_en: document.getElementById('set-about-cta-text-en')?.value || '',
                     about_cta_link: document.getElementById('set-about-cta-link')?.value || '#contact',
-                    about_image: document.getElementById('set-about-img-src')?.value || '',
+                    about_hero_image: document.getElementById('set-about-hero-img-src') ? document.getElementById('set-about-hero-img-src').value : (aboutHeroImage?.value || ''),
+                    about_image: document.getElementById('set-about-img-src') ? document.getElementById('set-about-img-src').value : (aboutImage?.value || ''),
                     about_bullets_th: document.getElementById('set-about-bullets-th')?.value || '',
                     about_bullets_en: document.getElementById('set-about-bullets-en')?.value || '',
 

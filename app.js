@@ -3253,7 +3253,6 @@ class CharoenApp {
         const container = sliderSec.querySelector('.slider-slides-container');
         if (!container) return;
 
-        // Bounds check currentSlideIndex
         if (typeof this.currentSlideIndex !== 'number' || isNaN(this.currentSlideIndex) || this.currentSlideIndex < 0) {
             this.currentSlideIndex = 0;
         }
@@ -3264,7 +3263,6 @@ class CharoenApp {
         const offsetPercent = -this.currentSlideIndex * (100 / slideCount);
         container.style.transform = `translateX(${offsetPercent}%)`;
 
-        // Synchronize dot active class, aria-current attribute, and inline styles
         const dots = sliderSec.querySelectorAll('.slider-dot');
         dots.forEach((dot, idx) => {
             if (idx === this.currentSlideIndex) {
@@ -3292,7 +3290,6 @@ class CharoenApp {
         const dots = sliderContainer.querySelectorAll('.slider-dot');
         if (!wrapper || slides.length === 0) return;
 
-        // Clear existing interval for this slider if any
         this.localSliderIntervals = this.localSliderIntervals || {};
         if (this.localSliderIntervals[sliderId]) {
             clearInterval(this.localSliderIntervals[sliderId]);
@@ -3320,7 +3317,6 @@ class CharoenApp {
             });
         };
 
-        // Initialize dots click listeners
         dots.forEach((dot, idx) => {
             dot.onclick = () => {
                 currentIndex = idx;
@@ -3329,7 +3325,6 @@ class CharoenApp {
             };
         });
 
-        // Initialize unique Product Slider navigation arrows
         const prevBtn = sliderContainer.querySelector('.products-hero-prev');
         const nextBtn = sliderContainer.querySelector('.products-hero-next');
         if (prevBtn) {
@@ -3358,7 +3353,6 @@ class CharoenApp {
             }, 5000);
         };
 
-        // Initialize UI and start autoplay
         updateUI();
         resetAutoplay();
     }
@@ -3383,6 +3377,13 @@ class CharoenApp {
         const companyName = await this.db.get('settings', this.lang === 'th' ? 'company_name_th' : 'company_name_en');
         const companyNameVal = companyName?.value || (this.lang === 'th' ? 'เจริญ ออน คัพ' : 'Charoen On Cup');
 
+        // Dynamic Hero Title and Subtitle
+        const heroTitleKey = await this.db.get('settings', this.lang === 'th' ? 'about_hero_title_th' : 'about_hero_title_en');
+        const heroSubKey = await this.db.get('settings', this.lang === 'th' ? 'about_hero_subtitle_th' : 'about_hero_subtitle_en');
+
+        const headingVal = heroTitleKey?.value || (this.lang === 'th' ? 'เกี่ยวกับ เจริญ ออน คัพ' : 'About Charoen On Cup');
+        const heroSubVal = heroSubKey?.value || (this.lang === 'th' ? 'โรงงานผลิตและสกรีนแก้วพลาสติก แก้วกระดาษ ครบวงจร' : 'Complete Plastic & Paper Cup Screen Printing Factory');
+
         // Dynamic Eyebrow, Title, Description, CTA
         const eyebrowKey = await this.db.get('settings', this.lang === 'th' ? 'about_eyebrow_th' : 'about_eyebrow_en');
         const eyebrowVal = eyebrowKey?.value || (this.lang === 'th' ? 'เกี่ยวกับ เจริญ ออน คัพ' : 'ABOUT CHAROEN ON CUP');
@@ -3401,10 +3402,15 @@ class CharoenApp {
         const ctaLinkKey = await this.db.get('settings', 'about_cta_link');
         const ctaLinkVal = ctaLinkKey?.value || '#/products';
 
-        // Dynamic About Us Image
+        // Dynamic About Hero Image & About Main Company Image
+        const aboutHeroImgKey = await this.db.get('settings', 'about_hero_image');
         const aboutImgKey = await this.db.get('settings', 'about_image');
+
+        const rawAboutHeroVal = aboutHeroImgKey?.value || '';
         const rawAboutVal = aboutImgKey?.value || '';
-        const aboutImgVal = await this.resolveAboutImageSrc(rawAboutVal) || 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1200&q=80';
+
+        const aboutHeroImgVal = await this.resolveAboutImageSrc(rawAboutHeroVal || rawAboutVal, 'about_banner.webp');
+        const aboutImgVal = await this.resolveAboutImageSrc(rawAboutVal, 'about_banner.webp');
 
         // Dynamic About Company Gallery Images (Phase A1)
         const aboutGalleryKey = await this.db.get('settings', 'about_gallery_images');
@@ -3481,51 +3487,17 @@ class CharoenApp {
             item.resolvedImage = item.image ? (await this.resolveAboutImageSrc(item.image)) : '';
         }
 
-        // 5 Dynamic Highlight Cards (Legacy Fallback Data)
-        const defaultHighlightsTh = [
-            { icon: 'fas fa-industry', title: 'โรงงานผลิตมาตรฐาน', desc: 'ใช้เครื่องจักรสกรีนแก้วทันสมัย ได้มาตรฐานอุตสาหกรรม ควบคุมคุณภาพทุกขั้นตอน' },
-            { icon: 'fas fa-layer-group', title: 'ขั้นต่ำต่ำ เริ่มต้น 1,000 ใบ', desc: 'รองรับทั้งร้านกาแฟเปิดใหม่และธุรกิจขนาดใหญ่ สั่งผลิตได้ตามต้องการ' },
-            { icon: 'fas fa-shield-halved', title: 'สีสกรีนคมชัด ติดทนนาน', desc: 'ใช้หมึกพิมพ์ Food Grade ปลอดภัย สีสวยสดใส ไม่หลุดลอกง่าย' },
-            { icon: 'fas fa-compass-drafting', title: 'บริการจัดวางแบบฟรี', desc: 'ทีมงานมืออาชีพช่วยจัดวางตำแหน่งโลโก้และตรวจสอบไฟล์ฟรีก่อนสกรีนจริง' },
-            { icon: 'fas fa-truck-fast', title: 'จัดส่งรวดเร็วทั่วประเทศ', desc: 'แพ็คบรรจุอย่างแน่นหนา พร้อมจัดส่งตรงถึงหน้าร้านทั่วประเทศไทย' }
+
+
+        const legacyHighlights = [
+            { icon: 'fas fa-industry', title: this.lang === 'th' ? 'โรงงานผลิตมาตรฐาน' : 'Standard Manufacturing', desc: this.lang === 'th' ? 'ใช้เครื่องจักรสกรีนแก้วทันสมัย ได้มาตรฐานอุตสาหกรรม' : 'Equipped with modern machinery and strict quality control.' },
+            { icon: 'fas fa-layer-group', title: this.lang === 'th' ? 'ขั้นต่ำต่ำ เริ่มต้น 1,000 ใบ' : 'Low MOQ Starts 1,000 Pcs', desc: this.lang === 'th' ? 'รองรับทั้งร้านกาแฟเปิดใหม่และธุรกิจขนาดใหญ่' : 'Suitable for both newly opened cafes and large beverage brands.' },
+            { icon: 'fas fa-shield-halved', title: this.lang === 'th' ? 'สีสกรีนคมชัด ติดทนนาน' : 'Durable & Safe Printing', desc: this.lang === 'th' ? 'ใช้หมึกพิมพ์ Food Grade ปลอดภัย สีสวยสดใส' : 'Food-Grade inks with vibrant, long-lasting print durability.' }
         ];
-
-        const defaultHighlightsEn = [
-            { icon: 'fas fa-industry', title: 'Standard Manufacturing', desc: 'Equipped with modern screen printing machinery and strict quality control.' },
-            { icon: 'fas fa-layer-group', title: 'Low MOQ Starts 1,000 Pcs', desc: 'Suitable for both newly opened cafes and large beverage brands.' },
-            { icon: 'fas fa-shield-halved', title: 'Durable & Safe Printing', desc: 'Food-Grade inks with vibrant, long-lasting print durability.' },
-            { icon: 'fas fa-compass-drafting', title: 'Free Design Layout', desc: 'In-house graphic team assists with free logo positioning and proofing.' },
-            { icon: 'fas fa-truck-fast', title: 'Nationwide Delivery', desc: 'Secure packaging with reliable door-to-door nationwide delivery.' }
-        ];
-
-        const defaults = this.lang === 'th' ? defaultHighlightsTh : defaultHighlightsEn;
-        const highlights = [];
-        for (let i = 1; i <= 5; i++) {
-            const iconK = await this.db.get('settings', `about_h${i}_icon`);
-            const titleK = await this.db.get('settings', this.lang === 'th' ? `about_h${i}_title_th` : `about_h${i}_title_en`);
-            const descK = await this.db.get('settings', this.lang === 'th' ? `about_h${i}_desc_th` : `about_h${i}_desc_en`);
-            
-            highlights.push({
-                icon: iconK?.value || defaults[i-1].icon,
-                title: titleK?.value || defaults[i-1].title,
-                desc: descK?.value || defaults[i-1].desc
-            });
-        }
-
-        // Whitespace-safe resolver helper
-        const resolveText = (val, fallback) => {
-            const trimmed = typeof val === 'string' ? val.trim() : '';
-            return trimmed || fallback;
-        };
-
-        const headingVal = resolveText(this.t('nav_about'), this.lang === 'th' ? 'เกี่ยวกับเรา' : 'About Us');
-        const heroSubVal = this.lang === 'th' 
-            ? 'ผู้เชี่ยวชาญด้านการผลิตและสกรีนแก้วพลาสติก พร้อมบริการครบวงจรสำหรับร้านกาแฟ ร้านเครื่องดื่ม และธุรกิจอาหาร' 
-            : 'Plastic cup production and logo printing specialists, providing complete solutions for cafés, beverage shops, and food businesses.';
 
         container.innerHTML = `
-            <!-- Hero Banner (Preserved existing Hero) -->
-            <div class="subpage-hero-banner about-hero" style="--hero-bg: url('${aboutImgVal}'); --hero-position: center 35%; position: relative; padding: 65px 0; overflow: hidden; text-align: center;">
+            <!-- Hero Banner -->
+            <div class="subpage-hero-banner about-hero" style="--hero-bg: url('${aboutHeroImgVal}'); --hero-position: center 35%; position: relative; padding: 65px 0; overflow: hidden; text-align: center;">
                 <div class="subpage-hero-overlay" style="position: absolute; inset: 0; background: linear-gradient(to right, rgba(4, 53, 106, 0.70), rgba(4, 53, 106, 0.50)); z-index: 1;"></div>
                 <div class="container" style="position: relative; z-index: 2;">
                     <h2 class="about-hero-title">
@@ -3623,7 +3595,7 @@ class CharoenApp {
                         </div>
                         
                         <div class="about-highlights-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
-                            ${highlights.map((h, idx) => `
+                            ${legacyHighlights.map((h, idx) => `
                                 <div class="about-highlight-card" style="background: white; padding: 32px 24px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04); border: 1px solid rgba(4, 53, 106, 0.08); border-top: 4px solid ${idx % 2 === 0 ? 'var(--primary)' : 'var(--accent)'}; transition: transform 0.3s ease, box-shadow 0.3s ease;">
                                     <div style="width: 54px; height: 54px; border-radius: 12px; background: rgba(255, 107, 0, 0.08); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 20px;">
                                         <i class="${h.icon}"></i>
@@ -3640,6 +3612,8 @@ class CharoenApp {
                     </div>
                 </section>
             `}
+
+
 
             <!-- SECTION 3: CONTACT INFORMATION (Centered Premium Contact Card) -->
             <section class="section-padding" style="background-color: var(--bg-main); padding: 80px 0;">
