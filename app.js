@@ -3883,6 +3883,200 @@ class CharoenApp {
         return allImgs[0] || 'coffee_bg.webp';
     }
 
+    getPortfolioPreviewImages(item, maxLimit = 6) {
+        if (!item) return [];
+        const extractUrl = (entry) => {
+            if (!entry) return null;
+            if (typeof entry === 'string') {
+                const s = entry.trim();
+                return s && s.toLowerCase() !== 'null' && s.toLowerCase() !== 'undefined' ? s : null;
+            }
+            if (typeof entry === 'object') {
+                const candidate = entry.image_src || entry.src || entry.url || entry.image_url || entry.cover_image;
+                if (candidate && typeof candidate === 'string') {
+                    const s = candidate.trim();
+                    return s && s.toLowerCase() !== 'null' && s.toLowerCase() !== 'undefined' ? s : null;
+                }
+            }
+            return null;
+        };
+
+        const set = new Set();
+        const cover = this.getPortfolioCoverImage(item);
+        if (cover) set.add(cover);
+
+        const checkAndAdd = (val) => {
+            if (!val) return;
+            let list = [];
+            if (Array.isArray(val)) {
+                list = val;
+            } else if (typeof val === 'string') {
+                try {
+                    list = JSON.parse(val);
+                } catch(e) {
+                    const url = extractUrl(val);
+                    if (url) set.add(url);
+                    return;
+                }
+            } else if (typeof val === 'object') {
+                list = [val];
+            }
+            if (Array.isArray(list)) {
+                list.forEach(entry => {
+                    const url = extractUrl(entry);
+                    if (url) set.add(url);
+                });
+            }
+        };
+
+        checkAndAdd(item.image_src);
+        checkAndAdd(item.cover_image);
+        checkAndAdd(item.coverImageUrl);
+        checkAndAdd(item.gallery_images);
+        checkAndAdd(item.gallery);
+        checkAndAdd(item.images);
+
+        return Array.from(set).slice(0, maxLimit);
+    }
+
+    stopAllPortfolioPreviews() {
+        if (this.activePortfolioPreview) {
+            const { card, hoverTimeout, cycleInterval, primaryImg, secondaryImg, counterEl, coverSrc } = this.activePortfolioPreview;
+            if (hoverTimeout) clearTimeout(hoverTimeout);
+            if (cycleInterval) clearInterval(cycleInterval);
+
+            if (card) {
+                card.classList.remove('is-preview-active');
+                if (primaryImg) {
+                    primaryImg.src = coverSrc;
+                    primaryImg.style.opacity = '1';
+                }
+                if (secondaryImg) {
+                    secondaryImg.style.opacity = '0';
+                    secondaryImg.src = '';
+                }
+                if (counterEl) {
+                    counterEl.style.display = 'none';
+                    counterEl.textContent = '';
+                }
+            }
+            this.activePortfolioPreview = null;
+        }
+    }
+
+    initPortfolioSmartPreview(container) {
+        if (!container) return;
+
+        if (!this.hasAttachedPreviewGlobalListeners) {
+            this.hasAttachedPreviewGlobalListeners = true;
+            const stopHandler = () => this.stopAllPortfolioPreviews();
+            document.addEventListener('visibilitychange', stopHandler);
+            window.addEventListener('pagehide', stopHandler);
+            window.addEventListener('beforeunload', stopHandler);
+        }
+
+        const cards = container.querySelectorAll('.portfolio-card[data-portfolio-id]');
+        cards.forEach(card => {
+            if (card.dataset.previewBound) return;
+            card.dataset.previewBound = 'true';
+
+            card.addEventListener('pointerenter', async (e) => {
+                if (e.pointerType === 'touch') return;
+                if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+                if (window.innerWidth <= 1024) return;
+                if (document.visibilityState !== 'visible') return;
+                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+                const itemId = card.getAttribute('data-portfolio-id');
+                let item = (this.portfolioCache || this.portfolioItemsToRender || []).find(i => String(i.id) === String(itemId));
+                if (!item && this.db) {
+                    try {
+                        item = await this.db.get('portfolio', itemId);
+                    } catch (err) {}
+                }
+                if (!item) return;
+
+                const previewList = this.getPortfolioPreviewImages(item, 6);
+                if (previewList.length < 2) return;
+
+                this.stopAllPortfolioPreviews();
+
+                const coverSrc = this.getPortfolioCoverImage(item);
+                const primaryImg = card.querySelector('.portfolio-card-preview-primary');
+                const secondaryImg = card.querySelector('.portfolio-card-preview-secondary');
+                const counterEl = card.querySelector('.portfolio-card-preview-counter');
+
+                let currentIndex = 0;
+                let activeLayer = 0;
+
+                const hoverTimeout = setTimeout(() => {
+                    if (!card.matches(':hover')) return;
+
+                    card.classList.add('is-preview-active');
+                    if (counterEl) {
+                        counterEl.textContent = `1 / ${previewList.length}`;
+                        counterEl.style.display = 'inline-block';
+                    }
+
+                    const cycleInterval = setInterval(() => {
+                        if (document.visibilityState !== 'visible' || !card.matches(':hover')) {
+                            this.stopAllPortfolioPreviews();
+                            return;
+                        }
+
+                        const nextIndex = (currentIndex + 1) % previewList.length;
+                        const nextSrc = previewList[nextIndex];
+
+                        const targetImg = activeLayer === 0 ? secondaryImg : primaryImg;
+                        const currentImg = activeLayer === 0 ? primaryImg : secondaryImg;
+
+                        if (!targetImg) return;
+
+                        const tempImg = new Image();
+                        tempImg.onload = () => {
+                            if (!this.activePortfolioPreview || this.activePortfolioPreview.card !== card) return;
+
+                            targetImg.src = nextSrc;
+                            targetImg.style.opacity = '1';
+                            if (currentImg) currentImg.style.opacity = '0';
+
+                            activeLayer = activeLayer === 0 ? 1 : 0;
+                            currentIndex = nextIndex;
+
+                            if (counterEl) {
+                                counterEl.textContent = `${currentIndex + 1} / ${previewList.length}`;
+                            }
+                        };
+                        tempImg.onerror = () => {
+                            currentIndex = nextIndex;
+                        };
+                        tempImg.src = nextSrc;
+                    }, 1000);
+
+                    if (this.activePortfolioPreview) {
+                        this.activePortfolioPreview.cycleInterval = cycleInterval;
+                    }
+                }, 280);
+
+                this.activePortfolioPreview = {
+                    card,
+                    hoverTimeout,
+                    cycleInterval: null,
+                    primaryImg,
+                    secondaryImg,
+                    counterEl,
+                    coverSrc
+                };
+            });
+
+            card.addEventListener('pointerleave', () => {
+                if (this.activePortfolioPreview && this.activePortfolioPreview.card === card) {
+                    this.stopAllPortfolioPreviews();
+                }
+            });
+        });
+    }
+
     renderPortfolioSkeletonHTML(count = 6) {
         let html = `<div class="portfolio-grid portfolio-skeleton-grid" aria-hidden="true">`;
         for (let i = 0; i < count; i++) {
@@ -3915,27 +4109,8 @@ class CharoenApp {
         const catName = catObj ? (this.lang === 'th' ? catObj.name_th : catObj.name_en) : '';
 
         // Safely count gallery images
-        let galleryCount = 0;
-        let productImages = [];
-        if (item.image_src) {
-            productImages.push(item.image_src);
-        }
-        if (item.gallery_images) {
-            let parsedGallery = [];
-            if (Array.isArray(item.gallery_images)) {
-                parsedGallery = item.gallery_images;
-            } else if (typeof item.gallery_images === 'string') {
-                try {
-                    parsedGallery = JSON.parse(item.gallery_images);
-                } catch(e) {}
-            }
-            parsedGallery.forEach(img => {
-                if (img && !productImages.includes(img)) {
-                    productImages.push(img);
-                }
-            });
-        }
-        galleryCount = productImages.length;
+        const previewImages = this.getPortfolioPreviewImages(item, 6);
+        const galleryCount = Math.max(previewImages.length, (item.gallery_images ? (Array.isArray(item.gallery_images) ? item.gallery_images.length : 1) : 1));
 
         // String validation helper
         const isValidString = (val) => {
@@ -3955,23 +4130,41 @@ class CharoenApp {
 
         const itemTitle = this.lang === 'th' ? (item.title_th || item.title_en) : (item.title_en || item.title_th);
 
+        const isFeatured = Boolean(item.featured || item.is_featured || item.featured_status);
+        const coverSrc = this.getPortfolioCoverImage(item);
+
         return `
-            <div class="portfolio-card portfolio-card-batch-fade" onclick="window.charoenApp.openPortfolioDetails('${item.id}')" tabindex="0" role="button" aria-label="${this.lang === 'th' ? 'ดูรายละเอียดผลงาน ' + (itemTitle || '') : 'View details of ' + (itemTitle || '')}" onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.charoenApp.openPortfolioDetails('${item.id}'); }">
+            <div class="portfolio-card portfolio-card-batch-fade" data-portfolio-id="${item.id}" onclick="window.charoenApp.openPortfolioDetails('${item.id}')" tabindex="0" role="button" aria-label="${this.lang === 'th' ? 'ดูรายละเอียดผลงาน ' + (itemTitle || '') : 'View details of ' + (itemTitle || '')}" onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.charoenApp.openPortfolioDetails('${item.id}'); }">
                 <div class="portfolio-card-image-wrapper">
-                    <img class="portfolio-card-image skeleton-shimmer" src="${this.getPortfolioCoverImage(item)}" alt="${itemTitle}" loading="lazy" onload="this.classList.remove('skeleton-shimmer')" onerror="this.classList.remove('skeleton-shimmer'); this.src='coffee_bg.webp';">
-                </div>
-                
-                ${galleryCount > 1 ? `
-                    <div class="portfolio-card-badge-container">
-                        <span class="portfolio-card-count-badge">
-                            <i class="fas fa-images"></i> ${galleryCount} ${this.lang === 'th' ? 'รูป' : 'Photos'}
-                        </span>
+                    <img class="portfolio-card-image portfolio-card-preview-primary skeleton-shimmer" src="${coverSrc}" alt="${itemTitle || 'Portfolio'}" loading="lazy" onload="this.classList.remove('skeleton-shimmer')" onerror="this.classList.remove('skeleton-shimmer'); this.src='coffee_bg.webp';">
+                    <img class="portfolio-card-preview-secondary" aria-hidden="true" alt="">
+
+                    <div class="portfolio-card-top-badges">
+                        <div class="portfolio-card-badge-group-left">
+                            ${isValidString(catName) ? `
+                                <span class="portfolio-card-category-badge">
+                                    ${catName}
+                                </span>
+                            ` : ''}
+                            ${isFeatured ? `
+                                <span class="portfolio-card-featured-badge">
+                                    <i class="fas fa-star"></i> ${this.lang === 'th' ? 'เด่น' : 'Featured'}
+                                </span>
+                            ` : ''}
+                        </div>
+
+                        ${galleryCount > 1 ? `
+                            <span class="portfolio-card-count-badge">
+                                <i class="fas fa-camera"></i> ${galleryCount}
+                            </span>
+                        ` : ''}
                     </div>
-                ` : ''}
+
+                    <span class="portfolio-card-preview-counter" aria-hidden="true" style="display: none;">1 / ${previewImages.length}</span>
+                </div>
 
                 <div class="portfolio-card-overlay">
-                    ${isValidString(catName) ? `<span class="portfolio-card-category">${catName}</span>` : ''}
-                    <h3 class="portfolio-card-title">${itemTitle}</h3>
+                    <h3 class="portfolio-card-title">${itemTitle || ''}</h3>
                     ${isValidString(descText) ? `<p class="portfolio-card-desc">${descText}</p>` : ''}
                     ${isValidString(qtyText) ? `
                         <div class="portfolio-card-qty">
@@ -3986,6 +4179,9 @@ class CharoenApp {
             </div>
         `;
     }
+
+               
+  
 
     async loadNextPortfolioBatch(cardsContainer, skeletonWrapper, sentinel, endMessage, categories) {
         if (this.portfolioIsLoadingMore) return;
@@ -4017,6 +4213,7 @@ class CharoenApp {
             const batchHtml = nextBatch.map(item => this.renderPortfolioCardItemHTML(item, categories)).join('');
             cardsContainer.insertAdjacentHTML('beforeend', batchHtml);
             this.portfolioCurrentIndex += nextBatch.length;
+            this.initPortfolioSmartPreview(cardsContainer);
         }
 
         if (skeletonWrapper) {
@@ -4168,6 +4365,8 @@ class CharoenApp {
             </svg>
         `;
 
+        const contactVisible = await this.getSetting('contact_visible', 'true');
+
         let html = `
             <div class="subpage-hero-banner section-bg-manager ${hasBgImg ? 'has-bg-image' : ''}" style="position: relative; overflow: hidden; background-color: ${hasBgImg ? 'transparent' : 'var(--bg-sec)'}; border-bottom: 1px solid var(--border-color); ${heroPaddingStyle}" data-overlay="${bgOverlay}">
                 ${hasBgImg ? `
@@ -4203,66 +4402,143 @@ class CharoenApp {
                 </div>
             </div>
             
-            <div class="container portfolio-layout" style="padding-top: 36px; padding-bottom: 60px;">
-                <div class="search-filter-bar" style="margin-bottom: 36px;">
+            <div class="container portfolio-layout">
+                <!-- Top Horizontal Category Filter Pills (Mobile/Tablet <= 1024px) -->
+                <div class="search-filter-bar portfolio-top-filter-bar" style="margin-bottom: 24px;">
                     <div class="category-filter-pills" role="tablist" aria-label="${this.lang === 'th' ? 'เลือกหมวดหมู่ผลงาน' : 'Select portfolio category'}">
                         <a href="#/portfolio?category=all" class="pill ${activeCatId === 'all' ? 'active' : ''}" role="tab" aria-selected="${activeCatId === 'all' ? 'true' : 'false'}" aria-label="${this.lang === 'th' ? 'ทั้งหมด ' + counts.all + ' รายการ' : 'All ' + counts.all + ' items'}">
                             ${this.t('portfolio_all')} (${counts.all})
                         </a>
-        `;
-
-        categories.forEach(cat => {
-            const count = counts[cat.id] || 0;
-            const catName = this.lang === 'th' ? cat.name_th : cat.name_en;
-            html += `
-                <a href="#/portfolio?category=${cat.id}" class="pill ${activeCatId === cat.id ? 'active' : ''}" role="tab" aria-selected="${activeCatId === cat.id ? 'true' : 'false'}" aria-label="${catName} ${count} ${this.lang === 'th' ? 'รายการ' : 'items'}">
-                    ${catName} (${count})
-                </a>
-            `;
-        });
-
-        html += `
+                        ${categories.map(cat => {
+                            const count = counts[cat.id] || 0;
+                            const catName = this.lang === 'th' ? cat.name_th : cat.name_en;
+                            return `
+                                <a href="#/portfolio?category=${cat.id}" class="pill ${activeCatId === cat.id ? 'active' : ''}" role="tab" aria-selected="${activeCatId === cat.id ? 'true' : 'false'}" aria-label="${catName} ${count} ${this.lang === 'th' ? 'รายการ' : 'items'}">
+                                    ${catName} (${count})
+                                </a>
+                            `;
+                        }).join('')}
                     </div>
                 </div>
-        `;
 
-        if (filteredPortfolio.length === 0) {
-            const contactVisible = await this.getSetting('contact_visible', 'true');
-            html += `
-                <div style="text-align:center; padding:80px 20px; border:1px dashed var(--border-color); border-radius:var(--radius-lg); background:var(--bg-main);">
-                    <i class="fas fa-images" style="font-size:3rem; color:var(--text-muted); margin-bottom:16px;"></i>
-                    <p style="color:var(--text-muted); margin-bottom:16px; font-weight:500;">${this.t('portfolio_empty')}</p>
-                    ${contactVisible !== 'false' ? `
-                        <a href="#/contact" class="btn btn-primary" style="font-size:0.9rem; display:inline-flex; align-items:center; gap:8px;">
-                            <i class="fas fa-envelope"></i> ${this.lang === 'th' ? 'ติดต่อเรา' : 'Contact Us'}
-                        </a>
-                    ` : ''}
+                <!-- Portfolio Desktop Workspace Layout -->
+                <div class="portfolio-workspace">
+                    <!-- Desktop Sidebar (Visible >= 1025px) -->
+                    <aside class="portfolio-sidebar" aria-label="${this.lang === 'th' ? 'ตัวกรองผลงาน' : 'Portfolio filters'}">
+                        <div class="portfolio-sidebar-inner">
+                            <!-- Search Shell -->
+                            <div class="portfolio-sidebar-widget">
+                                <label for="portfolio-sidebar-search" class="portfolio-sidebar-title">
+                                    <i class="fas fa-search" style="color: var(--accent); margin-right: 6px;"></i>
+                                    ${this.lang === 'th' ? 'ค้นหาผลงาน' : 'Search Portfolio'}
+                                </label>
+                                <div class="portfolio-sidebar-search-box">
+                                    <input type="text" id="portfolio-sidebar-search" class="form-control" placeholder="${this.lang === 'th' ? 'พิมพ์คำค้นหา...' : 'Search keyword...'}" value="${params?.get('q') || ''}" readonly style="cursor: not-allowed; opacity: 0.8; font-size: 0.85rem;" title="${this.lang === 'th' ? 'ระบบค้นหากำลังจะเปิดใช้งาน' : 'Search UI shell'}">
+                                </div>
+                            </div>
+
+                            <!-- Categories Shell -->
+                            <div class="portfolio-sidebar-widget">
+                                <h3 class="portfolio-sidebar-title">
+                                    <i class="fas fa-layer-group" style="color: var(--primary); margin-right: 6px;"></i>
+                                    ${this.lang === 'th' ? 'หมวดหมู่ผลงาน' : 'Portfolio Categories'}
+                                </h3>
+                                <ul class="portfolio-sidebar-cat-list" role="list">
+                                    <li>
+                                        <a href="#/portfolio?category=all" class="portfolio-sidebar-cat-item ${activeCatId === 'all' ? 'active' : ''}" ${activeCatId === 'all' ? 'aria-current="page"' : ''}>
+                                            <span>${this.t('portfolio_all')}</span>
+                                            <span class="portfolio-sidebar-count">${counts.all}</span>
+                                        </a>
+                                    </li>
+                                    ${categories.map(cat => {
+                                        const count = counts[cat.id] || 0;
+                                        const catName = this.lang === 'th' ? cat.name_th : cat.name_en;
+                                        return `
+                                            <li>
+                                                <a href="#/portfolio?category=${cat.id}" class="portfolio-sidebar-cat-item ${activeCatId === cat.id ? 'active' : ''}" ${activeCatId === cat.id ? 'aria-current="page"' : ''}>
+                                                    <span>${catName}</span>
+                                                    <span class="portfolio-sidebar-count">${count}</span>
+                                                </a>
+                                            </li>
+                                        `;
+                                    }).join('')}
+                                </ul>
+                            </div>
+
+                            <!-- Sort Shell -->
+                            <div class="portfolio-sidebar-widget">
+                                <label for="portfolio-sidebar-sort" class="portfolio-sidebar-title">
+                                    <i class="fas fa-sort-amount-down" style="color: var(--primary); margin-right: 6px;"></i>
+                                    ${this.lang === 'th' ? 'เรียงลำดับ' : 'Sort By'}
+                                </label>
+                                <select id="portfolio-sidebar-sort" class="form-control" disabled style="cursor: not-allowed; opacity: 0.8; font-size: 0.85rem;">
+                                    <option value="default">${this.lang === 'th' ? 'ลำดับแนะนำ (Default)' : 'Featured First'}</option>
+                                </select>
+                            </div>
+
+                            ${activeCatId !== 'all' ? `
+                                <div class="portfolio-sidebar-widget" style="border-bottom: none; padding-bottom: 0;">
+                                    <a href="#/portfolio?category=all" class="portfolio-sidebar-reset-btn">
+                                        <i class="fas fa-undo"></i>
+                                        <span>${this.lang === 'th' ? 'ล้างตัวกรองทั้งหมด' : 'Reset All Filters'}</span>
+                                    </a>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </aside>
+
+                    <!-- Main Results Content Column -->
+                    <main class="portfolio-results">
+                        <!-- Results Toolbar -->
+                        <div class="portfolio-results-toolbar">
+                            <div class="portfolio-results-count">
+                                <i class="fas fa-images" style="color: var(--accent); margin-right: 6px;"></i>
+                                <span>${this.lang === 'th' ? `ทั้งหมด ${filteredPortfolio.length} รายการ` : `Showing ${filteredPortfolio.length} items`}</span>
+                            </div>
+                            ${activeCatId !== 'all' ? `
+                                <div class="portfolio-results-active-tag">
+                                    <span>${categories.find(c => c.id === activeCatId) ? (this.lang === 'th' ? categories.find(c => c.id === activeCatId).name_th : categories.find(c => c.id === activeCatId).name_en) : activeCatId}</span>
+                                    <a href="#/portfolio?category=all" aria-label="${this.lang === 'th' ? 'ยกเลิกตัวกรองหมวดหมู่' : 'Clear category filter'}"><i class="fas fa-times"></i></a>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        ${filteredPortfolio.length === 0 ? `
+                            <div style="text-align:center; padding:80px 20px; border:1px dashed var(--border-color); border-radius:var(--radius-lg); background:var(--bg-main);">
+                                <i class="fas fa-images" style="font-size:3rem; color:var(--text-muted); margin-bottom:16px;"></i>
+                                <p style="color:var(--text-muted); margin-bottom:16px; font-weight:500;">${this.t('portfolio_empty')}</p>
+                                ${contactVisible !== 'false' ? `
+                                    <a href="#/contact" class="btn btn-primary" style="font-size:0.9rem; display:inline-flex; align-items:center; gap:8px;">
+                                        <i class="fas fa-envelope"></i> ${this.lang === 'th' ? 'ติดต่อเรา' : 'Contact Us'}
+                                    </a>
+                                ` : ''}
+                            </div>
+                        ` : `
+                            <div class="portfolio-grid portfolio-grid-content-fade" id="portfolio-cards-container">
+                                ${initialBatch.map(item => this.renderPortfolioCardItemHTML(item, categories)).join('')}
+                            </div>
+
+                            <div id="portfolio-infinite-skeleton-wrapper" style="margin-top: 24px; display: none;" aria-hidden="true">
+                                ${this.renderPortfolioSkeletonHTML(window.innerWidth < 768 ? 2 : 4)}
+                            </div>
+
+                            <div id="portfolio-scroll-sentinel" aria-hidden="true" style="height: 20px; margin-top: 10px; width: 100%;"></div>
+
+                            <div id="portfolio-end-message" style="display: ${this.portfolioCurrentIndex >= filteredPortfolio.length ? 'block' : 'none'}; text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 0.95rem; font-weight: 500;">
+                                <i class="fas fa-check-circle" style="color: var(--accent); margin-right: 8px;"></i>
+                                ${this.lang === 'th' ? 'คุณได้ดูผลงานทั้งหมดแล้ว' : 'All portfolio items loaded'}
+                            </div>
+                        `}
+                    </main>
                 </div>
-            `;
-        } else {
-            html += `
-                <div class="portfolio-grid portfolio-grid-content-fade" id="portfolio-cards-container">
-                    ${initialBatch.map(item => this.renderPortfolioCardItemHTML(item, categories)).join('')}
-                </div>
-
-                <div id="portfolio-infinite-skeleton-wrapper" style="margin-top: 24px; display: none;" aria-hidden="true">
-                    ${this.renderPortfolioSkeletonHTML(window.innerWidth < 768 ? 2 : 4)}
-                </div>
-
-                <div id="portfolio-scroll-sentinel" aria-hidden="true" style="height: 20px; margin-top: 10px; width: 100%;"></div>
-
-                <div id="portfolio-end-message" style="display: ${this.portfolioCurrentIndex >= filteredPortfolio.length ? 'block' : 'none'}; text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 0.95rem; font-weight: 500;">
-                    <i class="fas fa-check-circle" style="color: var(--accent); margin-right: 8px;"></i>
-                    ${this.lang === 'th' ? 'คุณได้ดูผลงานทั้งหมดแล้ว' : 'All portfolio items loaded'}
-                </div>
-            `;
-        }
-
-        html += `
             </div>
         `;
 
+        this.stopAllPortfolioPreviews();
+
         container.innerHTML = html;
+
+        this.initPortfolioSmartPreview(container);
 
         // Attach IntersectionObserver for Infinite Scroll
         if (this.portfolioCurrentIndex < filteredPortfolio.length) {
@@ -5062,6 +5338,7 @@ class CharoenApp {
     }
 
     async openPortfolioDetails(id) {
+        this.stopAllPortfolioPreviews();
         const item = await this.db.get('portfolio', id);
         const categories = await this.db.getAll('categories');
         if (!item) return;
