@@ -22,7 +22,7 @@ class CharoenOnCupDB {
             'homepage': 'homepage_sections',
             'clients': 'logos',
             'settings': 'company_info',
-            'home_videos': 'homepage_settings',
+            'home_videos': 'home_videos',
             'quotes': 'quotation_requests',
             'faq': 'faq',
             'reviews': 'reviews'
@@ -177,7 +177,7 @@ class CharoenOnCupDB {
     // Generic Operations (Offline-First cache pattern with fail-safe try-catches)
     // Generic Operations (Phase P1 Local-First cache pattern with safe background Cloud refresh)
     async getAll(storeName) {
-        const unSyncedStores = ['media', 'home_videos'];
+        const unSyncedStores = ['media'];
 
         // 1. Read IndexedDB local data immediately
         const localList = await new Promise((resolve) => {
@@ -238,7 +238,7 @@ class CharoenOnCupDB {
     }
 
     async get(storeName, id) {
-        const unSyncedStores = ['media', 'home_videos'];
+        const unSyncedStores = ['media'];
 
         // 1. Read requested record from IndexedDB immediately
         const localItem = await new Promise((resolve) => {
@@ -287,8 +287,40 @@ class CharoenOnCupDB {
         // Invalidate memory cache
         delete this.memCache[storeName];
 
-        const unSyncedStores = ['media', 'home_videos'];
+        const unSyncedStores = ['media'];
         const isCloudEnabled = this.isCloudEnabled && !unSyncedStores.includes(storeName);
+
+        if (storeName === 'home_videos') {
+            // Save to local IndexedDB first (guarantees immediate local persistence)
+            await new Promise((resolve, reject) => {
+                try {
+                    if (!this.db || !this.db.objectStoreNames.contains(storeName)) {
+                        reject(new Error(`Database store "${storeName}" is not initialized.`));
+                        return;
+                    }
+                    const transaction = this.db.transaction(storeName, 'readwrite');
+                    const store = transaction.objectStore(storeName);
+                    const request = store.put(item);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                } catch (err) {
+                    reject(err);
+                }
+            });
+
+            delete this.memCache[storeName];
+
+            // Non-blocking attempt to sync sanitized metadata to Firestore
+            if (isCloudEnabled && navigator.onLine !== false) {
+                try {
+                    await this.firebasePut(storeName, item);
+                } catch (err) {
+                    console.warn(`CharoenOnCupDB: Firestore sync failed for home_videos (local save succeeded):`, err);
+                }
+            }
+
+            return item;
+        }
 
         if (isCloudEnabled && navigator.onLine !== false) {
             try {
@@ -327,7 +359,7 @@ class CharoenOnCupDB {
         // Invalidate memory cache
         delete this.memCache[storeName];
 
-        const unSyncedStores = ['media', 'home_videos'];
+        const unSyncedStores = ['media'];
         const isCloudEnabled = this.isCloudEnabled && !unSyncedStores.includes(storeName);
 
         if (isCloudEnabled && navigator.onLine !== false) {
@@ -385,9 +417,24 @@ class CharoenOnCupDB {
                         const transaction = this.db.transaction(storeName, 'readwrite');
                         const store = transaction.objectStore(storeName);
                         
-                        store.clear();
-                        for (const item of cloudList) {
-                            store.put(item);
+                        if (storeName !== 'home_videos') {
+                            store.clear();
+                            for (const item of cloudList) {
+                                store.put(item);
+                            }
+                        } else {
+                            for (const item of cloudList) {
+                                const req = store.get(item.id);
+                                req.onsuccess = () => {
+                                    const localObj = req.result;
+                                    const merged = { ...item };
+                                    if (localObj) {
+                                        if (localObj.video_src && !merged.video_src) merged.video_src = localObj.video_src;
+                                        if (localObj.poster_src && !merged.poster_src) merged.poster_src = localObj.poster_src;
+                                    }
+                                    store.put(merged);
+                                };
+                            }
                         }
                         
                         transaction.oncomplete = () => {
@@ -442,6 +489,56 @@ class CharoenOnCupDB {
         }
     }
 
+    sanitizeHomeVideoForCloud(item) {
+        if (!item || typeof item !== 'object') return null;
+
+        const videoPath = typeof item.video_path === 'string' ? item.video_path.trim() : '';
+        const posterPath = typeof item.poster_path === 'string' ? item.poster_path.trim() : '';
+
+        const isSafeUrl = (str) => {
+            if (!str || typeof str !== 'string') return false;
+            const s = str.trim();
+            return !s.startsWith('data:') && !s.startsWith('blob:') && !s.startsWith('file://');
+        };
+
+        const safeVideoSrc = isSafeUrl(item.video_src) ? item.video_src.trim() : '';
+        const safePosterSrc = isSafeUrl(item.poster_src) ? item.poster_src.trim() : '';
+
+        const clean = {
+            id: String(item.id || 'video_1'),
+            title_th: String(item.title_th || ''),
+            title_en: String(item.title_en || ''),
+            desc_th: String(item.desc_th || ''),
+            desc_en: String(item.desc_en || ''),
+            video_path: videoPath,
+            poster_path: posterPath,
+            visible: item.visible !== false,
+            order: Number(item.order || 1),
+            updated_at: item.updated_at || new Date().toISOString()
+        };
+
+        if (safeVideoSrc) clean.video_src = safeVideoSrc;
+        if (safePosterSrc) clean.poster_src = safePosterSrc;
+
+        // Defensive assertion: check serialized payload for Base64/blob or excessive size
+        try {
+            const serialized = JSON.stringify(clean);
+            if (
+                serialized.includes('data:video/') ||
+                serialized.includes('data:image/') ||
+                serialized.includes('blob:') ||
+                serialized.length > 100000
+            ) {
+                console.warn(`CharoenOnCupDB: Rejected cloud sync for home_videos item "${clean.id}" due to unsafe payload or size limit (${serialized.length} bytes)`);
+                return null;
+            }
+        } catch (e) {
+            return null;
+        }
+
+        return clean;
+    }
+
     async firebasePut(storeName, item) {
         if (!this.fs) return;
         const docId = storeName === 'settings' ? item.key : (storeName === 'users' ? item.username : item.id);
@@ -457,7 +554,18 @@ class CharoenOnCupDB {
         }
 
         const colName = this.getCollectionName(storeName);
-        const sanitized = this.sanitizeForFirestore(item);
+        let sanitized = item;
+
+        if (storeName === 'home_videos') {
+            sanitized = this.sanitizeHomeVideoForCloud(item);
+            if (!sanitized) {
+                console.log(`CharoenOnCupDB: Skipped Firestore write for "${storeName}/${docId}" (sanitization returned null)`);
+                return;
+            }
+        } else {
+            sanitized = this.sanitizeForFirestore(item);
+        }
+
         await this.fs.collection(colName).doc(docId).set(sanitized, { merge: true });
     }
 

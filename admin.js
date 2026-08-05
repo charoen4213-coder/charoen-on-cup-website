@@ -347,7 +347,7 @@ class CharoenAdmin {
                         <li class="admin-menu-item ${this.activeTab === 'product_slider' ? 'active' : ''}" data-tab="product_slider">
                             <a><i class="fas fa-images"></i> จัดการสไลด์หน้าสินค้า</a>
                         </li>
-                        <li class="admin-menu-item ${this.activeTab === 'home_videos' ? 'active' : ''}" data-tab="home_videos" style="display: none;">
+                        <li class="admin-menu-item ${this.activeTab === 'home_videos' ? 'active' : ''}" data-tab="home_videos">
                             <a><i class="fas fa-video"></i> จัดการวิดีโอหน้าแรก</a>
                         </li>
                         <li class="admin-menu-item ${this.activeTab === 'media_lib' ? 'active' : ''}" data-tab="media_lib">
