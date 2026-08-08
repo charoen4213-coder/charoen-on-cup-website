@@ -4137,26 +4137,26 @@ h1, h2, h3, h4, h5, h6 {
 .portfolio-card {
     position: relative;
     aspect-ratio: 16 / 10;
-    border-radius: 18px;
+    border-radius: 16px;
     overflow: hidden;
     background-color: var(--card-bg, #ffffff);
     box-shadow: 0 4px 16px rgba(4, 53, 106, 0.08);
     border: 1px solid var(--border-color, rgba(4, 53, 106, 0.12));
     cursor: pointer;
     box-sizing: border-box;
-    transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 220ms ease, box-shadow 220ms ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
     .portfolio-card:hover {
-        transform: translateY(-6px) scale(1.015);
-        box-shadow: 0 16px 36px rgba(4, 53, 106, 0.18);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(4, 53, 106, 0.14);
     }
     .portfolio-card:hover .portfolio-card-image {
         transform: scale(1.04);
     }
     .portfolio-card:hover .portfolio-card-cta {
-        text-decoration: underline;
+        color: var(--accent, #ff6b00);
     }
     .portfolio-card:hover .portfolio-card-cta i {
         transform: translateX(4px);
@@ -4267,11 +4267,10 @@ h1, h2, h3, h4, h5, h6 {
     background-color: rgba(255, 107, 0, 0.92);
     color: #ffffff;
     font-size: 0.72rem;
-    font-weight: 700;
-    padding: 3px 9px;
+    font-weight: 500;
+    padding: 3px 8px;
     border-radius: 6px;
-    letter-spacing: 0.4px;
-    text-transform: uppercase;
+    letter-spacing: 0;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     backdrop-filter: blur(4px);
 }
@@ -4280,8 +4279,8 @@ h1, h2, h3, h4, h5, h6 {
     background-color: rgba(12, 35, 64, 0.85);
     color: #ffffff;
     font-size: 0.72rem;
-    font-weight: 700;
-    padding: 3px 9px;
+    font-weight: 600;
+    padding: 3px 8px;
     border-radius: 6px;
     display: inline-flex;
     align-items: center;
@@ -4295,7 +4294,7 @@ h1, h2, h3, h4, h5, h6 {
     background-color: rgba(234, 179, 8, 0.95);
     color: #0c2340;
     font-size: 0.72rem;
-    font-weight: 800;
+    font-weight: 700;
     padding: 3px 8px;
     border-radius: 6px;
     display: inline-flex;
@@ -4303,7 +4302,7 @@ h1, h2, h3, h4, h5, h6 {
     gap: 4px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     backdrop-filter: blur(4px);
-    letter-spacing: 0.3px;
+    letter-spacing: 0;
 }
 
 .portfolio-card-overlay {
@@ -4329,7 +4328,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .portfolio-card-title {
-    font-size: 1.05rem;
+    font-size: 1.02rem;
     font-weight: 700;
     margin: 0;
     color: #ffffff;
@@ -4342,6 +4341,7 @@ h1, h2, h3, h4, h5, h6 {
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    letter-spacing: 0;
 }
 
 
@@ -4351,17 +4351,17 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 600;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     margin-top: 2px;
 }
 
 .portfolio-card-cta {
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 700;
-    color: var(--accent, #ff6b00);
+    color: #ffffff;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     margin-top: 4px;
     transition: color 0.2s ease;
 }
@@ -4384,50 +4384,6 @@ h1, h2, h3, h4, h5, h6 {
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-.portfolio-card-cta {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: white;
-    margin-top: 4px;
-    transition: color 0.2s ease;
-}
-
-.portfolio-card-cta i {
-    transition: transform 0.2s ease;
-}
-
-/* Hover effects for Desktop devices */
-@media (hover: hover) and (pointer: fine) {
-    .portfolio-card:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--card-shadow-hover);
-    }
-    
-    .portfolio-card:hover .portfolio-card-image {
-        transform: scale(1.05);
-    }
-    
-    .portfolio-card:hover .portfolio-card-overlay {
-        opacity: 1;
-    }
-    
-    .portfolio-card:hover .portfolio-card-cta {
-        color: var(--accent);
-    }
-    
-    .portfolio-card:hover .portfolio-card-cta i {
-        transform: translateX(4px);
-    }
-}
-
-.portfolio-card:focus-visible {
-    outline: 3px solid var(--accent);
-    outline-offset: 2px;
 }
 
 /* Portfolio Details in Modal */
