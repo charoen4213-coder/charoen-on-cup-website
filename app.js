@@ -4120,10 +4120,6 @@ class CharoenApp {
             return s !== '' && lower !== 'null' && lower !== 'undefined';
         };
 
-        // Validate description text
-        const rawDesc = this.lang === 'th' ? (item.desc_th || item.description_th || item.desc) : (item.desc_en || item.description_en || item.desc);
-        const descText = isValidString(rawDesc) ? String(rawDesc).trim() : '';
-
         // Validate quantity text
         const rawQty = item.quantity || item.qty || item.minimum_order || item.min_order || item.amount;
         const qtyText = isValidString(rawQty) ? String(rawQty).trim() : '';
@@ -4165,7 +4161,6 @@ class CharoenApp {
 
                 <div class="portfolio-card-overlay">
                     <h3 class="portfolio-card-title">${itemTitle || ''}</h3>
-                    ${isValidString(descText) ? `<p class="portfolio-card-desc">${descText}</p>` : ''}
                     ${isValidString(qtyText) ? `
                         <div class="portfolio-card-qty">
                             <i class="fas fa-boxes"></i> ${qtyText}
@@ -5343,6 +5338,13 @@ class CharoenApp {
         const categories = await this.db.getAll('categories');
         if (!item) return;
 
+        const isValidString = (val) => {
+            if (val === null || val === undefined) return false;
+            const s = String(val).trim();
+            const lower = s.toLowerCase();
+            return s !== '' && lower !== 'null' && lower !== 'undefined';
+        };
+
         // Save active element for focus restoration
         this.modalTriggerElement = document.activeElement;
 
@@ -5390,94 +5392,153 @@ class CharoenApp {
         const lineSetting = await this.db.get('settings', 'line');
         const lineVal = lineSetting?.value?.replace('@', '') || 'charoenoncup';
 
+        const rawDescription = this.lang === 'th'
+            ? (
+                item.desc_th ||
+                item.description_th ||
+                item.details_th ||
+                item.desc_en ||
+                item.description_en ||
+                item.details_en ||
+                item.description ||
+                item.desc ||
+                item.details
+            )
+            : (
+                item.desc_en ||
+                item.description_en ||
+                item.details_en ||
+                item.desc_th ||
+                item.description_th ||
+                item.details_th ||
+                item.description ||
+                item.desc ||
+                item.details
+            );
+
+        const descriptionText = isValidString(rawDescription)
+            ? String(rawDescription).trim()
+            : '';
+
+        const clientName = item.client_name || item.customer_name || item.client || item.shop_name || '';
+        const printColor = item.print_color || item.screen_color || item.color_count || '';
+        const quantity = item.quantity || item.qty || item.amount || item.minimum_order || item.min_order || '';
+        const cupType = item.cup_type || item.cup || item.cup_size || '';
+        const province = item.province || item.location || item.city || '';
+
+        const hasMetadata = isValidString(clientName) ||
+                            isValidString(cupType) ||
+                            isValidString(printColor) ||
+                            isValidString(quantity) ||
+                            isValidString(province);
+
         const overlay = document.createElement('div');
-        overlay.className = 'modal-overlay portfolio-lightbox-modal';
+        overlay.className = 'modal-overlay portfolio-lightbox-modal portfolio-modal-overlay';
         overlay.id = 'portfolio-modal';
         overlay.setAttribute('role', 'dialog');
         overlay.setAttribute('aria-modal', 'true');
-        overlay.setAttribute('aria-labelledby', 'modal-portfolio-title');
+        overlay.setAttribute('aria-labelledby', 'portfolio-modal-title');
 
         let activeImgIdx = 0;
 
         overlay.innerHTML = `
-            <div class="modal-window portfolio-lightbox-window">
-                <button class="modal-close-btn" onclick="window.charoenApp.closeActiveModal()" aria-label="${this.lang === 'th' ? 'ปิดหน้าต่าง' : 'Close modal'}"><i class="fas fa-times"></i></button>
+            <div class="modal-window portfolio-lightbox-window portfolio-modal-dialog">
+                <button class="modal-close-btn portfolio-modal-close" onclick="window.charoenApp.closeActiveModal()" aria-label="${this.lang === 'th' ? 'ปิดหน้าต่าง' : 'Close modal'}">
+                    <i class="fas fa-times"></i>
+                </button>
                 
-                <div class="portfolio-lightbox-scroll-wrapper">
-                    <div class="portfolio-lightbox-grid">
-                        <!-- Left / Top: Gallery Media -->
-                        <div class="lightbox-media-col">
-                            <div class="lightbox-main-img-box" id="lightbox-main-img-box">
-                                ${portfolioImages.length > 1 ? `
-                                    <button class="lightbox-arrow prev" id="lightbox-prev-btn" aria-label="Previous image"><i class="fas fa-chevron-left"></i></button>
-                                    <button class="lightbox-arrow next" id="lightbox-next-btn" aria-label="Next image"><i class="fas fa-chevron-right"></i></button>
-                                ` : ''}
-                                <div class="lightbox-img-loader" id="lightbox-img-loader" style="display:none; position:absolute; inset:0; flex-direction:column; align-items:center; justify-content:center; background:rgba(0,0,0,0.35); color:var(--secondary); font-size:1.5rem; z-index:4; backdrop-filter:blur(2px);">
-                                    <i class="fas fa-circle-notch fa-spin"></i>
-                                </div>
-                                <div class="lightbox-img-error" id="lightbox-img-error" style="display:none; position:absolute; inset:0; flex-direction:column; align-items:center; justify-content:center; background:rgba(15,23,42,0.95); color:#ff6b6b; font-size:0.85rem; font-weight:600; gap:8px; z-index:5; text-align:center; padding:16px;">
-                                    <i class="fas fa-exclamation-circle" style="font-size:1.8rem;"></i>
-                                    <span>ไม่สามารถแสดงรูปนี้ได้</span>
-                                </div>
-                                <img id="modal-main-image" src="${mainImage || 'coffee_bg.webp'}" alt="${this.lang === 'th' ? (item.title_th || '') : (item.title_en || '')}">
-                            </div>
-
+                <div class="portfolio-modal-layout">
+                    <!-- Left / Top: Gallery Media Section -->
+                    <section class="portfolio-modal-media lightbox-media-col">
+                        <div class="portfolio-modal-main-frame lightbox-main-img-box" id="lightbox-main-img-box">
                             ${portfolioImages.length > 1 ? `
-                                <div class="lightbox-thumbnails-wrapper">
-                                    ${portfolioImages.map((img, idx) => `
-                                        <button class="lightbox-thumb-btn ${idx === 0 ? 'active' : ''}" data-idx="${idx}" aria-label="Thumbnail ${idx + 1}">
-                                            <img src="${img}" alt="Thumb ${idx + 1}" onerror="this.src='coffee_bg.webp';">
-                                        </button>
-                                    `).join('')}
-                                </div>
+                                <button class="lightbox-arrow prev" id="lightbox-prev-btn" aria-label="${this.lang === 'th' ? 'รูปก่อนหน้า' : 'Previous image'}"><i class="fas fa-chevron-left"></i></button>
+                                <button class="lightbox-arrow next" id="lightbox-next-btn" aria-label="${this.lang === 'th' ? 'รูปถัดไป' : 'Next image'}"><i class="fas fa-chevron-right"></i></button>
+                                <span class="lightbox-img-counter" id="lightbox-img-counter">1 / ${portfolioImages.length}</span>
                             ` : ''}
+                            <div class="lightbox-img-loader" id="lightbox-img-loader" style="display:none; position:absolute; inset:0; flex-direction:column; align-items:center; justify-content:center; background:rgba(0,0,0,0.35); color:var(--secondary); font-size:1.5rem; z-index:4; backdrop-filter:blur(2px);">
+                                <i class="fas fa-circle-notch fa-spin"></i>
+                            </div>
+                            <div class="lightbox-img-error" id="lightbox-img-error" style="display:none; position:absolute; inset:0; flex-direction:column; align-items:center; justify-content:center; background:rgba(15,23,42,0.95); color:#ff6b6b; font-size:0.85rem; font-weight:600; gap:8px; z-index:5; text-align:center; padding:16px;">
+                                <i class="fas fa-exclamation-circle" style="font-size:1.8rem;"></i>
+                                <span>${this.lang === 'th' ? 'ไม่สามารถแสดงรูปนี้ได้' : 'Failed to load image'}</span>
+                            </div>
+                            <img id="modal-main-image" src="${mainImage || 'coffee_bg.webp'}" alt="${this.lang === 'th' ? (item.title_th || '') : (item.title_en || '')}">
                         </div>
 
-                        <!-- Right / Bottom: Project Specifications & Info -->
-                        <div class="lightbox-info-col">
-                            <div class="lightbox-header-info">
-                                <span class="lightbox-category-badge">${catName}</span>
-                                <h3 id="modal-portfolio-title" class="lightbox-title">${this.lang === 'th' ? (item.title_th || item.title_en) : (item.title_en || item.title_th)}</h3>
+                        ${portfolioImages.length > 1 ? `
+                            <div class="portfolio-modal-thumbnails lightbox-thumbnails-wrapper" role="tablist" aria-label="${this.lang === 'th' ? 'รายการรูปภาพผลงาน' : 'Portfolio image gallery'}">
+                                ${portfolioImages.map((img, idx) => `
+                                    <button class="lightbox-thumb-btn ${idx === 0 ? 'active' : ''}" data-idx="${idx}" aria-label="Thumbnail ${idx + 1}" role="tab" aria-selected="${idx === 0 ? 'true' : 'false'}">
+                                        <img src="${img}" alt="Thumb ${idx + 1}" onerror="this.src='coffee_bg.webp';">
+                                    </button>
+                                `).join('')}
                             </div>
+                        ` : ''}
+                    </section>
 
-                            <div class="lightbox-specs-grid">
-                                <div class="lightbox-spec-item">
-                                    <span class="spec-label"><i class="fas fa-wine-glass-alt"></i> ${this.lang === 'th' ? 'ประเภทแก้ว' : 'Cup Type'}</span>
-                                    <span class="spec-value">${item.cup_type || (this.lang === 'th' ? 'แก้ว PET 22oz' : 'PET 22oz')}</span>
-                                </div>
-                                <div class="lightbox-spec-item">
-                                    <span class="spec-label"><i class="fas fa-palette"></i> ${this.lang === 'th' ? 'จำนวนสี' : 'Colors'}</span>
-                                    <span class="spec-value">${item.print_color || (this.lang === 'th' ? '2 สี' : '2 Colors')}</span>
-                                </div>
-                                <div class="lightbox-spec-item">
-                                    <span class="spec-label"><i class="fas fa-boxes"></i> ${this.lang === 'th' ? 'จำนวน' : 'Quantity'}</span>
-                                    <span class="spec-value">${item.qty || item.quantity || '10,000 ใบ'}</span>
-                                </div>
-                                <div class="lightbox-spec-item">
-                                    <span class="spec-label"><i class="fas fa-map-marker-alt"></i> ${this.lang === 'th' ? 'จังหวัด' : 'Province'}</span>
-                                    <span class="spec-value">${item.province || item.location || (this.lang === 'th' ? 'สงขลา' : 'Songkhla')}</span>
-                                </div>
-                                <div class="lightbox-spec-item">
-                                    <span class="spec-label"><i class="far fa-calendar-alt"></i> ${this.lang === 'th' ? 'วันที่จัดส่ง' : 'Delivery Date'}</span>
-                                    <span class="spec-value">${item.date || (this.lang === 'th' ? '15 กรกฎาคม 2025' : '15 July 2025')}</span>
-                                </div>
-                            </div>
-
-                            <div class="lightbox-desc-box">
-                                <h4>${this.lang === 'th' ? 'รายละเอียดผลงาน' : 'Project Details'}</h4>
-                                <p>${this.lang === 'th' ? (item.desc_th || item.description_th || 'แก้ว PET สกรีนลายคมชัด 2 สี พร้อมส่งมอบงานพิมพ์คุณภาพสูงสะท้อนเอกลักษณ์เฉพาะตัวของแบรนด์') : (item.desc_en || item.description_en || 'High quality custom printed PET cup showcasing brand identity.')}</p>
-                            </div>
-
-                            <div class="lightbox-actions">
-                                <a href="https://line.me/R/ti/p/~${lineVal}" target="_blank" rel="noopener noreferrer" class="btn btn-primary lightbox-primary-btn">
-                                    <i class="fab fa-line"></i> ${this.lang === 'th' ? 'สั่งสกรีนแบบนี้' : 'Inquire This Design'}
-                                </a>
-                                <button type="button" class="btn btn-outline lightbox-share-btn" id="lightbox-share-action">
-                                    <i class="fas fa-share-alt"></i> ${this.lang === 'th' ? 'แชร์ผลงาน' : 'Share'}
-                                </button>
-                            </div>
+                    <!-- Right / Bottom: Information Panel -->
+                    <aside class="portfolio-modal-info lightbox-info-col">
+                        <div class="lightbox-header-info">
+                            ${isValidString(catName) ? `<span class="lightbox-category-badge">${catName}</span>` : ''}
+                            <h3 id="portfolio-modal-title" class="lightbox-title">${this.lang === 'th' ? (item.title_th || item.title_en) : (item.title_en || item.title_th)}</h3>
                         </div>
-                    </div>
+
+                        ${isValidString(descriptionText) ? `
+                            <div class="lightbox-desc-box portfolio-modal-description-section">
+                                <h3 class="portfolio-modal-section-title">${this.lang === 'th' ? 'รายละเอียดผลงาน' : 'Project Details'}</h3>
+                                <p class="portfolio-modal-description">${descriptionText}</p>
+                            </div>
+                        ` : ''}
+
+                        ${hasMetadata ? `
+                            <section class="portfolio-modal-metadata">
+                                <h3 class="portfolio-modal-section-title">${this.lang === 'th' ? 'ข้อมูลผลงาน' : 'Project Information'}</h3>
+
+                                <dl class="portfolio-modal-meta-list portfolio-modal-meta-grid lightbox-specs-grid">
+                                    ${isValidString(clientName) ? `
+                                        <div class="portfolio-modal-meta-row portfolio-modal-meta-item lightbox-spec-item">
+                                            <dt class="portfolio-modal-meta-label spec-label"><i class="fas fa-store"></i> ${this.lang === 'th' ? 'ชื่อลูกค้า' : 'Client'}</dt>
+                                            <dd class="portfolio-modal-meta-value spec-value">${clientName}</dd>
+                                        </div>
+                                    ` : ''}
+                                    ${isValidString(cupType) ? `
+                                        <div class="portfolio-modal-meta-row portfolio-modal-meta-item lightbox-spec-item">
+                                            <dt class="portfolio-modal-meta-label spec-label"><i class="fas fa-wine-glass-alt"></i> ${this.lang === 'th' ? 'ประเภทแก้ว' : 'Cup Type'}</dt>
+                                            <dd class="portfolio-modal-meta-value spec-value">${cupType}</dd>
+                                        </div>
+                                    ` : ''}
+                                    ${isValidString(printColor) ? `
+                                        <div class="portfolio-modal-meta-row portfolio-modal-meta-item lightbox-spec-item">
+                                            <dt class="portfolio-modal-meta-label spec-label"><i class="fas fa-palette"></i> ${this.lang === 'th' ? 'จำนวนสีสกรีน' : 'Print Colors'}</dt>
+                                            <dd class="portfolio-modal-meta-value spec-value">${printColor}</dd>
+                                        </div>
+                                    ` : ''}
+                                    ${isValidString(quantity) ? `
+                                        <div class="portfolio-modal-meta-row portfolio-modal-meta-item lightbox-spec-item">
+                                            <dt class="portfolio-modal-meta-label spec-label"><i class="fas fa-boxes"></i> ${this.lang === 'th' ? 'จำนวนผลิต' : 'Production Quantity'}</dt>
+                                            <dd class="portfolio-modal-meta-value spec-value">${quantity}</dd>
+                                        </div>
+                                    ` : ''}
+                                    ${isValidString(province) ? `
+                                        <div class="portfolio-modal-meta-row portfolio-modal-meta-item lightbox-spec-item">
+                                            <dt class="portfolio-modal-meta-label spec-label"><i class="fas fa-map-marker-alt"></i> ${this.lang === 'th' ? 'จังหวัด' : 'Location'}</dt>
+                                            <dd class="portfolio-modal-meta-value spec-value">${province}</dd>
+                                        </div>
+                                    ` : ''}
+                                </dl>
+                            </section>
+                        ` : ''}
+
+                        <div class="lightbox-actions">
+                            <a href="https://line.me/R/ti/p/~${lineVal}" target="_blank" rel="noopener noreferrer" class="btn btn-primary lightbox-primary-btn">
+                                <i class="fab fa-line"></i> ${this.lang === 'th' ? 'สั่งสกรีนแบบนี้' : 'Inquire This Design'}
+                            </a>
+                            <button type="button" class="btn btn-outline lightbox-share-btn" id="lightbox-share-action">
+                                <i class="fas fa-share-alt"></i> ${this.lang === 'th' ? 'แชร์ผลงาน' : 'Share'}
+                            </button>
+                        </div>
+                    </aside>
                 </div>
             </div>
         `;
@@ -5562,6 +5623,12 @@ class CharoenApp {
             };
 
             tempImg.src = targetSrc;
+
+            // Update counter text if element exists
+            const counterEl = overlay.querySelector('#lightbox-img-counter');
+            if (counterEl) {
+                counterEl.textContent = `${activeImgIdx + 1} / ${portfolioImages.length}`;
+            }
 
             // Update Thumbnail active states
             thumbBtns.forEach((btn, idx) => {
