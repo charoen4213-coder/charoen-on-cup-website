@@ -4888,15 +4888,75 @@ class CharoenApp {
 
         const descHtml = contactDesc ? `<p style="line-height:1.75; color:var(--text-sec); margin-bottom:30px;">${contactDesc}</p>` : '';
 
+        const contactHeroTitleThSetting = await this.getSetting('contact_hero_title_th');
+        const contactHeroTitleEnSetting = await this.getSetting('contact_hero_title_en');
+        const contactHeroDescThSetting = await this.getSetting('contact_hero_desc_th');
+        const contactHeroDescEnSetting = await this.getSetting('contact_hero_desc_en');
+        const contactHeroHeightSetting = await this.getSetting('contact_hero_height');
+
+        const contactHeroTitleTh = contactHeroTitleThSetting || this.t('nav_contact');
+        const contactHeroTitleEn = contactHeroTitleEnSetting || 'Contact Us';
+        const contactHeroDescTh = contactHeroDescThSetting || (this.lang === 'th' ? 'ยินดีให้คำปรึกษาและออกแบบแก้วฟรี พร้อมบริการส่งด่วนทั่วประเทศ' : 'Get free design consultations and packaging mockups with nationwide delivery.');
+        const contactHeroDescEn = contactHeroDescEnSetting || 'Get free design consultations and packaging mockups with nationwide delivery.';
+        const contactHeroHeightVal = contactHeroHeightSetting || 'default';
+
+        let contactHeroPaddingStyle = '';
+        if (contactHeroHeightVal === 'compact') contactHeroPaddingStyle = 'padding: 38px 0 !important;';
+        else if (contactHeroHeightVal === 'tall') contactHeroPaddingStyle = 'padding: 80px 0 !important;';
+
+        const contactBgStyle = await this.getSetting('contact_hero_background_style', 'image');
+        let contactBgImg = await this.getSetting('contact_hero_background_image', 'contact_banner.webp');
+        if (!contactBgImg) contactBgImg = 'contact_banner.webp';
+        if (typeof contactBgImg === 'object' && contactBgImg !== null) {
+            contactBgImg = contactBgImg.url || contactBgImg.image_src || contactBgImg.src || contactBgImg.path || 'contact_banner.webp';
+        }
+
+        const contactRawOverlay = await this.getSetting('contact_hero_background_overlay', 55);
+        const contactBgOverlay = (function(raw) {
+            if (raw === undefined || raw === null || raw === '') return 55;
+            let val = Number(raw);
+            if (!Number.isFinite(val)) return 55;
+            if (val > 0 && val <= 1) val = val * 100;
+            return Math.min(80, Math.max(0, Math.round(val)));
+        })(contactRawOverlay);
+
+        const contactBgPos = await this.getSetting('contact_hero_background_position', 'center center');
+        const contactBgBrightnessRaw = await this.getSetting('contact_hero_background_brightness', 100);
+        const contactBgBrightness = parseInt(contactBgBrightnessRaw) || 100;
+        const contactBgTextTheme = await this.getSetting('contact_hero_background_text_theme', 'auto');
+
+        const hasContactBgImg = (contactBgStyle === 'image' || contactBgStyle === 'image_line_art') && Boolean(contactBgImg);
+        const isContactLightText = (hasContactBgImg && (contactBgTextTheme === 'auto' || contactBgTextTheme === 'light')) || contactBgTextTheme === 'light';
+        const contactTitleColorStyle = isContactLightText ? 'color: #ffffff !important;' : '';
+        const contactDescColorStyle = isContactLightText ? 'color: rgba(255, 255, 255, 0.88) !important;' : 'color: var(--text-muted);';
+
         container.innerHTML = `
-            <div class="subpage-hero-banner" style="background-image: url('contact_banner.webp')">
-                <div class="container">
-                    <h2>${this.t('nav_contact')}</h2>
-                    <p>${this.lang === 'th' ? 'ยินดีให้คำปรึกษาและออกแบบแก้วฟรี พร้อมบริการส่งด่วนทั่วประเทศ' : 'Get free design consultations and packaging mockups with nationwide delivery.'}</p>
+            <div class="subpage-hero-banner contact-hero-banner ${hasContactBgImg ? 'has-bg-image' : ''}" style="position: relative; overflow: hidden; background-color: ${hasContactBgImg ? 'transparent' : 'var(--bg-sec)'}; ${contactHeroPaddingStyle}" data-overlay="${contactBgOverlay}">
+                ${hasContactBgImg ? `
+                    <div class="sec-bg-image-layer" style="
+                        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                        background-image: url(&quot;${contactBgImg}&quot;);
+                        background-size: cover;
+                        background-position: ${contactBgPos};
+                        filter: brightness(${contactBgBrightness}%);
+                        z-index: 0;
+                        pointer-events: none;
+                    "></div>
+                    <div class="sec-bg-overlay-layer" style="
+                        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                        background-color: rgba(0, 0, 0, ${contactBgOverlay / 100});
+                        z-index: 0;
+                        pointer-events: none;
+                    "></div>
+                ` : ''}
+
+                <div class="container text-center" style="position: relative; z-index: 2;">
+                    <h2 style="${contactTitleColorStyle}">${this.lang === 'th' ? contactHeroTitleTh : contactHeroTitleEn}</h2>
+                    <p style="${contactDescColorStyle}">${this.lang === 'th' ? contactHeroDescTh : contactHeroDescEn}</p>
                 </div>
             </div>
             
-            <section class="section-padding">
+            <section class="section-padding contact-section">
                 <div class="container">
                     <div class="grid-2" style="gap:50px;">
                         <div>
@@ -5002,15 +5062,75 @@ class CharoenApp {
             `).join('');
         }
 
+        const faqHeroTitleThSetting = await this.getSetting('faq_hero_title_th');
+        const faqHeroTitleEnSetting = await this.getSetting('faq_hero_title_en');
+        const faqHeroDescThSetting = await this.getSetting('faq_hero_desc_th');
+        const faqHeroDescEnSetting = await this.getSetting('faq_hero_desc_en');
+        const faqHeroHeightSetting = await this.getSetting('faq_hero_height');
+
+        const faqHeroTitleTh = faqHeroTitleThSetting || this.t('nav_faq');
+        const faqHeroTitleEn = faqHeroTitleEnSetting || 'Frequently Asked Questions';
+        const faqHeroDescTh = faqHeroDescThSetting || (this.lang === 'th' ? 'คำถามที่พบบ่อยเกี่ยวกับการสกรีนแก้ว ขั้นต่ำ ระยะเวลาผลิต และการขนส่งสำหรับแบรนด์คาเฟ่' : 'Frequently Asked Questions about cup custom screen printing, MOQs, lead times, and logistics.');
+        const faqHeroDescEn = faqHeroDescEnSetting || 'Frequently Asked Questions about cup custom screen printing, MOQs, lead times, and logistics.';
+        const faqHeroHeightVal = faqHeroHeightSetting || 'default';
+
+        let faqHeroPaddingStyle = '';
+        if (faqHeroHeightVal === 'compact') faqHeroPaddingStyle = 'padding: 38px 0 !important;';
+        else if (faqHeroHeightVal === 'tall') faqHeroPaddingStyle = 'padding: 80px 0 !important;';
+
+        const faqBgStyle = await this.getSetting('faq_hero_background_style', 'image');
+        let faqBgImg = await this.getSetting('faq_hero_background_image', 'faq_banner.webp');
+        if (!faqBgImg) faqBgImg = 'faq_banner.webp';
+        if (typeof faqBgImg === 'object' && faqBgImg !== null) {
+            faqBgImg = faqBgImg.url || faqBgImg.image_src || faqBgImg.src || faqBgImg.path || 'faq_banner.webp';
+        }
+
+        const faqRawOverlay = await this.getSetting('faq_hero_background_overlay', 55);
+        const faqBgOverlay = (function(raw) {
+            if (raw === undefined || raw === null || raw === '') return 55;
+            let val = Number(raw);
+            if (!Number.isFinite(val)) return 55;
+            if (val > 0 && val <= 1) val = val * 100;
+            return Math.min(80, Math.max(0, Math.round(val)));
+        })(faqRawOverlay);
+
+        const faqBgPos = await this.getSetting('faq_hero_background_position', 'center center');
+        const faqBgBrightnessRaw = await this.getSetting('faq_hero_background_brightness', 100);
+        const faqBgBrightness = parseInt(faqBgBrightnessRaw) || 100;
+        const faqBgTextTheme = await this.getSetting('faq_hero_background_text_theme', 'auto');
+
+        const hasFaqBgImg = (faqBgStyle === 'image' || faqBgStyle === 'image_line_art') && Boolean(faqBgImg);
+        const isFaqLightText = (hasFaqBgImg && (faqBgTextTheme === 'auto' || faqBgTextTheme === 'light')) || faqBgTextTheme === 'light';
+        const faqTitleColorStyle = isFaqLightText ? 'color: #ffffff !important;' : '';
+        const faqDescColorStyle = isFaqLightText ? 'color: rgba(255, 255, 255, 0.88) !important;' : 'color: var(--text-muted);';
+
         container.innerHTML = `
-            <div class="subpage-hero-banner" style="background-image: url('faq_banner.webp')">
-                <div class="container">
-                    <h2>${this.t('nav_faq')}</h2>
-                    <p>${this.lang === 'th' ? 'คำถามที่พบบ่อยเกี่ยวกับการสกรีนแก้ว ขั้นต่ำ ระยะเวลาผลิต และการขนส่งสำหรับแบรนด์คาเฟ่' : 'Frequently Asked Questions about cup custom screen printing, MOQs, lead times, and logistics.'}</p>
+            <div class="subpage-hero-banner faq-hero-banner ${hasFaqBgImg ? 'has-bg-image' : ''}" style="position: relative; overflow: hidden; background-color: ${hasFaqBgImg ? 'transparent' : 'var(--bg-sec)'}; ${faqHeroPaddingStyle}" data-overlay="${faqBgOverlay}">
+                ${hasFaqBgImg ? `
+                    <div class="sec-bg-image-layer" style="
+                        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                        background-image: url(&quot;${faqBgImg}&quot;);
+                        background-size: cover;
+                        background-position: ${faqBgPos};
+                        filter: brightness(${faqBgBrightness}%);
+                        z-index: 0;
+                        pointer-events: none;
+                    "></div>
+                    <div class="sec-bg-overlay-layer" style="
+                        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                        background-color: rgba(0, 0, 0, ${faqBgOverlay / 100});
+                        z-index: 0;
+                        pointer-events: none;
+                    "></div>
+                ` : ''}
+
+                <div class="container text-center" style="position: relative; z-index: 2;">
+                    <h2 style="${faqTitleColorStyle}">${this.lang === 'th' ? faqHeroTitleTh : faqHeroTitleEn}</h2>
+                    <p style="${faqDescColorStyle}">${this.lang === 'th' ? faqHeroDescTh : faqHeroDescEn}</p>
                 </div>
             </div>
             
-            <section class="section-padding">
+            <section class="section-padding faq-section">
                 <div class="container" style="max-width:800px;">
                     <div style="display:flex; flex-direction:column; gap:20px;">
                         ${faqsHtml}

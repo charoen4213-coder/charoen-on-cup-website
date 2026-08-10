@@ -1658,6 +1658,96 @@ h1, h2, h3, h4, h5, h6 {
     opacity: 0.8;
 }
 
+/* Contact & FAQ Hero B2B Refinement */
+.subpage-hero-banner.contact-hero-banner,
+.subpage-hero-banner.faq-hero-banner {
+    background-color: var(--secondary, #0c2340);
+    padding: 56px 0;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    background-size: cover;
+    background-position: center;
+}
+
+.subpage-hero-banner.contact-hero-banner::before,
+.subpage-hero-banner.faq-hero-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(10, 25, 47, 0.88) 0%, rgba(12, 35, 64, 0.82) 100%);
+    z-index: 1;
+}
+
+.subpage-hero-banner.contact-hero-banner .container,
+.subpage-hero-banner.faq-hero-banner .container {
+    position: relative;
+    z-index: 2;
+}
+
+.subpage-hero-banner.contact-hero-banner h2,
+.subpage-hero-banner.faq-hero-banner h2 {
+    font-size: clamp(2rem, 3.2vw, 2.4rem);
+    font-weight: 700;
+    color: #ffffff !important;
+    margin-bottom: 10px;
+    font-family: 'Kanit', sans-serif;
+    letter-spacing: 0;
+    line-height: 1.3;
+}
+
+.subpage-hero-banner.contact-hero-banner p,
+.subpage-hero-banner.faq-hero-banner p {
+    font-size: clamp(0.95rem, 1.4vw, 1.05rem);
+    color: rgba(255, 255, 255, 0.88) !important;
+    font-weight: 400;
+    line-height: 1.6;
+    letter-spacing: 0;
+    max-width: 680px;
+    margin: 0 auto;
+    opacity: 1;
+}
+
+.contact-section,
+.faq-section {
+    padding-top: 48px !important;
+}
+
+@media (max-width: 1024px) {
+    .subpage-hero-banner.contact-hero-banner,
+    .subpage-hero-banner.faq-hero-banner {
+        padding: 46px 0 !important;
+    }
+    .contact-section,
+    .faq-section {
+        padding-top: 36px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .subpage-hero-banner.contact-hero-banner,
+    .subpage-hero-banner.faq-hero-banner {
+        padding: 38px 0 !important;
+    }
+    .subpage-hero-banner.contact-hero-banner h2,
+    .subpage-hero-banner.faq-hero-banner h2 {
+        font-size: 1.65rem !important;
+        margin-bottom: 8px !important;
+    }
+    .subpage-hero-banner.contact-hero-banner p,
+    .subpage-hero-banner.faq-hero-banner p {
+        font-size: 0.92rem !important;
+        line-height: 1.55 !important;
+    }
+    .contact-section,
+    .faq-section {
+        padding-top: 28px !important;
+    }
+}
+
 .catalog-layout {
     display: grid;
     grid-template-columns: 240px 1fr;

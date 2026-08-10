@@ -13,6 +13,18 @@ window.normalizeSectionOverlay = (raw) => {
     return Math.min(80, Math.max(0, Math.round(val)));
 };
 
+// Safe helper to resolve image settings persistence without unintentional resets
+window.resolveImageSettingForSave = (inputVal, existingVal, explicitlyRemoved = false) => {
+    if (explicitlyRemoved) {
+        return '';
+    }
+    const val = typeof inputVal === 'string' ? inputVal.trim() : '';
+    if (val) {
+        return val;
+    }
+    return existingVal || '';
+};
+
 // Reusable helper function to generate Section Background Appearance Panel HTML
 window.renderBgAppearancePanelHtml = (sectionObj) => {
     const bgStyle = sectionObj.content?.backgroundStyle || sectionObj.backgroundStyle || 'line_art';
@@ -1007,8 +1019,8 @@ class CharoenAdmin {
         });
     }
 
-    // Dedicated Portfolio Hero Background Manager Dialog
-    async openPortfolioHeroModal() {
+    // Generic Subpage Hero Background & Content Manager Dialog
+    async openSubpageHeroModal({ prefix, titleLabel, defaultTitleTh, defaultTitleEn, defaultDescTh, defaultDescEn, defaultBanner }) {
         const adminApp = this;
 
         if (!window.toggleBgStyleControls) {
@@ -1060,24 +1072,24 @@ class CharoenAdmin {
             };
         }
 
-        const titleThObj = await adminApp.db.get('settings', 'portfolio_hero_title_th');
-        const titleEnObj = await adminApp.db.get('settings', 'portfolio_hero_title_en');
-        const descThObj = await adminApp.db.get('settings', 'portfolio_hero_desc_th');
-        const descEnObj = await adminApp.db.get('settings', 'portfolio_hero_desc_en');
+        const titleThObj = await adminApp.db.get('settings', `${prefix}_hero_title_th`);
+        const titleEnObj = await adminApp.db.get('settings', `${prefix}_hero_title_en`);
+        const descThObj = await adminApp.db.get('settings', `${prefix}_hero_desc_th`);
+        const descEnObj = await adminApp.db.get('settings', `${prefix}_hero_desc_en`);
 
-        const bgStyleObj = await adminApp.db.get('settings', 'portfolio_hero_background_style');
-        const bgImgObj = await adminApp.db.get('settings', 'portfolio_hero_background_image');
-        const bgOverlayObj = await adminApp.db.get('settings', 'portfolio_hero_background_overlay');
-        const bgPosObj = await adminApp.db.get('settings', 'portfolio_hero_background_position');
-        const bgBrightnessObj = await adminApp.db.get('settings', 'portfolio_hero_background_brightness');
-        const bgTextThemeObj = await adminApp.db.get('settings', 'portfolio_hero_background_text_theme');
-        const bgAttachmentObj = await adminApp.db.get('settings', 'portfolio_hero_background_attachment');
-        const heightObj = await adminApp.db.get('settings', 'portfolio_hero_height');
+        const bgStyleObj = await adminApp.db.get('settings', `${prefix}_hero_background_style`);
+        const bgImgObj = await adminApp.db.get('settings', `${prefix}_hero_background_image`);
+        const bgOverlayObj = await adminApp.db.get('settings', `${prefix}_hero_background_overlay`);
+        const bgPosObj = await adminApp.db.get('settings', `${prefix}_hero_background_position`);
+        const bgBrightnessObj = await adminApp.db.get('settings', `${prefix}_hero_background_brightness`);
+        const bgTextThemeObj = await adminApp.db.get('settings', `${prefix}_hero_background_text_theme`);
+        const bgAttachmentObj = await adminApp.db.get('settings', `${prefix}_hero_background_attachment`);
+        const heightObj = await adminApp.db.get('settings', `${prefix}_hero_height`);
 
         const heroSecObj = {
             content: {
                 backgroundStyle: bgStyleObj?.value || 'image',
-                backgroundImage: bgImgObj?.value || 'portfolio_banner.webp',
+                backgroundImage: bgImgObj?.value || defaultBanner,
                 backgroundOverlay: bgOverlayObj?.value !== undefined ? bgOverlayObj.value : 55,
                 backgroundPosition: bgPosObj?.value || 'center center',
                 backgroundBrightness: bgBrightnessObj?.value !== undefined ? bgBrightnessObj.value : 100,
@@ -1086,52 +1098,52 @@ class CharoenAdmin {
             }
         };
 
-        const titleTh = titleThObj?.value || 'ผลงานสกรีนแก้ว';
-        const titleEn = titleEnObj?.value || 'Our Portfolio';
-        const descTh = descThObj?.value || 'รวมภาพตัวอย่างผลงานสกรีนจริงจากแบรนด์เครื่องดื่มและร้านกาแฟชั้นนำทั่วประเทศ';
-        const descEn = descEnObj?.value || 'Real-world screen printing portfolio from leading beverage brands & cafes.';
+        const titleTh = titleThObj?.value || defaultTitleTh;
+        const titleEn = titleEnObj?.value || defaultTitleEn;
+        const descTh = descThObj?.value || defaultDescTh;
+        const descEn = descEnObj?.value || defaultDescEn;
         const heightVal = heightObj?.value || 'default';
 
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay active';
         overlay.innerHTML = `
-            <div class="modal-window portfolio-hero-modal-window" style="max-width: 680px; width: 92%; max-height: 90vh; overflow-y: auto; overflow-x: hidden; padding: 24px; box-sizing: border-box;">
+            <div class="modal-window subpage-hero-modal-window" style="max-width: 680px; width: 92%; max-height: 90vh; overflow-y: auto; overflow-x: hidden; padding: 24px; box-sizing: border-box;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:12px; border-bottom:1px solid var(--border-color); width:100%; box-sizing:border-box;">
                     <h3 style="font-size:1.15rem; font-weight:700; color:var(--primary); margin:0; line-height:1.4;">
-                        <i class="fas fa-image" style="color:var(--secondary); margin-right:8px;"></i> ตั้งค่า Hero พื้นหลังหัวข้อผลงาน (Portfolio Hero)
+                        <i class="fas fa-image" style="color:var(--secondary); margin-right:8px;"></i> ตั้งค่า ${titleLabel}
                     </h3>
                     <button type="button" class="btn btn-outline close-modal-btn" style="padding:4px 8px; font-size:0.8rem; flex-shrink:0;"><i class="fas fa-times"></i></button>
                 </div>
 
-                <form id="portfolio-hero-form" style="width:100%; box-sizing:border-box;">
+                <form id="${prefix}-hero-form" style="width:100%; box-sizing:border-box;">
                     <div class="portfolio-hero-grid" style="display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:14px; margin-bottom:14px; width:100%; box-sizing:border-box;">
                         <div class="form-group" style="min-width:0; max-width:100%; box-sizing:border-box;">
                             <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; width:100%; margin-left:0; padding-left:0; margin-bottom:6px; line-height:1.5; overflow:visible;">ชื่อหัวข้อ (ภาษาไทย)</label>
-                            <input type="text" id="port-hero-title-th" class="form-control" value="${titleTh}" style="width:100%; max-width:100%; box-sizing:border-box; margin-left:0; transform:none;">
+                            <input type="text" id="${prefix}-hero-title-th" class="form-control" value="${titleTh}" style="width:100%; max-width:100%; box-sizing:border-box; margin-left:0; transform:none;">
                         </div>
                         <div class="form-group" style="min-width:0; max-width:100%; box-sizing:border-box;">
                             <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; width:100%; margin-left:0; padding-left:0; margin-bottom:6px; line-height:1.5; overflow:visible;">Title (English)</label>
-                            <input type="text" id="port-hero-title-en" class="form-control" value="${titleEn}" style="width:100%; max-width:100%; box-sizing:border-box; margin-left:0; transform:none;">
+                            <input type="text" id="${prefix}-hero-title-en" class="form-control" value="${titleEn}" style="width:100%; max-width:100%; box-sizing:border-box; margin-left:0; transform:none;">
                         </div>
                     </div>
 
                     <div class="portfolio-hero-grid" style="display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:14px; margin-bottom:14px; width:100%; box-sizing:border-box;">
                         <div class="form-group" style="min-width:0; max-width:100%; box-sizing:border-box;">
                             <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; width:100%; margin-left:0; padding-left:0; margin-bottom:6px; line-height:1.5; overflow:visible;">คำอธิบาย (ภาษาไทย)</label>
-                            <textarea id="port-hero-desc-th" class="form-control" rows="2" style="width:100%; max-width:100%; box-sizing:border-box; margin-left:0; transform:none;">${descTh}</textarea>
+                            <textarea id="${prefix}-hero-desc-th" class="form-control" rows="2" style="width:100%; max-width:100%; box-sizing:border-box; margin-left:0; transform:none;">${descTh}</textarea>
                         </div>
                         <div class="form-group" style="min-width:0; max-width:100%; box-sizing:border-box;">
                             <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; width:100%; margin-left:0; padding-left:0; margin-bottom:6px; line-height:1.5; overflow:visible;">Description (English)</label>
-                            <textarea id="port-hero-desc-en" class="form-control" rows="2" style="width:100%; max-width:100%; box-sizing:border-box; margin-left:0; transform:none;">${descEn}</textarea>
+                            <textarea id="${prefix}-hero-desc-en" class="form-control" rows="2" style="width:100%; max-width:100%; box-sizing:border-box; margin-left:0; transform:none;">${descEn}</textarea>
                         </div>
                     </div>
 
                     <div class="form-group" style="margin-bottom:16px; min-width:0; max-width:100%; box-sizing:border-box;">
                         <label style="font-weight:700; font-size:0.82rem; color:var(--primary); display:block; width:100%; margin-left:0; padding-left:0; margin-bottom:6px; line-height:1.5; overflow:visible;">ความสูงป้าย Hero (Section Height)</label>
-                        <select id="port-hero-height" class="form-control" style="width:100%; max-width:100%; box-sizing:border-box; margin-left:0; transform:none; padding:8px 12px;">
+                        <select id="${prefix}-hero-height" class="form-control" style="width:100%; max-width:100%; box-sizing:border-box; margin-left:0; transform:none; padding:8px 12px;">
                             <option value="compact" ${heightVal === 'compact' ? 'selected' : ''}>Compact (กะทัดรัด - 38px padding)</option>
-                            <option value="default" ${heightVal === 'default' ? 'selected' : ''}>Default (มาตรฐาน - 60px padding)</option>
-                            <option value="tall" ${heightVal === 'tall' ? 'selected' : ''}>Tall (ทรงสูง - 90px padding)</option>
+                            <option value="default" ${heightVal === 'default' ? 'selected' : ''}>Default (มาตรฐาน - 56px padding)</option>
+                            <option value="tall" ${heightVal === 'tall' ? 'selected' : ''}>Tall (ทรงสูง - 80px padding)</option>
                         </select>
                     </div>
 
@@ -1153,7 +1165,7 @@ class CharoenAdmin {
 
         overlay.querySelectorAll('.close-modal-btn').forEach(btn => btn.onclick = closeModal);
 
-        document.getElementById('portfolio-hero-form').onsubmit = async (e) => {
+        document.getElementById(`${prefix}-hero-form`).onsubmit = async (e) => {
             e.preventDefault();
             const bgStyle = document.querySelector('input[name="bg-style-radio"]:checked')?.value || 'image';
             const bgImg = document.getElementById('sec-bg-img-val')?.value !== undefined
@@ -1166,24 +1178,60 @@ class CharoenAdmin {
             const bgTextTheme = document.querySelector('input[name="bg-text-theme-radio"]:checked')?.value || document.getElementById('sec-bg-text-theme')?.value || 'auto';
             const bgAttachment = document.getElementById('sec-bg-attachment')?.value === 'fixed' ? 'fixed' : 'scroll';
 
-            await adminApp.db.put('settings', { key: 'portfolio_hero_title_th', value: document.getElementById('port-hero-title-th').value });
-            await adminApp.db.put('settings', { key: 'portfolio_hero_title_en', value: document.getElementById('port-hero-title-en').value });
-            await adminApp.db.put('settings', { key: 'portfolio_hero_desc_th', value: document.getElementById('port-hero-desc-th').value });
-            await adminApp.db.put('settings', { key: 'portfolio_hero_desc_en', value: document.getElementById('port-hero-desc-en').value });
-            await adminApp.db.put('settings', { key: 'portfolio_hero_height', value: document.getElementById('port-hero-height').value });
+            await adminApp.db.put('settings', { key: `${prefix}_hero_title_th`, value: document.getElementById(`${prefix}-hero-title-th`).value });
+            await adminApp.db.put('settings', { key: `${prefix}_hero_title_en`, value: document.getElementById(`${prefix}-hero-title-en`).value });
+            await adminApp.db.put('settings', { key: `${prefix}_hero_desc_th`, value: document.getElementById(`${prefix}-hero-desc-th`).value });
+            await adminApp.db.put('settings', { key: `${prefix}_hero_desc_en`, value: document.getElementById(`${prefix}-hero-desc-en`).value });
+            await adminApp.db.put('settings', { key: `${prefix}_hero_height`, value: document.getElementById(`${prefix}-hero-height`).value });
 
-            await adminApp.db.put('settings', { key: 'portfolio_hero_background_style', value: bgStyle });
-            await adminApp.db.put('settings', { key: 'portfolio_hero_background_image', value: bgImg });
-            await adminApp.db.put('settings', { key: 'portfolio_hero_background_overlay', value: bgOverlay });
-            await adminApp.db.put('settings', { key: 'portfolio_hero_background_position', value: bgPos });
-            await adminApp.db.put('settings', { key: 'portfolio_hero_background_brightness', value: bgBrightness });
-            await adminApp.db.put('settings', { key: 'portfolio_hero_background_text_theme', value: bgTextTheme });
-            await adminApp.db.put('settings', { key: 'portfolio_hero_background_attachment', value: bgAttachment });
+            await adminApp.db.put('settings', { key: `${prefix}_hero_background_style`, value: bgStyle });
+            await adminApp.db.put('settings', { key: `${prefix}_hero_background_image`, value: bgImg });
+            await adminApp.db.put('settings', { key: `${prefix}_hero_background_overlay`, value: bgOverlay });
+            await adminApp.db.put('settings', { key: `${prefix}_hero_background_position`, value: bgPos });
+            await adminApp.db.put('settings', { key: `${prefix}_hero_background_brightness`, value: bgBrightness });
+            await adminApp.db.put('settings', { key: `${prefix}_hero_background_text_theme`, value: bgTextTheme });
+            await adminApp.db.put('settings', { key: `${prefix}_hero_background_attachment`, value: bgAttachment });
 
-            alert('บันทึกการตั้งค่า Portfolio Hero เรียบร้อยแล้ว');
+            alert(`บันทึกการตั้งค่า ${titleLabel} เรียบร้อยแล้ว`);
             closeModal();
             adminApp.renderActiveView();
         };
+    }
+
+    async openPortfolioHeroModal() {
+        return this.openSubpageHeroModal({
+            prefix: 'portfolio',
+            titleLabel: 'Hero พื้นหลังหัวข้อผลงาน (Portfolio Hero)',
+            defaultTitleTh: 'ผลงานสกรีนแก้ว',
+            defaultTitleEn: 'Our Portfolio',
+            defaultDescTh: 'รวมภาพตัวอย่างผลงานสกรีนจริงจากแบรนด์เครื่องดื่มและร้านกาแฟชั้นนำทั่วประเทศ',
+            defaultDescEn: 'Real-world screen printing portfolio from leading beverage brands & cafes.',
+            defaultBanner: 'portfolio_banner.webp'
+        });
+    }
+
+    async openContactHeroModal() {
+        return this.openSubpageHeroModal({
+            prefix: 'contact',
+            titleLabel: 'Hero หน้าติดต่อเรา (Contact Hero)',
+            defaultTitleTh: 'ติดต่อเรา',
+            defaultTitleEn: 'Contact Us',
+            defaultDescTh: 'ยินดีให้คำปรึกษาและออกแบบแก้วฟรี พร้อมบริการส่งด่วนทั่วประเทศ',
+            defaultDescEn: 'Get free design consultations and packaging mockups with nationwide delivery.',
+            defaultBanner: 'contact_banner.webp'
+        });
+    }
+
+    async openFaqHeroModal() {
+        return this.openSubpageHeroModal({
+            prefix: 'faq',
+            titleLabel: 'Hero หน้าคำถามที่พบบ่อย (FAQ Hero)',
+            defaultTitleTh: 'คำถามที่พบบ่อย',
+            defaultTitleEn: 'Frequently Asked Questions',
+            defaultDescTh: 'คำถามที่พบบ่อยเกี่ยวกับการสกรีนแก้ว ขั้นต่ำ ระยะเวลาผลิต และการขนส่งสำหรับแบรนด์คาเฟ่',
+            defaultDescEn: 'Frequently Asked Questions about cup custom screen printing, MOQs, lead times, and logistics.',
+            defaultBanner: 'faq_banner.webp'
+        });
     }
 
     // Hero Slider View
@@ -2074,6 +2122,11 @@ class CharoenAdmin {
 
     // Settings View
     async loadSettingsView(container) {
+        window.logoImgExplicitlyRemoved = false;
+        window.aboutImageExplicitlyRemoved = false;
+        window.aboutHeroImageExplicitlyRemoved = false;
+        window.lineQrImgExplicitlyRemoved = false;
+
         const logoImg = await this.db.get('settings', 'logo_img');
         const phone = await this.db.get('settings', 'phone');
         const line = await this.db.get('settings', 'line');
@@ -2416,7 +2469,10 @@ class CharoenAdmin {
 
                     <!-- Contact & Maps Settings Form -->
                     <div class="admin-card">
-                        <h3 style="font-size:1.1rem; font-weight:700; color:var(--secondary); margin-bottom:16px; border-bottom:1.5px solid var(--border-color); padding-bottom:8px;"><i class="fas fa-map-marked-alt"></i> ข้อมูลการติดต่อและแผนที่ (Contact & Map Settings)</h3>
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid var(--border-color); padding-bottom:8px; margin-bottom:16px;">
+                            <h3 style="font-size:1.1rem; font-weight:700; color:var(--secondary); margin:0;"><i class="fas fa-map-marked-alt"></i> ข้อมูลการติดต่อและแผนที่ (Contact & Map Settings)</h3>
+                            <button type="button" class="btn btn-outline" id="edit-contact-hero-btn" style="padding:6px 14px; font-size:0.82rem;"><i class="fas fa-image"></i> ตั้งค่า Hero / Background</button>
+                        </div>
                         
                         <div style="display:flex; flex-direction:column; gap:12px;">
                             <div class="form-group" style="flex-direction:row; align-items:center; gap:8px; background:var(--bg-sec); padding:10px; border-radius:var(--radius-sm);">
@@ -2687,6 +2743,7 @@ class CharoenAdmin {
                     };
                     await this.db.put('media', newMedia);
 
+                    window.logoImgExplicitlyRemoved = false;
                     logoImgSrcInput.value = base64;
                     document.getElementById('set-logo-preview').src = base64;
                     alert('อัปโหลดและอัปเดตโลโก้ร้านค้าสำเร็จ! (กดปุ่มบันทึกเพื่อบันทึกข้อมูลหน้าร้านหลัก)');
@@ -2703,6 +2760,7 @@ class CharoenAdmin {
         if (setLogoLibraryBtn) {
             setLogoLibraryBtn.onclick = () => {
                 this.openMediaSelectorDialog((selectedBase64) => {
+                    window.logoImgExplicitlyRemoved = false;
                     logoImgSrcInput.value = selectedBase64;
                     document.getElementById('set-logo-preview').src = selectedBase64;
                     alert('เลือกโลโก้ร้านค้าจากคลังสำเร็จ! (กดปุ่มบันทึกเพื่อบันทึกข้อมูลหน้าร้านหลัก)');
@@ -2714,6 +2772,7 @@ class CharoenAdmin {
         if (setLogoClearBtn) {
             setLogoClearBtn.onclick = () => {
                 if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบภาพโลโก้ร้านค้าหลักออก?')) {
+                    window.logoImgExplicitlyRemoved = true;
                     logoImgSrcInput.value = '';
                     logoDropZone.innerHTML = `<i class="fas fa-image" style="color:var(--text-muted); font-size:1.2rem;"></i>`;
                     alert('ล้างภาพโลโก้แล้ว (กดปุ่มบันทึกเพื่อบันทึกข้อมูลหน้าร้านหลัก)');
@@ -2762,6 +2821,7 @@ class CharoenAdmin {
                         };
                         await this.db.put('media', newMedia);
 
+                        window.aboutImageExplicitlyRemoved = false;
                         aboutImgSrcInput.value = filename;
                         const preview = document.getElementById('set-about-preview');
                         if (preview) {
@@ -2790,6 +2850,7 @@ class CharoenAdmin {
                     };
                     await this.db.put('media', newMedia);
 
+                    window.aboutImageExplicitlyRemoved = false;
                     aboutImgSrcInput.value = filename;
                     const preview = document.getElementById('set-about-preview');
                     if (preview) {
@@ -2811,6 +2872,7 @@ class CharoenAdmin {
         if (setAboutLibraryBtn) {
             setAboutLibraryBtn.onclick = () => {
                 this.openMediaSelectorDialog((src, name) => {
+                    window.aboutImageExplicitlyRemoved = false;
                     aboutImgSrcInput.value = name || src;
                     const preview = document.getElementById('set-about-preview');
                     if (preview) {
@@ -2827,6 +2889,7 @@ class CharoenAdmin {
         if (setAboutClearBtn) {
             setAboutClearBtn.onclick = () => {
                 if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรูปภาพหน้าเกี่ยวกับเราออก?')) {
+                    window.aboutImageExplicitlyRemoved = true;
                     aboutImgSrcInput.value = '';
                     aboutDropZone.innerHTML = `<i class="fas fa-image" style="color:var(--text-muted); font-size:1.5rem;"></i>`;
                     alert('ล้างรูปภาพเรียบร้อย (กดปุ่มบันทึกเพื่อบันทึกข้อมูล)');
@@ -2862,6 +2925,7 @@ class CharoenAdmin {
                     };
                     await this.db.put('media', newMedia);
 
+                    window.lineQrImgExplicitlyRemoved = false;
                     lineQrImgSrcInput.value = base64;
                     const preview = document.getElementById('set-line-qr-preview');
                     if (preview) {
@@ -2883,6 +2947,7 @@ class CharoenAdmin {
         if (setLineQrLibraryBtn) {
             setLineQrLibraryBtn.onclick = () => {
                 this.openMediaSelectorDialog((selectedBase64) => {
+                    window.lineQrImgExplicitlyRemoved = false;
                     lineQrImgSrcInput.value = selectedBase64;
                     const preview = document.getElementById('set-line-qr-preview');
                     if (preview) {
@@ -2899,6 +2964,7 @@ class CharoenAdmin {
         if (setLineQrClearBtn) {
             setLineQrClearBtn.onclick = () => {
                 if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรูปภาพ LINE QR Code?')) {
+                    window.lineQrImgExplicitlyRemoved = true;
                     lineQrImgSrcInput.value = '';
                     lineQrZone.innerHTML = `<i class="fas fa-qrcode" style="color:var(--text-muted); font-size:1.5rem;"></i>`;
                     alert('ล้างค่ารูปภาพ LINE QR แล้ว (กดปุ่มบันทึกสีส้มด้านล่างสุดเพื่อยืนยัน)');
@@ -3089,9 +3155,11 @@ class CharoenAdmin {
                 masterSaveBtn.disabled = true;
                 masterSaveBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...`;
 
-                const cleanGallery = (Array.isArray(window.currentAboutGalleryImages)
+                const currentGalleryArr = (Array.isArray(window.currentAboutGalleryImages) && window.currentAboutGalleryImages.length > 0)
                     ? window.currentAboutGalleryImages
-                    : [])
+                    : (Array.isArray(aboutGalleryList) ? aboutGalleryList : []);
+
+                const cleanGallery = currentGalleryArr
                     .map(item => typeof item === 'string' ? item.trim() : item)
                     .filter(Boolean)
                     .filter((item, index, arr) => arr.indexOf(item) === index)
@@ -3130,7 +3198,7 @@ class CharoenAdmin {
                     about_service_banner_subtitle_th: document.getElementById('set-about-one-stop-sub-th')?.value || '',
                     about_service_banner_subtitle_en: document.getElementById('set-about-one-stop-sub-en')?.value || '',
                     about_service_items: serviceJson,
-                    logo_img: document.getElementById('set-logo-img-src')?.value || '',
+                    logo_img: window.resolveImageSettingForSave(document.getElementById('set-logo-img-src')?.value, logoImg?.value, window.logoImgExplicitlyRemoved),
                     company_name_th: document.getElementById('set-company-name-th')?.value || '',
                     company_name_en: document.getElementById('set-company-name-en')?.value || '',
                     about_eyebrow_th: document.getElementById('set-about-eyebrow-th')?.value || '',
@@ -3142,8 +3210,8 @@ class CharoenAdmin {
                     about_cta_text_th: document.getElementById('set-about-cta-text-th')?.value || '',
                     about_cta_text_en: document.getElementById('set-about-cta-text-en')?.value || '',
                     about_cta_link: document.getElementById('set-about-cta-link')?.value || '#contact',
-                    about_hero_image: document.getElementById('set-about-hero-img-src') ? document.getElementById('set-about-hero-img-src').value : (aboutHeroImage?.value || ''),
-                    about_image: document.getElementById('set-about-img-src') ? document.getElementById('set-about-img-src').value : (aboutImage?.value || ''),
+                    about_hero_image: window.resolveImageSettingForSave(document.getElementById('set-about-hero-img-src')?.value, aboutHeroImage?.value, window.aboutHeroImageExplicitlyRemoved),
+                    about_image: window.resolveImageSettingForSave(document.getElementById('set-about-img-src')?.value, aboutImage?.value, window.aboutImageExplicitlyRemoved),
                     about_bullets_th: document.getElementById('set-about-bullets-th')?.value || '',
                     about_bullets_en: document.getElementById('set-about-bullets-en')?.value || '',
 
@@ -3197,7 +3265,7 @@ class CharoenAdmin {
                     google_maps_url: document.getElementById('set-maps-url')?.value || '',
                     google_maps_embed_url: document.getElementById('set-maps-embed-url')?.value || '',
                     line_url: document.getElementById('set-line-url')?.value || '',
-                    line_qr_image: document.getElementById('set-line-qr-img-src')?.value || '',
+                    line_qr_image: window.resolveImageSettingForSave(document.getElementById('set-line-qr-img-src')?.value, lineQrImage?.value, window.lineQrImgExplicitlyRemoved),
                     contact_visible: document.getElementById('set-contact-visible')?.checked ? 'true' : 'false',
                     line_qr_visible: document.getElementById('set-line-qr-visible')?.checked ? 'true' : 'false',
 
@@ -3231,6 +3299,9 @@ class CharoenAdmin {
                 }
             };
         }
+
+        const editContactHeroBtn = document.getElementById('edit-contact-hero-btn');
+        if (editContactHeroBtn) editContactHeroBtn.onclick = () => this.openContactHeroModal();
 
         // Firebase config submit
         document.getElementById('firebase-settings-form').onsubmit = async (e) => {
@@ -7139,7 +7210,10 @@ class CharoenAdmin {
             <div style="background:var(--bg-main); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:24px; box-shadow:var(--shadow-sm);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1.5px solid var(--border-color); padding-bottom:12px;">
                     <h3 style="font-size:1.15rem; font-weight:800; color:var(--secondary);"><i class="fas fa-question-circle" style="color:var(--primary)"></i> จัดการคำถามที่พบบ่อย (FAQs)</h3>
-                    <button id="add-faq-btn" class="btn btn-primary" style="display: none; padding:10px 18px;"><i class="fas fa-plus"></i> เพิ่มคำถามพบบ่อย</button>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button type="button" id="edit-faq-hero-btn" class="btn btn-outline" style="padding:8px 16px; font-size:0.85rem;"><i class="fas fa-image"></i> ตั้งค่า Hero / Background</button>
+                        <button id="add-faq-btn" class="btn btn-primary" style="display: none; padding:10px 18px;"><i class="fas fa-plus"></i> เพิ่มคำถามพบบ่อย</button>
+                    </div>
                 </div>
 
                 <div class="table-responsive">
@@ -7181,6 +7255,9 @@ class CharoenAdmin {
                 </div>
             </div>
         `;
+
+        const editFaqHeroBtn = document.getElementById('edit-faq-hero-btn');
+        if (editFaqHeroBtn) editFaqHeroBtn.onclick = () => this.openFaqHeroModal();
 
         document.getElementById('add-faq-btn').onclick = () => this.openFaqEditDialog(null);
         document.querySelectorAll('.edit-faq-btn').forEach(btn => {
