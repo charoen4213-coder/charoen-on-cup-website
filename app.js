@@ -184,6 +184,7 @@ class CharoenApp {
         this.renderNavbar();
         this.bindGlobalEvents();
         this.updateFooterContactInfo();
+        this.renderFloatingContactWidget();
 
         // Listen for route changes
         window.addEventListener('hashchange', () => this.handleRouting());
@@ -214,6 +215,7 @@ class CharoenApp {
         
         this.renderNavbar();
         this.updateFooterContactInfo();
+        this.renderFloatingContactWidget();
         this.handleRouting();
     }
 
@@ -535,6 +537,241 @@ class CharoenApp {
         }
         
         footerSocials.innerHTML = socialButtons;
+    }
+
+    async renderFloatingContactWidget() {
+        let widgetContainer = document.getElementById('floating-contact-widget');
+        if (!widgetContainer) {
+            widgetContainer = document.createElement('div');
+            widgetContainer.id = 'floating-contact-widget';
+            widgetContainer.className = 'floating-contact-widget';
+            widgetContainer.setAttribute('aria-label', this.lang === 'th' ? 'ช่องทางติดต่อ' : 'Contact channels');
+            document.body.appendChild(widgetContainer);
+        }
+
+        const phone = await this.getSetting('phone');
+        const email = await this.getSetting('email');
+        const lineUrl = await this.getSetting('line_url');
+        const lineId = await this.getSetting('line');
+        const lineVisible = await this.getSetting('line_visible', 'true');
+        const facebookUrl = await this.getSetting('facebook_url');
+        const facebookVisible = await this.getSetting('facebook_visible', 'true');
+
+        const cleanPhone = phone ? phone.replace(/[^0-9+]/g, '') : '';
+        const effectiveLineUrl = lineUrl || (lineId ? `https://line.me/R/ti/p/~${lineId.replace('@', '')}` : '');
+
+        const showFacebook = Boolean(facebookUrl) && facebookVisible !== 'false';
+        const showLine = lineVisible !== 'false' && Boolean(effectiveLineUrl);
+        const showEmail = Boolean(email);
+        const showPhone = Boolean(phone && cleanPhone);
+        const showContact = true;
+
+        const activeChannels = [];
+
+        if (showLine) {
+            activeChannels.push({
+                type: 'line',
+                label: this.lang === 'th' ? 'พูดคุยผ่าน LINE' : 'Chat on LINE',
+                icon: 'fab fa-line',
+                href: effectiveLineUrl,
+                target: '_blank',
+                rel: 'noopener noreferrer',
+                bgClass: 'fc-btn-line'
+            });
+        }
+
+        if (showFacebook) {
+            activeChannels.push({
+                type: 'facebook',
+                label: this.lang === 'th' ? 'พูดคุยผ่าน Facebook' : 'Chat on Facebook',
+                icon: 'fab fa-facebook-f',
+                href: facebookUrl,
+                target: '_blank',
+                rel: 'noopener noreferrer',
+                bgClass: 'fc-btn-facebook'
+            });
+        }
+
+        if (showPhone) {
+            activeChannels.push({
+                type: 'phone',
+                label: this.lang === 'th' ? 'โทรหาเรา' : 'Call Us',
+                icon: 'fas fa-phone-alt',
+                href: `tel:${cleanPhone}`,
+                target: '_self',
+                rel: '',
+                bgClass: 'fc-btn-phone'
+            });
+        }
+
+        if (showEmail) {
+            activeChannels.push({
+                type: 'email',
+                label: this.lang === 'th' ? 'ส่งอีเมลถึงเรา' : 'Email Us',
+                icon: 'fas fa-envelope',
+                href: `mailto:${email}`,
+                target: '_self',
+                rel: '',
+                bgClass: 'fc-btn-email'
+            });
+        }
+
+        if (showContact) {
+            activeChannels.push({
+                type: 'contact',
+                label: this.lang === 'th' ? 'ติดต่อเรา' : 'Contact Us',
+                icon: 'fas fa-comment-dots',
+                href: '#/contact',
+                target: '_self',
+                rel: '',
+                bgClass: 'fc-btn-contact'
+            });
+        }
+
+        if (activeChannels.length === 0) {
+            widgetContainer.innerHTML = '';
+            widgetContainer.style.display = 'none';
+            return;
+        } else {
+            widgetContainer.style.display = 'block';
+        }
+
+        const desktopItemsHtml = activeChannels.map(item => `
+            <a href="${item.href}" ${item.target ? `target="${item.target}"` : ''} ${item.rel ? `rel="${item.rel}"` : ''} class="fc-desktop-item ${item.bgClass}" aria-label="${item.label}">
+                <span class="fc-label">${item.label}</span>
+                <span class="fc-icon-box"><i class="${item.icon}"></i></span>
+            </a>
+        `).join('');
+
+        const mobileItemsHtml = activeChannels.map(item => `
+            <a href="${item.href}" ${item.target ? `target="${item.target}"` : ''} ${item.rel ? `rel="${item.rel}"` : ''} class="fc-mobile-item ${item.bgClass}" aria-label="${item.label}">
+                <span class="fc-mobile-icon-box"><i class="${item.icon}"></i></span>
+                <span class="fc-mobile-label">${item.label}</span>
+            </a>
+        `).join('');
+
+        const openLabel = this.lang === 'th' ? 'เปิดช่องทางติดต่อ' : 'Open contact options';
+        const closeLabel = this.lang === 'th' ? 'ปิดช่องทางติดต่อ' : 'Close contact options';
+
+        widgetContainer.innerHTML = `
+            <!-- Desktop Fixed Vertical Stack (>= 769px) -->
+            <div class="fc-desktop-stack">
+                ${desktopItemsHtml}
+            </div>
+
+            <!-- Mobile Expandable FAB Floating Widget (<= 768px) -->
+            <div class="fc-mobile-wrapper">
+                <div class="fc-mobile-menu" id="floating-contact-actions" aria-hidden="true">
+                    ${mobileItemsHtml}
+                </div>
+                <button type="button" class="fc-mobile-trigger" id="fc-mobile-trigger-btn" aria-expanded="false" aria-controls="floating-contact-actions" aria-label="${openLabel}">
+                    <i class="fas fa-comment-dots fc-icon-open"></i>
+                    <i class="fas fa-times fc-icon-close" style="display:none;"></i>
+                </button>
+            </div>
+        `;
+
+        const triggerBtn = document.getElementById('fc-mobile-trigger-btn');
+        const mobileMenu = document.getElementById('floating-contact-actions');
+        if (!triggerBtn || !mobileMenu) return;
+
+        const isMobileOpen = () => widgetContainer.classList.contains('is-mobile-open');
+
+        const openMobileMenu = () => {
+            widgetContainer.classList.add('is-mobile-open');
+            triggerBtn.setAttribute('aria-expanded', 'true');
+            triggerBtn.setAttribute('aria-label', closeLabel);
+            mobileMenu.setAttribute('aria-hidden', 'false');
+            const openIcon = triggerBtn.querySelector('.fc-icon-open');
+            const closeIcon = triggerBtn.querySelector('.fc-icon-close');
+            if (openIcon) openIcon.style.display = 'none';
+            if (closeIcon) closeIcon.style.display = 'inline-block';
+        };
+
+        const closeMobileMenu = () => {
+            widgetContainer.classList.remove('is-mobile-open');
+            triggerBtn.setAttribute('aria-expanded', 'false');
+            triggerBtn.setAttribute('aria-label', openLabel);
+            mobileMenu.setAttribute('aria-hidden', 'true');
+            const openIcon = triggerBtn.querySelector('.fc-icon-open');
+            const closeIcon = triggerBtn.querySelector('.fc-icon-close');
+            if (openIcon) openIcon.style.display = 'inline-block';
+            if (closeIcon) closeIcon.style.display = 'none';
+        };
+
+        triggerBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (isMobileOpen()) {
+                closeMobileMenu();
+            } else {
+                openMobileMenu();
+            }
+        };
+
+        widgetContainer.querySelectorAll('.fc-mobile-item').forEach(item => {
+            item.addEventListener('click', () => {
+                closeMobileMenu();
+            });
+        });
+
+        if (!this.fcGlobalListenersBound) {
+            this.fcGlobalListenersBound = true;
+
+            document.addEventListener('click', (e) => {
+                const container = document.getElementById('floating-contact-widget');
+                if (container && container.classList.contains('is-mobile-open')) {
+                    if (!container.contains(e.target)) {
+                        container.classList.remove('is-mobile-open');
+                        const trigger = document.getElementById('fc-mobile-trigger-btn');
+                        const menu = document.getElementById('floating-contact-actions');
+                        if (trigger) {
+                            trigger.setAttribute('aria-expanded', 'false');
+                            const openIcon = trigger.querySelector('.fc-icon-open');
+                            const closeIcon = trigger.querySelector('.fc-icon-close');
+                            if (openIcon) openIcon.style.display = 'inline-block';
+                            if (closeIcon) closeIcon.style.display = 'none';
+                        }
+                        if (menu) menu.setAttribute('aria-hidden', 'true');
+                    }
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' || e.key === 'Esc') {
+                    const container = document.getElementById('floating-contact-widget');
+                    if (container && container.classList.contains('is-mobile-open')) {
+                        container.classList.remove('is-mobile-open');
+                        const trigger = document.getElementById('fc-mobile-trigger-btn');
+                        const menu = document.getElementById('floating-contact-actions');
+                        if (trigger) {
+                            trigger.setAttribute('aria-expanded', 'false');
+                            const openIcon = trigger.querySelector('.fc-icon-open');
+                            const closeIcon = trigger.querySelector('.fc-icon-close');
+                            if (openIcon) openIcon.style.display = 'inline-block';
+                            if (closeIcon) closeIcon.style.display = 'none';
+                        }
+                        if (menu) menu.setAttribute('aria-hidden', 'true');
+                    }
+                }
+            });
+
+            window.addEventListener('hashchange', () => {
+                const container = document.getElementById('floating-contact-widget');
+                if (container && container.classList.contains('is-mobile-open')) {
+                    container.classList.remove('is-mobile-open');
+                    const trigger = document.getElementById('fc-mobile-trigger-btn');
+                    const menu = document.getElementById('floating-contact-actions');
+                    if (trigger) {
+                        trigger.setAttribute('aria-expanded', 'false');
+                        const openIcon = trigger.querySelector('.fc-icon-open');
+                        const closeIcon = trigger.querySelector('.fc-icon-close');
+                        if (openIcon) openIcon.style.display = 'inline-block';
+                        if (closeIcon) closeIcon.style.display = 'none';
+                    }
+                    if (menu) menu.setAttribute('aria-hidden', 'true');
+                }
+            });
+        }
     }
 
     closeMobileMenu() {
