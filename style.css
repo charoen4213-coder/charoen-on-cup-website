@@ -2899,17 +2899,17 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .portfolio-sidebar-inner {
-    background: var(--bg-main, #ffffff);
-    border: 1px solid var(--border-color, rgba(4, 53, 106, 0.12));
-    border-radius: var(--radius-md, 12px);
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 14px;
     padding: 20px 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
 }
 
 .portfolio-sidebar-widget {
     margin-bottom: 20px;
     padding-bottom: 16px;
-    border-bottom: 1px solid var(--border-color, rgba(4, 53, 106, 0.08));
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
 }
 .portfolio-sidebar-widget:last-child {
     margin-bottom: 0;
@@ -2918,15 +2918,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .portfolio-sidebar-title {
-    font-size: 0.88rem;
-    font-weight: 800;
+    font-size: 0.86rem;
+    font-weight: 700;
     color: var(--secondary, #0c2340);
     margin: 0 0 12px 0;
     display: flex;
     align-items: center;
-    font-family: 'Kanit', 'Inter', sans-serif;
-    letter-spacing: 0.3px;
-    text-transform: uppercase;
+    font-family: 'Kanit', sans-serif;
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 .portfolio-sidebar-search-box {
@@ -2947,12 +2947,15 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 12px;
-    border-radius: var(--radius-sm, 8px);
+    height: 38px;
+    padding: 8px 10px;
+    border-radius: 8px;
     font-size: 0.85rem;
-    font-weight: 600;
+    font-weight: 500;
     color: var(--text-main, #334155);
     text-decoration: none;
+    font-family: 'Prompt', 'Kanit', sans-serif;
+    letter-spacing: 0;
     transition: all 0.2s ease;
 }
 
@@ -2964,20 +2967,21 @@ h1, h2, h3, h4, h5, h6 {
 .portfolio-sidebar-cat-item.active {
     background: var(--primary, #04356a);
     color: #ffffff !important;
+    font-weight: 600;
 }
 
 .portfolio-sidebar-count {
-    font-size: 0.75rem;
-    font-weight: 700;
+    font-size: 0.74rem;
+    font-weight: 600;
     padding: 2px 7px;
-    border-radius: 12px;
+    border-radius: 10px;
     background: rgba(4, 53, 106, 0.08);
     color: var(--primary, #04356a);
     transition: background 0.2s ease, color 0.2s ease;
 }
 
 .portfolio-sidebar-cat-item.active .portfolio-sidebar-count {
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.22);
     color: #ffffff;
 }
 
@@ -2988,17 +2992,18 @@ h1, h2, h3, h4, h5, h6 {
     gap: 8px;
     width: 100%;
     padding: 8px 12px;
-    border-radius: var(--radius-sm, 8px);
-    border: 1px dashed var(--accent, #ff6b00);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 107, 0, 0.4);
     color: var(--accent, #ff6b00);
     font-size: 0.82rem;
-    font-weight: 700;
+    font-weight: 600;
     text-decoration: none;
     transition: all 0.2s ease;
 }
 
 .portfolio-sidebar-reset-btn:hover {
-    background: rgba(255, 107, 0, 0.08);
+    background: rgba(255, 107, 0, 0.06);
+    border-color: var(--accent, #ff6b00);
 }
 
 .portfolio-results {
@@ -3011,12 +3016,12 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
-    background: var(--bg-main, #ffffff);
-    border: 1px solid var(--border-color, rgba(4, 53, 106, 0.08));
-    border-radius: var(--radius-md, 12px);
-    margin-bottom: 24px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    padding: 10px 16px;
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: none;
 }
 
 .portfolio-results-count {
@@ -3032,10 +3037,10 @@ h1, h2, h3, h4, h5, h6 {
     gap: 8px;
     padding: 4px 12px;
     border-radius: 20px;
-    background: rgba(255, 107, 0, 0.1);
+    background: rgba(255, 107, 0, 0.08);
     color: var(--accent, #ff6b00);
     font-size: 0.8rem;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .portfolio-results-active-tag a {
