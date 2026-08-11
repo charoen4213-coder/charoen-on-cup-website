@@ -1460,7 +1460,7 @@ class CharoenApp {
                                         <span class="section-eyebrow" style="font-weight: 700; color: var(--accent); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">
                                             ${this.lang === 'th' ? 'ข้อมูลแนะนำบริษัท' : 'About Company'}
                                         </span>
-                                        <h2 style="font-size: 1.95rem; font-weight: 800; ${aboutTitleTextColorStyle} margin-bottom: 16px; line-height: 1.35; font-family: 'Inter', 'Kanit', sans-serif;">
+                                        <h2 style="font-size: 1.95rem; font-weight: 800; ${aboutTitleTextColorStyle} margin-bottom: 16px; line-height: 1.35; font-family: var(--font-family-heading);">
                                             ${this.lang === 'th' ? sec.content.title_th : sec.content.title_en}
                                         </h2>
                                         <p class="section-description" style="font-size: 0.98rem; line-height: 1.75; ${aboutDescTextColorStyle} margin-bottom: 20px;">
@@ -1636,7 +1636,7 @@ class CharoenApp {
                                                 ${this.lang === 'th' ? 'วีดีโอแนะนำ' : 'Featured Videos'}
                                             </span>
                                             ${secTitle ? `
-                                                <h2 class="section-title" style="font-size: 1.95rem; font-weight: 800; color: var(--secondary); margin-bottom: 12px; font-family: 'Inter', 'Kanit', sans-serif; ${videoTitleTextColorStyle}">
+                                                <h2 class="section-title" style="font-size: 1.95rem; font-weight: 800; color: var(--secondary); margin-bottom: 12px; font-family: var(--font-family-heading); ${videoTitleTextColorStyle}">
                                                     ${secTitle}
                                                 </h2>
                                             ` : ''}
@@ -1682,7 +1682,7 @@ class CharoenApp {
                                                     ${hasCardText ? `
                                                         <div style="padding: 20px 24px;">
                                                             ${title ? `
-                                                                <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--secondary); ${desc ? 'margin-bottom: 8px;' : 'margin-bottom: 0;'} font-family: 'Inter', 'Kanit', sans-serif; line-height: 1.4;">
+                                                                <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--secondary); ${desc ? 'margin-bottom: 8px;' : 'margin-bottom: 0;'} font-family: var(--font-family-heading); line-height: 1.4;">
                                                                     ${title}
                                                                 </h3>
                                                             ` : ''}
@@ -3793,7 +3793,7 @@ class CharoenApp {
                                 <i class="fas fa-building" style="font-size: 0.8rem;"></i>
                                 ${eyebrowVal}
                             </span>
-                            <h2 style="font-size: 2.2rem; font-weight: 800; color: var(--secondary); margin-bottom: 24px; line-height: 1.3; font-family: 'Inter', 'Kanit', sans-serif;">
+                            <h2 style="font-size: 2.2rem; font-weight: 800; color: var(--secondary); margin-bottom: 24px; line-height: 1.3; font-family: var(--font-family-heading);">
                                 ${aboutTitleVal}
                             </h2>
                             <div class="body-text" style="line-height: 1.8; color: var(--text-main); font-size: 1.02rem; margin-bottom: 28px;">
@@ -3847,7 +3847,7 @@ class CharoenApp {
                             <span class="section-eyebrow" style="font-weight: 700; color: var(--accent); font-size: 0.88rem; text-transform: uppercase; letter-spacing: 1.5px; display: block; margin-bottom: 10px;">
                                 ${this.lang === 'th' ? 'จุดเด่นของเรา' : 'OUR HIGHLIGHTS'}
                             </span>
-                            <h3 style="font-size: 2rem; font-weight: 800; color: var(--secondary); font-family: 'Inter', 'Kanit', sans-serif; margin-bottom: 0;">
+                            <h3 style="font-size: 2rem; font-weight: 800; color: var(--secondary); font-family: var(--font-family-heading); margin-bottom: 0;">
                                 ${this.lang === 'th' ? 'เหตุผลที่ลูกค้าไว้วางใจ เจริญ ออน คัพ' : 'Why Businesses Choose Charoen On Cup'}
                             </h3>
                         </div>
@@ -3858,7 +3858,7 @@ class CharoenApp {
                                     <div style="width: 54px; height: 54px; border-radius: 12px; background: rgba(255, 107, 0, 0.08); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 20px;">
                                         <i class="${h.icon}"></i>
                                     </div>
-                                    <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--secondary); margin-bottom: 10px; font-family: 'Inter', 'Kanit', sans-serif;">
+                                    <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--secondary); margin-bottom: 10px; font-family: var(--font-family-heading);">
                                         ${h.title}
                                     </h4>
                                     <p style="font-size: 0.92rem; color: var(--text-main); line-height: 1.65; margin: 0;">
@@ -3883,7 +3883,7 @@ class CharoenApp {
                             <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(4, 53, 106, 0.08); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 16px;">
                                 <i class="fas fa-building"></i>
                             </div>
-                            <h3 style="font-size: 1.8rem; font-weight: 800; color: var(--secondary); font-family: 'Inter', 'Kanit', sans-serif; margin-bottom: 8px;">
+                            <h3 style="font-size: 1.8rem; font-weight: 800; color: var(--secondary); font-family: var(--font-family-heading); margin-bottom: 8px;">
                                 ${this.lang === 'th' ? 'ข้อมูลการติดต่อ และโรงงาน' : 'Factory & Contact Details'}
                             </h3>
                             <p style="color: var(--text-muted); font-size: 0.95rem; margin: 0;">
@@ -4945,7 +4945,7 @@ class CharoenApp {
         const contactVisible = await this.getSetting('contact_visible', 'true');
         if (contactVisible === 'false') {
             container.innerHTML = `
-                <div class="container text-center" style="padding:120px 20px; font-family:'Kanit', sans-serif;">
+                <div class="container text-center" style="padding:120px 20px; font-family:var(--font-family-base);">
                     <div style="font-size:4rem; color:var(--text-muted); margin-bottom:20px;"><i class="fas fa-eye-slash"></i></div>
                     <h2 style="font-weight:700; color:var(--secondary); margin-bottom:15px;">${this.lang === 'th' ? 'ขออภัย หน้านี้ไม่เปิดให้บริการชั่วคราว' : 'Page Temporarily Unavailable'}</h2>
                     <p style="color:var(--text-sec); max-width:500px; margin:0 auto 30px auto; line-height:1.6;">${this.lang === 'th' ? 'ช่องทางการติดต่อสื่อสารกำลังอยู่ในระหว่างปรับปรุงข้อมูลโดยระบบบริหารจัดการเว็บไซต์' : 'The contact channels are currently being updated by the administrator.'}</p>
@@ -5086,7 +5086,7 @@ class CharoenApp {
         if (lineQrImage && lineQrVisible !== 'false') {
             lineQrCardHtml = `
                 <div class="line-qr-card-box" style="background-color:var(--bg-sec); border-radius:var(--radius-lg); padding:24px; border:1px solid var(--border-color); text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-top:30px;">
-                    <h5 style="font-size:1.05rem; font-weight:700; margin-top:0; margin-bottom:12px; color:var(--primary); font-family:'Kanit', sans-serif;"><i class="fas fa-qrcode"></i> LINE QR Code</h5>
+                    <h5 style="font-size:1.05rem; font-weight:700; margin-top:0; margin-bottom:12px; color:var(--primary); font-family:var(--font-family-base);"><i class="fas fa-qrcode"></i> LINE QR Code</h5>
                     <div style="width:140px; height:140px; background:white; border:1px solid var(--border-color); border-radius:var(--radius-md); padding:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:var(--shadow-sm);" onclick="window.openLineQrModal('${lineQrImage}')" title="${this.lang === 'th' ? 'คลิกขยายรูป QR Code' : 'Click to enlarge QR Code'}">
                         <img src="${lineQrImage}" alt="LINE QR Code" width="140" height="140" loading="lazy" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="const card = this.closest('.line-qr-card-box'); if (card) card.style.display='none';">
                     </div>
@@ -5241,7 +5241,7 @@ class CharoenApp {
         if (sortedFaqs.length > 0) {
             faqsHtml = sortedFaqs.map((faq, idx) => `
                 <div class="faq-accordion-item" style="background:var(--bg-main); border:1px solid var(--border-color); border-radius:var(--radius-md); overflow:hidden;">
-                    <button class="faq-accordion-header" style="width:100%; border:none; background:none; text-align:left; padding:20px 24px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-family:'Kanit', sans-serif; transition:var(--transition); outline:none;">
+                    <button class="faq-accordion-header" style="width:100%; border:none; background:none; text-align:left; padding:20px 24px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-family:var(--font-family-base); transition:var(--transition); outline:none;">
                         <h4 style="font-weight:700; color:var(--secondary); font-size:1.1rem; margin:0; display:flex; align-items:center; gap:10px; line-height:1.4;">
                             <i class="fas fa-question-circle" style="color:var(--primary)"></i> ${this.lang === 'th' ? (faq.question_th || faq.question_en) : (faq.question_en || faq.question_th)}
                         </h4>
@@ -5284,7 +5284,7 @@ class CharoenApp {
             ];
             faqsHtml = defaults.map((faq, idx) => `
                 <div class="faq-accordion-item" style="background:var(--bg-main); border:1px solid var(--border-color); border-radius:var(--radius-md); overflow:hidden;">
-                    <button class="faq-accordion-header" style="width:100%; border:none; background:none; text-align:left; padding:20px 24px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-family:'Kanit', sans-serif; transition:var(--transition); outline:none;">
+                    <button class="faq-accordion-header" style="width:100%; border:none; background:none; text-align:left; padding:20px 24px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-family:var(--font-family-base); transition:var(--transition); outline:none;">
                         <h4 style="font-weight:700; color:var(--secondary); font-size:1.1rem; margin:0; display:flex; align-items:center; gap:10px; line-height:1.4;">
                             <i class="fas fa-question-circle" style="color:var(--primary)"></i> ${this.lang === 'th' ? faq.q_th : faq.q_en}
                         </h4>
@@ -6197,7 +6197,7 @@ class CharoenApp {
         spinnerBox.style.pointerEvents = 'none';
         spinnerBox.innerHTML = `
             <i class="fas fa-circle-notch fa-spin" style="font-size: 2.4rem; color: var(--accent, #FF6B00);"></i>
-            <span style="font-size: 0.85rem; letter-spacing: 0.5px; font-weight: 500; font-family: 'Kanit', sans-serif;">${this.lang === 'th' ? 'กำลังโหลดวิดีโอ...' : 'Loading video...'}</span>
+            <span style="font-size: 0.85rem; letter-spacing: 0.5px; font-weight: 500; font-family: var(--font-family-base);">${this.lang === 'th' ? 'กำลังโหลดวิดีโอ...' : 'Loading video...'}</span>
         `;
 
         // 4. Error Message Overlay
@@ -6217,10 +6217,10 @@ class CharoenApp {
         errorBox.style.background = '#060D18';
         errorBox.innerHTML = `
             <i class="fas fa-exclamation-triangle" style="font-size: 2.8rem; color: #EF4444;"></i>
-            <p style="font-size: 1.05rem; font-weight: 700; margin: 0; color: #F3F4F6; font-family: 'Kanit', sans-serif;">
+            <p style="font-size: 1.05rem; font-weight: 700; margin: 0; color: #F3F4F6; font-family: var(--font-family-base);">
                 ${this.lang === 'th' ? 'ไม่พบไฟล์วิดีโอ' : 'Video File Not Found'}
             </p>
-            <p style="font-size: 0.85rem; color: #9CA3AF; max-width: 340px; margin: 0; text-align: center; line-height: 1.6; font-family: 'Prompt', sans-serif;">
+            <p style="font-size: 0.85rem; color: #9CA3AF; max-width: 340px; margin: 0; text-align: center; line-height: 1.6; font-family: var(--font-family-base);">
                 ${this.lang === 'th'
                     ? 'ไม่พบไฟล์วิดีโอ กรุณาตรวจสอบ Path และ Deploy ไฟล์อีกครั้ง<br><code style="font-size:0.78rem; color:#6B7280;">' + resolvedVideoSrc + '</code>'
                     : 'Video file not found. Please verify the path and redeploy the website.<br><code style="font-size:0.78rem; color:#6B7280;">' + resolvedVideoSrc + '</code>'

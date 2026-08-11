@@ -40,8 +40,8 @@
     /* ==========================================================================
        2. TYPOGRAPHY SYSTEM TOKENS
        ========================================================================== */
-    --font-family-base: 'Kanit', sans-serif;
-    --font-family-heading: 'Inter', 'Kanit', sans-serif;
+    --font-family-base: 'Noto Sans Thai', 'Kanit', 'Inter', sans-serif;
+    --font-family-heading: 'Noto Sans Thai', 'Kanit', 'Inter', sans-serif;
 
     /* Typography Scale */
     --font-size-hero: 3rem;       /* 48px */
@@ -411,7 +411,7 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 800;
     font-size: 1.3rem;
     letter-spacing: -0.2px;
-    font-family: 'Inter', 'Kanit', sans-serif;
+    font-family: var(--font-family-heading);
 }
 
 .logo-text span {
@@ -783,7 +783,7 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 700 !important;
     margin-bottom: 12px !important;
     color: var(--primary) !important;
-    font-family: 'Kanit', sans-serif !important;
+    font-family: var(--font-family-heading) !important;
     transition: color 0.25s ease !important;
 }
 
@@ -863,7 +863,7 @@ h1, h2, h3, h4, h5, h6 {
     user-select: none !important;
     pointer-events: none !important;
     z-index: 0 !important;
-    font-family: 'Inter', sans-serif !important;
+    font-family: var(--font-family-heading) !important;
 }
 
 .why-us-circle-box {
@@ -899,7 +899,7 @@ h1, h2, h3, h4, h5, h6 {
     margin: 0 0 12px 0 !important;
     position: relative !important;
     z-index: 1 !important;
-    font-family: 'Kanit', sans-serif !important;
+    font-family: var(--font-family-heading) !important;
     line-height: 1.35 !important;
     transition: color 0.25s ease !important;
 }
@@ -1694,7 +1694,7 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
     color: #ffffff !important;
     margin-bottom: 10px;
-    font-family: 'Kanit', sans-serif;
+    font-family: var(--font-family-heading);
     letter-spacing: 0;
     line-height: 1.3;
 }
@@ -1773,7 +1773,7 @@ h1, h2, h3, h4, h5, h6 {
     margin-top: 0;
     margin-bottom: 16px;
     color: var(--secondary);
-    font-family: 'Kanit', sans-serif;
+    font-family: var(--font-family-heading);
     border-bottom: 1.5px solid var(--border-color);
     padding-bottom: 12px;
 }
@@ -1896,7 +1896,7 @@ h1, h2, h3, h4, h5, h6 {
     margin-top: 0;
     margin-bottom: 8px;
     color: var(--secondary);
-    font-family: 'Kanit', sans-serif;
+    font-family: var(--font-family-base);
     line-height: 1.3;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -2461,7 +2461,7 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: 20px;
     backdrop-filter: blur(4px);
     letter-spacing: 0.5px;
-    font-family: 'Kanit', 'Inter', sans-serif;
+    font-family: var(--font-family-heading);
 }
 
 .lightbox-arrow {
@@ -2576,7 +2576,7 @@ h1, h2, h3, h4, h5, h6 {
     line-height: 1.3;
     color: #0c2340;
     margin: 0;
-    font-family: 'Kanit', sans-serif;
+    font-family: var(--font-family-heading);
     word-break: break-word;
     border: none;
 }
@@ -2586,7 +2586,7 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
     color: #0c2340;
     margin: 0 0 12px 0;
-    font-family: 'Kanit', sans-serif;
+    font-family: var(--font-family-heading);
     letter-spacing: 0;
     border-bottom: none;
 }
@@ -3014,7 +3014,7 @@ h1, h2, h3, h4, h5, h6 {
     margin: 0 0 12px 0;
     display: flex;
     align-items: center;
-    font-family: 'Kanit', sans-serif;
+    font-family: var(--font-family-heading);
     letter-spacing: 0;
     text-transform: none;
 }
@@ -3044,7 +3044,7 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 500;
     color: var(--text-main, #334155);
     text-decoration: none;
-    font-family: 'Prompt', 'Kanit', sans-serif;
+    font-family: var(--font-family-base);
     letter-spacing: 0;
     transition: all 0.2s ease;
 }
@@ -3118,7 +3118,7 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 0.88rem;
     font-weight: 700;
     color: var(--secondary, #0c2340);
-    font-family: 'Kanit', 'Inter', sans-serif;
+    font-family: var(--font-family-heading);
 }
 
 .portfolio-results-active-tag {
@@ -3230,7 +3230,7 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: var(--radius-full);
     font-weight: 700;
     font-size: 0.9rem;
-    font-family: 'Kanit', sans-serif;
+    font-family: var(--font-family-base);
     cursor: pointer;
     background-color: white;
     color: var(--primary);
@@ -4311,7 +4311,7 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     pointer-events: none;
     letter-spacing: 0.5px;
-    font-family: 'Kanit', 'Inter', sans-serif;
+    font-family: var(--font-family-base);
     transition: opacity 200ms ease;
 }
 
@@ -4428,7 +4428,7 @@ h1, h2, h3, h4, h5, h6 {
     margin: 0;
     color: #ffffff;
     line-height: 1.3;
-    font-family: 'Kanit', 'Inter', sans-serif;
+    font-family: var(--font-family-base);
     word-wrap: break-word;
     overflow-wrap: anywhere;
     display: -webkit-box;
@@ -4859,7 +4859,7 @@ input[type="radio"].form-control,
     line-height: 1.25;
     margin-bottom: 18px;
     letter-spacing: -0.5px;
-    font-family: 'Inter', 'Kanit', sans-serif;
+    font-family: var(--font-family-heading);
 }
 
 .hero-description {
@@ -6600,7 +6600,7 @@ body.no-scroll {
     font-size: 1.35rem !important;
     font-weight: 700 !important;
     margin: 0 0 8px 0 !important;
-    font-family: 'Kanit', sans-serif !important;
+    font-family: var(--font-family-heading) !important;
     color: #ffffff !important;
     line-height: 1.35 !important;
     display: -webkit-box !important;
@@ -6732,7 +6732,7 @@ body.no-scroll {
     font-weight: 800 !important;
     margin-top: 0 !important;
     margin-bottom: 12px !important;
-    font-family: 'Kanit', sans-serif !important;
+    font-family: var(--font-family-heading) !important;
     color: white !important;
     line-height: 1.25 !important;
 }
@@ -7040,7 +7040,7 @@ body.no-scroll {
 .subpage-hero-banner.about-hero .about-hero-title {
     margin: 0 0 10px;
     color: #ffffff;
-    font-family: 'Inter', 'Kanit', sans-serif;
+    font-family: var(--font-family-heading);
     font-size: 2.2rem;
     font-weight: 800;
     line-height: 1.6;
@@ -7052,7 +7052,7 @@ body.no-scroll {
     max-width: 960px;
     margin: 0 auto;
     color: #ffffff;
-    font-family: 'Kanit', sans-serif;
+    font-family: var(--font-family-base);
     font-size: 1.05rem;
     font-weight: 400;
     line-height: 1.6;
@@ -7082,7 +7082,7 @@ body.no-scroll {
 .info-text,
 .article-body,
 .detail-description {
-    font-family: 'Kanit', sans-serif;
+    font-family: var(--font-family-base);
 }
 
 /* About Us Redesign Scoped Styling */
@@ -7585,7 +7585,7 @@ body.no-scroll {
     color: #ffffff;
     margin-bottom: 10px;
     letter-spacing: 0.5px;
-    font-family: 'Inter', 'Kanit', sans-serif;
+    font-family: var(--font-family-heading);
 }
 
 .about-one-stop-mobile-break {
@@ -7722,7 +7722,7 @@ body.no-scroll {
 .floating-contact-widget {
     position: fixed;
     z-index: 990;
-    font-family: 'Kanit', 'Prompt', 'Inter', sans-serif;
+    font-family: var(--font-family-base);
     letter-spacing: 0;
     pointer-events: none;
 }
