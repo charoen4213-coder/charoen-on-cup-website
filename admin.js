@@ -186,10 +186,10 @@ class CharoenAdmin {
         container.style.padding = '20px';
 
         container.innerHTML = `
-            <div class="login-card" style="background:white; padding:40px; border-radius:var(--radius-lg); box-shadow:var(--shadow-md); width:100%; max-width:400px; border:1px solid var(--border-color); display:flex; flex-direction:column; gap:24px; font-family:'Kanit', sans-serif;">
+            <div class="login-card" style="background:white; padding:40px; border-radius:var(--radius-lg); box-shadow:var(--shadow-md); width:100%; max-width:400px; border:1px solid var(--border-color); display:flex; flex-direction:column; gap:24px; font-family:var(--font-family-base);">
                 <div style="text-align:center;">
                     <div style="width:60px; height:60px; background:var(--primary); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.8rem; margin:0 auto 16px auto;"><i class="fas fa-user-shield"></i></div>
-                    <h3 style="font-family:'Kanit', sans-serif; font-size:1.5rem; font-weight:800; color:var(--secondary); margin-bottom:6px;">Charoen Cup CMS</h3>
+                    <h3 style="font-family:var(--font-family-heading); font-size:1.5rem; font-weight:800; color:var(--secondary); margin-bottom:6px;">Charoen Cup CMS</h3>
                     <p style="font-size:0.88rem; color:var(--text-muted);">${noticeMsg || 'ระบบบริหารจัดการหลังบ้าน'}</p>
                 </div>
 
@@ -1714,7 +1714,7 @@ class CharoenAdmin {
         } catch (err) {
             console.error("Error loading Media Library view:", err);
             container.innerHTML = `
-                <div style="padding:40px; text-align:center; color:var(--danger); font-family:'Kanit', sans-serif;">
+                <div style="padding:40px; text-align:center; color:var(--danger); font-family:var(--font-family-base);">
                     <i class="fas fa-exclamation-triangle" style="font-size:2.5rem; margin-bottom:16px;"></i>
                     <h3 style="font-weight:700;">เกิดข้อผิดพลาดในการโหลดคลังสื่อ</h3>
                     <p style="margin-top:8px; font-size:0.9rem; color:var(--text-muted);">${err.message}</p>
